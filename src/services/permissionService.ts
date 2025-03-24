@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { generateAccessToken } from '@/utils/auth-helpers';
 import { Tables } from '@/integrations/supabase/types';
@@ -233,7 +234,8 @@ export const getAddressForShippingCarrier = async (
       throw new Error('Invalid or expired shipping token');
     }
     
-    const metadata = permission.metadata || {};
+    // Since we added the metadata column in our SQL migration, we can safely access it now
+    const metadata = permission.metadata as any || {};
     if (!metadata.isShippingCarrier) {
       throw new Error('This token is not authorized for shipping carrier access');
     }
@@ -260,6 +262,7 @@ export const getAddressForShippingCarrier = async (
     
     await logAddressAccess(permission.id, ['carrier_access', carrierIdentifier, shipmentDetails.service]);
     
+    // Now the shipments table exists so we can use it
     const { data: shipment, error: shipmentError } = await supabase
       .from('shipments')
       .insert([{

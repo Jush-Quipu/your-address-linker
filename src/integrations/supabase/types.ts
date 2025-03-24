@@ -57,6 +57,7 @@ export type Database = {
           last_accessed: string | null
           last_notification_at: string | null
           max_access_count: number | null
+          metadata: Json | null
           revocation_reason: string | null
           revoked: boolean | null
           revoked_at: string | null
@@ -80,6 +81,7 @@ export type Database = {
           last_accessed?: string | null
           last_notification_at?: string | null
           max_access_count?: number | null
+          metadata?: Json | null
           revocation_reason?: string | null
           revoked?: boolean | null
           revoked_at?: string | null
@@ -103,6 +105,7 @@ export type Database = {
           last_accessed?: string | null
           last_notification_at?: string | null
           max_access_count?: number | null
+          metadata?: Json | null
           revocation_reason?: string | null
           revoked?: boolean | null
           revoked_at?: string | null
@@ -286,6 +289,65 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      shipments: {
+        Row: {
+          carrier: string
+          carrier_details: Json | null
+          confirmation_required: boolean | null
+          confirmation_status: string | null
+          created_at: string
+          id: string
+          package_details: Json | null
+          permission_id: string
+          service: string
+          status: string
+          tracking_details: Json | null
+          tracking_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          carrier: string
+          carrier_details?: Json | null
+          confirmation_required?: boolean | null
+          confirmation_status?: string | null
+          created_at?: string
+          id?: string
+          package_details?: Json | null
+          permission_id: string
+          service: string
+          status?: string
+          tracking_details?: Json | null
+          tracking_number?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          carrier?: string
+          carrier_details?: Json | null
+          confirmation_required?: boolean | null
+          confirmation_status?: string | null
+          created_at?: string
+          id?: string
+          package_details?: Json | null
+          permission_id?: string
+          service?: string
+          status?: string
+          tracking_details?: Json | null
+          tracking_number?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipments_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "address_permissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wallet_addresses: {
         Row: {

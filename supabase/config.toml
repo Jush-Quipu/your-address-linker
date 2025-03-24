@@ -6,8 +6,8 @@
 project_id = "akfieehzgpcapuhdujvf"
 
 [api]
-# Point to where you locally run Supabase.
-# This will be ignored when deploying to Supabase Platform.
+# Point to where you locally run Supabase
+# This will be ignored when deploying to Supabase Platform
 port = 54321
 
 [db]
