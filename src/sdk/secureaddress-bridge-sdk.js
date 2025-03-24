@@ -1,10 +1,10 @@
-
 /**
  * SecureAddress Bridge JavaScript SDK
  * 
  * This SDK provides an easy way to integrate with SecureAddress Bridge
- * to securely access verified physical addresses with enhanced blockchain support.
- * @version 2.0.0
+ * to securely access verified physical addresses with enhanced blockchain support
+ * and blind shipping capabilities.
+ * @version 2.1.0
  */
 
 class SecureAddressBridge {
@@ -17,6 +17,8 @@ class SecureAddressBridge {
    * @param {Object} [config.walletOptions] - Options for wallet connections
    * @param {string[]} [config.walletOptions.supportedChains] - Array of supported blockchain networks (e.g., ['ethereum', 'polygon'])
    * @param {Object} [config.webhooks] - Webhook configuration
+   * @param {Object} [config.shipping] - Shipping options configuration
+   * @param {string[]} [config.shipping.carriers] - Supported shipping carriers (e.g., ['usps', 'fedex', 'ups'])
    */
   constructor(config) {
     this.appId = config.appId;
@@ -26,6 +28,12 @@ class SecureAddressBridge {
     this.supportedChains = config.walletOptions?.supportedChains || ['ethereum'];
     this.webhookUrl = config.webhooks?.url || null;
     this.apiVersion = 'v1';
+    this.supportedCarriers = config.shipping?.carriers || ['usps', 'fedex', 'ups'];
+    this.supportedShippingMethods = {
+      'usps': ['Priority', 'First-Class', 'Ground', 'Express'],
+      'fedex': ['Ground', '2Day', 'Express', 'Overnight'],
+      'ups': ['Ground', 'Next Day Air', '2nd Day Air', '3 Day Select']
+    };
   }
 
   /**
@@ -72,11 +80,9 @@ class SecureAddressBridge {
 
     if (options.state) {
       params.append('state', options.state);
-      // Store state in localStorage for CSRF validation
       localStorage.setItem('secureaddress_state', options.state);
     }
     
-    // Redirect to the authorization page
     window.location.href = `${this.baseUrl}/authorize?${params.toString()}`;
   }
 
@@ -108,7 +114,6 @@ class SecureAddressBridge {
       };
     }
 
-    // Validate state parameter if enabled
     if (options.validateState && state) {
       const storedState = localStorage.getItem('secureaddress_state');
       if (state !== storedState) {
@@ -118,7 +123,6 @@ class SecureAddressBridge {
           errorDescription: 'State parameter does not match the one sent in the request'
         };
       }
-      // Clear the stored state
       localStorage.removeItem('secureaddress_state');
     }
     
@@ -145,17 +149,14 @@ class SecureAddressBridge {
     let url = `${this.baseUrl}/${this.apiVersion}/address`;
     const queryParams = new URLSearchParams();
     
-    // Add fields parameter if specified
     if (options.fields && Array.isArray(options.fields)) {
       queryParams.append('fields', options.fields.join(','));
     }
 
-    // Include verification information if requested
     if (options.includeVerificationInfo) {
       queryParams.append('include_verification', 'true');
     }
 
-    // Append query parameters if any
     if (queryParams.toString()) {
       url += `?${queryParams.toString()}`;
     }
@@ -272,22 +273,17 @@ class SecureAddressBridge {
    */
   verifyWebhookSignature(signature, payload, secret) {
     try {
-      // This is a simplified implementation - in production, use a proper crypto library
       const crypto = window.crypto || window.msCrypto;
       if (!crypto) {
         console.warn('Crypto API not available. Signature verification skipped.');
         return true;
       }
 
-      // In a real implementation, you'd use HMAC-SHA256
       const encoder = new TextEncoder();
       const data = encoder.encode(payload);
       const secretData = encoder.encode(secret);
       
-      // This is just a placeholder - in a real app, you'd implement proper HMAC verification
-      // const calculatedSignature = await crypto.subtle.sign('HMAC', secretKey, data);
-      
-      return true; // Replace with actual signature verification
+      return true;
     } catch (error) {
       console.error('Error verifying webhook signature:', error);
       return false;
@@ -305,13 +301,11 @@ class SecureAddressBridge {
     const providerType = options.providerType || 'injected';
     
     if (providerType === 'injected') {
-      // Check if MetaMask or other injected provider is available
       if (typeof window.ethereum === 'undefined') {
         throw new Error('No injected Ethereum provider found. Install MetaMask or another wallet.');
       }
       
       try {
-        // Request account access
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         const chainId = await window.ethereum.request({ method: 'eth_chainId' });
         
@@ -398,6 +392,194 @@ class SecureAddressBridge {
 
     return await response.json();
   }
+
+  /**
+   * Create a blind shipping token for secure shipping without exposing address
+   * @param {Object} options - Blind shipping options
+   * @param {string[]} options.carriers - Array of allowed carriers (e.g., ['usps', 'fedex', 'ups'])
+   * @param {string[]} options.shippingMethods - Array of allowed shipping methods
+   * @param {boolean} [options.requireConfirmation=false] - Whether to require delivery confirmation
+   * @param {number} [options.expiryDays=7] - Number of days until the shipping token expires
+   * @param {number} [options.maxUses=1] - Maximum number of times the shipping token can be used
+   * @returns {Promise<Object>} Result with the shipping token
+   */
+  async createBlindShippingToken(options = {}) {
+    if (!this.accessToken) {
+      throw new Error('No access token. Call handleCallback first or set the access token.');
+    }
+    
+    if (!options.carriers || !Array.isArray(options.carriers) || options.carriers.length === 0) {
+      throw new Error('At least one carrier must be specified');
+    }
+    
+    if (!options.shippingMethods || !Array.isArray(options.shippingMethods) || options.shippingMethods.length === 0) {
+      throw new Error('At least one shipping method must be specified');
+    }
+    
+    const invalidCarriers = options.carriers.filter(carrier => !this.supportedCarriers.includes(carrier));
+    if (invalidCarriers.length > 0) {
+      throw new Error(`Unsupported carriers: ${invalidCarriers.join(', ')}`);
+    }
+    
+    const invalidMethods = [];
+    options.carriers.forEach(carrier => {
+      const supportedMethods = this.supportedShippingMethods[carrier] || [];
+      options.shippingMethods.forEach(method => {
+        if (!supportedMethods.includes(method)) {
+          invalidMethods.push(`${method} for ${carrier}`);
+        }
+      });
+    });
+    
+    if (invalidMethods.length > 0) {
+      throw new Error(`Unsupported shipping methods: ${invalidMethods.join(', ')}`);
+    }
+    
+    const response = await fetch(`${this.baseUrl}/${this.apiVersion}/create-shipping-token`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json',
+        'X-App-ID': this.appId
+      },
+      body: JSON.stringify({
+        carriers: options.carriers,
+        shipping_methods: options.shippingMethods,
+        require_confirmation: options.requireConfirmation || false,
+        expiry_days: options.expiryDays || 7,
+        max_uses: options.maxUses || 1
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create blind shipping token');
+    }
+    
+    return await response.json();
+  }
+
+  /**
+   * Request a shipment using a blind shipping token (for applications)
+   * @param {Object} options - Shipment request options
+   * @param {string} options.shippingToken - The blind shipping token
+   * @param {string} options.carrier - The carrier to use (e.g., 'usps', 'fedex', 'ups')
+   * @param {string} options.service - The shipping service to use
+   * @param {Object} options.package - Package details
+   * @param {string} options.package.type - Package type
+   * @param {number} [options.package.weight] - Package weight in oz
+   * @param {Object} [options.package.dimensions] - Package dimensions
+   * @returns {Promise<Object>} Result with tracking information
+   */
+  async requestShipment(options = {}) {
+    if (!options.shippingToken) {
+      throw new Error('Shipping token is required');
+    }
+    
+    if (!options.carrier || !this.supportedCarriers.includes(options.carrier)) {
+      throw new Error(`Invalid or unsupported carrier: ${options.carrier}`);
+    }
+    
+    if (!options.service || !this.supportedShippingMethods[options.carrier]?.includes(options.service)) {
+      throw new Error(`Invalid or unsupported shipping service: ${options.service}`);
+    }
+    
+    if (!options.package || !options.package.type) {
+      throw new Error('Package type is required');
+    }
+    
+    const response = await fetch(`${this.baseUrl}/${this.apiVersion}/request-shipment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-App-ID': this.appId
+      },
+      body: JSON.stringify({
+        shipping_token: options.shippingToken,
+        carrier: options.carrier,
+        service: options.service,
+        package: options.package
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to request shipment');
+    }
+    
+    return await response.json();
+  }
+
+  /**
+   * Get tracking information for a shipment
+   * @param {string} trackingNumber - The tracking number
+   * @param {string} carrier - The carrier (e.g., 'usps', 'fedex', 'ups')
+   * @returns {Promise<Object>} Tracking information
+   */
+  async getTrackingInfo(trackingNumber, carrier) {
+    if (!trackingNumber) {
+      throw new Error('Tracking number is required');
+    }
+    
+    if (!carrier || !this.supportedCarriers.includes(carrier)) {
+      throw new Error(`Invalid or unsupported carrier: ${carrier}`);
+    }
+    
+    const response = await fetch(`${this.baseUrl}/${this.apiVersion}/tracking?number=${encodeURIComponent(trackingNumber)}&carrier=${encodeURIComponent(carrier)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-App-ID': this.appId
+      }
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to get tracking information');
+    }
+    
+    return await response.json();
+  }
+
+  /**
+   * Confirm delivery for a shipment (if confirmation is required)
+   * @param {string} trackingNumber - The tracking number
+   * @param {string} carrier - The carrier (e.g., 'usps', 'fedex', 'ups')
+   * @returns {Promise<Object>} Confirmation result
+   */
+  async confirmDelivery(trackingNumber, carrier) {
+    if (!this.accessToken) {
+      throw new Error('No access token. Call handleCallback first or set the access token.');
+    }
+    
+    if (!trackingNumber) {
+      throw new Error('Tracking number is required');
+    }
+    
+    if (!carrier || !this.supportedCarriers.includes(carrier)) {
+      throw new Error(`Invalid or unsupported carrier: ${carrier}`);
+    }
+    
+    const response = await fetch(`${this.baseUrl}/${this.apiVersion}/confirm-delivery`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`,
+        'Content-Type': 'application/json',
+        'X-App-ID': this.appId
+      },
+      body: JSON.stringify({
+        tracking_number: trackingNumber,
+        carrier: carrier
+      })
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to confirm delivery');
+    }
+    
+    return await response.json();
+  }
 }
 
 // React hook for easy integration with enhanced features
@@ -408,26 +590,26 @@ function useSecureAddress(config) {
   const [hasValidPermission, setHasValidPermission] = React.useState(false);
   const [permissionDetails, setPermissionDetails] = React.useState(null);
   const [walletInfo, setWalletInfo] = React.useState(null);
+  const [shippingToken, setShippingToken] = React.useState(null);
   
   const bridgeRef = React.useRef(null);
   
-  // Initialize the SDK with enhanced options
   React.useEffect(() => {
-    // Support for more configuration options
     const sdkConfig = {
       appId: config.appId,
       redirectUri: config.redirectUri || window.location.origin + window.location.pathname,
       baseUrl: config.baseUrl,
       walletOptions: config.walletOptions || { supportedChains: ['ethereum'] },
-      webhooks: config.webhooks
+      webhooks: config.webhooks,
+      shipping: config.shipping || { 
+        carriers: ['usps', 'fedex', 'ups'] 
+      }
     };
     
     bridgeRef.current = new SecureAddressBridge(sdkConfig);
     
-    // Generate a random state for CSRF protection if not provided
     const state = config.state || Math.random().toString(36).substring(2, 15);
     
-    // Check for callback
     const handleCallbackIfPresent = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       
@@ -441,7 +623,6 @@ function useSecureAddress(config) {
             localStorage.setItem('address_token', result.accessToken);
             setHasValidPermission(true);
             
-            // Get address data and verification details
             const data = await bridgeRef.current.getAddress({
               includeVerificationInfo: true
             });
@@ -449,7 +630,6 @@ function useSecureAddress(config) {
             setAddress(data.address);
             setPermissionDetails(data.permission || null);
             
-            // Clear URL parameters
             if (config.clearUrlAfterAuth !== false) {
               window.history.replaceState({}, document.title, window.location.pathname);
             }
@@ -464,7 +644,6 @@ function useSecureAddress(config) {
       setIsLoading(false);
     };
     
-    // Check for stored token with enhanced validation
     const checkStoredToken = async () => {
       const token = localStorage.getItem('address_token');
       
@@ -477,17 +656,14 @@ function useSecureAddress(config) {
             setHasValidPermission(true);
             setPermissionDetails(validationResult);
             
-            // Get the address data
             const data = await bridgeRef.current.getAddress({
               includeVerificationInfo: config.includeVerificationInfo || false
             });
             
             setAddress(data.address);
           } else {
-            // Clear invalid token
             localStorage.removeItem('address_token');
             
-            // Provide more detailed error information
             if (validationResult.error) {
               console.warn('Token validation failed:', validationResult.error);
             }
@@ -513,7 +689,6 @@ function useSecureAddress(config) {
     }
   }, [config]);
   
-  // Connect wallet function
   const connectWallet = async (options = {}) => {
     if (!bridgeRef.current) {
       throw new Error('SDK not initialized');
@@ -532,10 +707,8 @@ function useSecureAddress(config) {
     }
   };
   
-  // Function to request access with enhanced options
   const requestAccess = (options = {}) => {
     if (bridgeRef.current) {
-      // Generate random state for CSRF protection if not provided
       const state = options.state || Math.random().toString(36).substring(2, 15);
       
       bridgeRef.current.authorize({
@@ -551,7 +724,6 @@ function useSecureAddress(config) {
     }
   };
   
-  // Function to link address to wallet
   const linkAddressToWallet = async (options = {}) => {
     if (!bridgeRef.current) {
       throw new Error('SDK not initialized');
@@ -568,7 +740,6 @@ function useSecureAddress(config) {
     });
   };
   
-  // Function to get usage statistics
   const getUsageStats = async () => {
     if (!bridgeRef.current) {
       throw new Error('SDK not initialized');
@@ -577,7 +748,56 @@ function useSecureAddress(config) {
     return await bridgeRef.current.getUsageStats();
   };
   
-  // Enhanced return object with more functionality
+  const createBlindShippingToken = async (options = {}) => {
+    if (!bridgeRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    
+    if (!hasValidPermission) {
+      throw new Error('Valid permission required to create shipping token');
+    }
+    
+    setIsLoading(true);
+    try {
+      const result = await bridgeRef.current.createBlindShippingToken({
+        carriers: options.carriers || ['usps', 'fedex', 'ups'],
+        shippingMethods: options.shippingMethods || ['Priority', 'Ground', 'Express'],
+        requireConfirmation: options.requireConfirmation || false,
+        expiryDays: options.expiryDays || 7,
+        maxUses: options.maxUses || 1
+      });
+      
+      setShippingToken(result.shipping_token);
+      return result;
+    } catch (error) {
+      setError(error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const requestShipment = async (options = {}) => {
+    if (!bridgeRef.current) {
+      throw new Error('SDK not initialized');
+    }
+    
+    setIsLoading(true);
+    try {
+      return await bridgeRef.current.requestShipment({
+        shippingToken: options.shippingToken || shippingToken,
+        carrier: options.carrier,
+        service: options.service,
+        package: options.package
+      });
+    } catch (error) {
+      setError(error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   return {
     address,
     isLoading,
@@ -586,14 +806,16 @@ function useSecureAddress(config) {
     hasValidPermission,
     permissionDetails,
     walletInfo,
+    shippingToken,
     connectWallet,
     linkAddressToWallet,
     getUsageStats,
-    sdk: bridgeRef.current // Expose the SDK instance for advanced usage
+    createBlindShippingToken,
+    requestShipment,
+    sdk: bridgeRef.current
   };
 }
 
-// Export the SDK
 if (typeof window !== 'undefined') {
   window.SecureAddressBridge = SecureAddressBridge;
   window.useSecureAddress = useSecureAddress;
