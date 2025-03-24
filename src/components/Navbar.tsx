@@ -1,63 +1,116 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from './ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { Menu } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 const Navbar: React.FC = () => {
-  const [scrolled, setScrolled] = useState(false);
-  
-  useEffect(() => {
-    const handleScroll = () => {
-      const isScrolled = window.scrollY > 10;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [scrolled]);
+  const [isOpen, setIsOpen] = useState(false);
+  const { isAuthenticated, signOut, isLoading } = useAuth();
+
+  const closeMenu = () => setIsOpen(false);
 
   return (
-    <header 
-      className={cn(
-        "fixed top-0 left-0 w-full z-50 transition-all duration-300 ease-in-out py-4 px-6 md:px-12",
-        scrolled ? "bg-white/80 backdrop-blur-md shadow-sm" : "bg-transparent"
-      )}
-    >
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <Link to="/" className="flex items-center space-x-2">
-          <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-xl">SB</span>
-          </div>
-          <span className="font-semibold text-lg hidden sm:inline-block">SecureAddress Bridge</span>
+    <header className="fixed w-full z-50 bg-background/90 backdrop-blur-sm border-b">
+      <div className="container mx-auto px-4 md:px-6 flex h-16 items-center justify-between">
+        <Link to="/" className="font-bold text-xl md:text-2xl">
+          SecureAddress Bridge
         </Link>
-        
-        <nav className="hidden md:flex items-center space-x-8">
-          <Link to="/" className="text-foreground/80 hover:text-foreground transition-colors">
+
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-6">
+          <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
             Home
           </Link>
-          <Link to="/about" className="text-foreground/80 hover:text-foreground transition-colors">
-            About
-          </Link>
-          <Link to="/features" className="text-foreground/80 hover:text-foreground transition-colors">
-            Features
-          </Link>
+          {isAuthenticated && (
+            <>
+              <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
+                Dashboard
+              </Link>
+              <Link to="/verify" className="text-sm font-medium hover:text-primary transition-colors">
+                Verify Address
+              </Link>
+              <Link to="/connect" className="text-sm font-medium hover:text-primary transition-colors">
+                Connect Wallet
+              </Link>
+            </>
+          )}
         </nav>
-        
-        <div className="flex items-center space-x-4">
-          <Link to="/dashboard">
-            <Button variant="outline" size="sm" className="hidden sm:inline-flex">
-              Dashboard
+
+        {/* Auth Buttons - Desktop */}
+        <div className="hidden md:flex items-center gap-4">
+          {isAuthenticated ? (
+            <Button variant="outline" onClick={signOut} disabled={isLoading}>
+              Sign Out
             </Button>
-          </Link>
-          <Link to="/connect">
-            <Button size="sm" className="bg-primary text-white hover:bg-primary/90">
-              Connect
-            </Button>
-          </Link>
+          ) : (
+            <Link to="/auth">
+              <Button>Sign In</Button>
+            </Link>
+          )}
         </div>
+
+        {/* Mobile Navigation */}
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild className="md:hidden">
+            <Button variant="ghost" size="icon">
+              <Menu className="h-6 w-6" />
+              <span className="sr-only">Toggle menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[75%] sm:w-[350px]">
+            <nav className="flex flex-col gap-4 mt-8">
+              <Link 
+                to="/" 
+                className="text-base font-medium hover:text-primary transition-colors"
+                onClick={closeMenu}
+              >
+                Home
+              </Link>
+              {isAuthenticated && (
+                <>
+                  <Link 
+                    to="/dashboard" 
+                    className="text-base font-medium hover:text-primary transition-colors"
+                    onClick={closeMenu}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link 
+                    to="/verify" 
+                    className="text-base font-medium hover:text-primary transition-colors"
+                    onClick={closeMenu}
+                  >
+                    Verify Address
+                  </Link>
+                  <Link 
+                    to="/connect" 
+                    className="text-base font-medium hover:text-primary transition-colors"
+                    onClick={closeMenu}
+                  >
+                    Connect Wallet
+                  </Link>
+                </>
+              )}
+              <div className="mt-4">
+                {isAuthenticated ? (
+                  <Button variant="outline" onClick={() => { signOut(); closeMenu(); }} disabled={isLoading} className="w-full">
+                    Sign Out
+                  </Button>
+                ) : (
+                  <Link to="/auth" onClick={closeMenu} className="w-full block">
+                    <Button className="w-full">Sign In</Button>
+                  </Link>
+                )}
+              </div>
+            </nav>
+          </SheetContent>
+        </Sheet>
       </div>
     </header>
   );
