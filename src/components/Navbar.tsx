@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,9 @@ const Navbar: React.FC = () => {
               </Link>
               <Link to="/connect" className="text-sm font-medium hover:text-primary transition-colors">
                 Connect Wallet
+              </Link>
+              <Link to="/permissions" className="text-sm font-medium hover:text-primary transition-colors">
+                Manage Access
               </Link>
             </>
           )}
@@ -94,6 +98,13 @@ const Navbar: React.FC = () => {
                     onClick={closeMenu}
                   >
                     Connect Wallet
+                  </Link>
+                  <Link 
+                    to="/permissions" 
+                    className="text-base font-medium hover:text-primary transition-colors"
+                    onClick={closeMenu}
+                  >
+                    Manage Access
                   </Link>
                 </>
               )}

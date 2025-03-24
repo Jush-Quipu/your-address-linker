@@ -1,9 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { connectMetaMask, WalletInfo, defaultWalletInfo, shortenAddress, isMetaMaskInstalled } from '@/utils/web3';
 import { toast } from 'sonner';
+import { createWalletAddress, getWalletAddresses } from '@/services/addressService';
+import { useAuth } from '@/context/AuthContext';
 
 interface WalletConnectProps {
   onConnect?: (walletInfo: WalletInfo) => void;
@@ -13,13 +15,54 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ onConnect }) => {
   const [loading, setLoading] = useState(false);
   const [walletInfo, setWalletInfo] = useState<WalletInfo>(defaultWalletInfo);
   const [isConnected, setIsConnected] = useState(false);
+  const { user, isAuthenticated } = useAuth();
+
+  // Check if the user already has wallets connected
+  useEffect(() => {
+    const checkExistingWallets = async () => {
+      if (!isAuthenticated || !user) return;
+
+      try {
+        const wallets = await getWalletAddresses();
+        
+        if (wallets.length > 0) {
+          const primaryWallet = wallets.find(w => w.is_primary) || wallets[0];
+          setWalletInfo({
+            address: primaryWallet.address,
+            chainId: primaryWallet.chain_id,
+            balance: '0', // We don't store balance in DB, would need to fetch from chain
+          });
+          setIsConnected(true);
+        }
+      } catch (error) {
+        console.error('Error checking existing wallets:', error);
+      }
+    };
+
+    checkExistingWallets();
+  }, [isAuthenticated, user]);
 
   const handleConnectMetaMask = async () => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in first', {
+        description: 'You need to be signed in to connect your wallet',
+      });
+      return;
+    }
+    
     setLoading(true);
     try {
       const info = await connectMetaMask();
       setWalletInfo(info);
       setIsConnected(true);
+      
+      // Save wallet to database
+      await createWalletAddress({
+        user_id: user!.id,
+        address: info.address,
+        chain_id: info.chainId,
+        is_primary: true
+      });
       
       toast.success('Wallet connected successfully!', {
         description: `Connected to ${shortenAddress(info.address)}`,
@@ -69,10 +112,15 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ onConnect }) => {
                 MetaMask is not installed. Please install MetaMask to continue.
               </div>
             )}
+            {!isAuthenticated && (
+              <div className="p-4 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-600 rounded-lg text-sm">
+                Please sign in to connect your wallet.
+              </div>
+            )}
             <Button 
               onClick={handleConnectMetaMask} 
               className="w-full" 
-              disabled={loading || !isMetaMaskInstalled()}
+              disabled={loading || !isMetaMaskInstalled() || !isAuthenticated}
             >
               {loading ? 'Connecting...' : 'Connect MetaMask'}
             </Button>

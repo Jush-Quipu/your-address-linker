@@ -34,6 +34,15 @@ export type Database = {
           permission_id?: string
           user_agent?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "access_logs_permission_id_fkey"
+            columns: ["permission_id"]
+            isOneToOne: false
+            referencedRelation: "address_permissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       address_permissions: {
         Row: {
@@ -84,6 +93,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
+        Relationships: []
       }
       physical_addresses: {
         Row: {
@@ -128,6 +138,7 @@ export type Database = {
           verification_method?: string | null
           verification_status?: string
         }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -157,6 +168,7 @@ export type Database = {
           id?: string
           updated_at?: string
         }
+        Relationships: []
       }
       wallet_addresses: {
         Row: {
@@ -186,6 +198,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
+        Relationships: []
       }
     }
     Views: {
@@ -283,4 +296,19 @@ export type Enums<
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
     ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never

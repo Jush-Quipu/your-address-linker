@@ -7,83 +7,22 @@ import { Separator } from './ui/separator';
 import { Switch } from './ui/switch';
 import { Label } from './ui/label';
 import { shortenAddress } from '@/utils/web3';
+import { 
+  PhysicalAddress, 
+  WalletAddress, 
+  AddressPermission,
+  updateAddressPermission,
+  deleteAddressPermission
+} from '@/services/addressService';
+import { toast } from 'sonner';
+import { Badge } from './ui/badge';
+import { useAuth } from '@/context/AuthContext';
 
-// Simulate database data
-const mockData = {
-  wallet: {
-    address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
-    chainId: 1,
-  },
-  physicalAddress: {
-    streetAddress: '123 Blockchain Ave',
-    city: 'Crypto City',
-    state: 'CA',
-    postalCode: '94103',
-    country: 'United States',
-    verificationStatus: 'Verified',
-    verificationDate: '2023-04-15T14:30:00Z',
-  },
-  connectedApps: [
-    {
-      id: 1,
-      name: 'NFT Marketplace',
-      icon: '🖼️',
-      accessLevel: 'Full address',
-      lastAccess: '2023-04-20T10:15:00Z',
-      status: 'Active',
-    },
-    {
-      id: 2,
-      name: 'DeFi App',
-      icon: '💰',
-      accessLevel: 'City & Country only',
-      lastAccess: '2023-04-18T09:30:00Z',
-      status: 'Active',
-    },
-    {
-      id: 3,
-      name: 'DAO Governance',
-      icon: '🏛️',
-      accessLevel: 'Country only',
-      lastAccess: '2023-04-10T16:45:00Z',
-      status: 'Expired',
-    },
-  ],
-  activityLog: [
-    {
-      id: 1,
-      type: 'Address verification',
-      description: 'Address successfully verified',
-      date: '2023-04-15T14:30:00Z',
-    },
-    {
-      id: 2,
-      type: 'App access',
-      description: 'NFT Marketplace accessed your address',
-      date: '2023-04-20T10:15:00Z',
-    },
-    {
-      id: 3,
-      type: 'Permission change',
-      description: 'Updated DeFi App permissions to City & Country only',
-      date: '2023-04-18T09:30:00Z',
-    },
-    {
-      id: 4,
-      type: 'Wallet connection',
-      description: 'Connected wallet to SecureAddress Bridge',
-      date: '2023-04-15T14:25:00Z',
-    },
-  ],
-  privacySettings: {
-    shareCity: true,
-    shareState: true,
-    shareCountry: true,
-    sharePostalCode: false,
-    defaultAccessExpiry: '7d',
-    notifyOnAccess: true,
-  },
-};
+interface DashboardProps {
+  physicalAddresses: PhysicalAddress[];
+  walletAddresses: WalletAddress[];
+  permissions: AddressPermission[];
+}
 
 // Helper function to format dates
 const formatDate = (dateString: string): string => {
@@ -97,8 +36,20 @@ const formatDate = (dateString: string): string => {
   }).format(date);
 };
 
-const Dashboard: React.FC = () => {
-  const [privacySettings, setPrivacySettings] = useState(mockData.privacySettings);
+const Dashboard: React.FC<DashboardProps> = ({ 
+  physicalAddresses = [], 
+  walletAddresses = [], 
+  permissions = [] 
+}) => {
+  const { user } = useAuth();
+  const [privacySettings, setPrivacySettings] = useState({
+    shareCity: true,
+    shareState: true,
+    shareCountry: true,
+    sharePostalCode: false,
+    defaultAccessExpiry: '7d',
+    notifyOnAccess: true,
+  });
   
   const handlePrivacyToggle = (setting: keyof typeof privacySettings) => {
     setPrivacySettings((prev) => ({
@@ -106,6 +57,39 @@ const Dashboard: React.FC = () => {
       [setting]: !prev[setting],
     }));
   };
+
+  const handleRevokePermission = async (permissionId: string) => {
+    try {
+      await deleteAddressPermission(permissionId);
+      toast.success('Permission revoked successfully');
+      // The UI should update when the parent component refetches data
+    } catch (error) {
+      console.error('Error revoking permission:', error);
+      toast.error('Failed to revoke permission');
+    }
+  };
+  
+  // Get the most recent physical address
+  const physicalAddress = physicalAddresses.length > 0 ? physicalAddresses[0] : null;
+  
+  // Get the primary wallet address
+  const walletAddress = walletAddresses.find(w => w.is_primary) || (walletAddresses.length > 0 ? walletAddresses[0] : null);
+
+  // Mock activity log data - in a real app, this would come from a database
+  const activityLog = [
+    {
+      id: 1,
+      type: 'Address verification',
+      description: 'Address submitted for verification',
+      date: new Date().toISOString(),
+    },
+    {
+      id: 2,
+      type: 'Wallet connection',
+      description: 'Connected wallet to SecureAddress Bridge',
+      date: new Date().toISOString(),
+    },
+  ];
   
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -118,26 +102,39 @@ const Dashboard: React.FC = () => {
               <CardDescription>Your connected blockchain wallet details</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Address:</span>
-                  <span className="text-sm font-mono">{shortenAddress(mockData.wallet.address)}</span>
+              {walletAddress ? (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Address:</span>
+                    <span className="text-sm font-mono">{shortenAddress(walletAddress.address)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Network:</span>
+                    <span className="text-sm">Chain ID: {walletAddress.chain_id}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Status:</span>
+                    <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+                      Connected
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Network:</span>
-                  <span className="text-sm">Ethereum Mainnet</span>
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-muted-foreground mb-4">No wallet connected yet</p>
+                  <Button variant="outline" size="sm" onClick={() => window.location.href = '/connect'}>
+                    Connect Wallet
+                  </Button>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Status:</span>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    Connected
-                  </span>
-                </div>
-              </div>
+              )}
             </CardContent>
-            <CardFooter>
-              <Button variant="outline" size="sm" className="w-full">Disconnect Wallet</Button>
-            </CardFooter>
+            {walletAddress && (
+              <CardFooter>
+                <Button variant="outline" size="sm" className="w-full" onClick={() => window.location.href = '/connect'}>
+                  Manage Wallets
+                </Button>
+              </CardFooter>
+            )}
           </Card>
           
           {/* Physical Address Card */}
@@ -147,29 +144,50 @@ const Dashboard: React.FC = () => {
               <CardDescription>Your securely stored physical address</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="bg-secondary p-4 rounded-lg">
-                  <p className="text-sm mb-1">{mockData.physicalAddress.streetAddress}</p>
-                  <p className="text-sm mb-1">
-                    {mockData.physicalAddress.city}, {mockData.physicalAddress.state} {mockData.physicalAddress.postalCode}
-                  </p>
-                  <p className="text-sm">{mockData.physicalAddress.country}</p>
+              {physicalAddress ? (
+                <div className="space-y-4">
+                  <div className="bg-secondary p-4 rounded-lg">
+                    <p className="text-sm mb-1">{physicalAddress.street_address}</p>
+                    <p className="text-sm mb-1">
+                      {physicalAddress.city}, {physicalAddress.state} {physicalAddress.postal_code}
+                    </p>
+                    <p className="text-sm">{physicalAddress.country}</p>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Verification Status:</span>
+                    <Badge variant="outline" className={
+                      physicalAddress.verification_status === 'verified' 
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                        : physicalAddress.verification_status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
+                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                    }>
+                      {physicalAddress.verification_status.charAt(0).toUpperCase() + physicalAddress.verification_status.slice(1)}
+                    </Badge>
+                  </div>
+                  {physicalAddress.verification_date && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Verified on:</span>
+                      <span className="text-sm">{formatDate(physicalAddress.verification_date)}</span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Verification Status:</span>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    {mockData.physicalAddress.verificationStatus}
-                  </span>
+              ) : (
+                <div className="text-center py-6">
+                  <p className="text-muted-foreground mb-4">No address verified yet</p>
+                  <Button variant="outline" size="sm" onClick={() => window.location.href = '/verify'}>
+                    Verify Address
+                  </Button>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Verified on:</span>
-                  <span className="text-sm">{formatDate(mockData.physicalAddress.verificationDate)}</span>
-                </div>
-              </div>
+              )}
             </CardContent>
-            <CardFooter>
-              <Button variant="outline" size="sm" className="w-full">Update Address</Button>
-            </CardFooter>
+            {physicalAddress && (
+              <CardFooter>
+                <Button variant="outline" size="sm" className="w-full" onClick={() => window.location.href = '/verify'}>
+                  Update Address
+                </Button>
+              </CardFooter>
+            )}
           </Card>
         </div>
         
@@ -192,29 +210,44 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockData.connectedApps.map((app) => (
-                    <div key={app.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="text-2xl">{app.icon}</div>
-                        <div>
-                          <h4 className="text-sm font-medium">{app.name}</h4>
-                          <div className="flex space-x-4 text-xs text-muted-foreground mt-1">
-                            <span>Access: {app.accessLevel}</span>
-                            <span>Last used: {new Date(app.lastAccess).toLocaleDateString()}</span>
+                  {permissions.length > 0 ? (
+                    permissions.map((permission) => (
+                      <div key={permission.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          <div className="text-2xl">🔐</div>
+                          <div>
+                            <h4 className="text-sm font-medium">{permission.app_name}</h4>
+                            <div className="flex space-x-4 text-xs text-muted-foreground mt-1">
+                              <span>Access: {
+                                [
+                                  permission.share_city ? 'City' : '',
+                                  permission.share_state ? 'State' : '',
+                                  permission.share_postal_code ? 'Postal Code' : '',
+                                  permission.share_country ? 'Country' : ''
+                                ].filter(Boolean).join(', ') || 'No access'
+                              }</span>
+                              {permission.last_accessed && (
+                                <span>Last used: {formatDate(permission.last_accessed)}</span>
+                              )}
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleRevokePermission(permission.id)}
+                          >
+                            Revoke
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className={app.status === 'Expired' ? 'text-muted-foreground' : ''}
-                        >
-                          {app.status === 'Active' ? 'Revoke' : 'Expired'}
-                        </Button>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-10">
+                      <p className="text-muted-foreground">No applications are currently connected to your address.</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -231,7 +264,7 @@ const Dashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockData.activityLog.map((activity) => (
+                  {activityLog.map((activity) => (
                     <div key={activity.id} className="flex items-start space-x-4 p-4 border rounded-lg">
                       <div>
                         <div className="w-2 h-2 mt-1.5 rounded-full bg-primary"></div>
