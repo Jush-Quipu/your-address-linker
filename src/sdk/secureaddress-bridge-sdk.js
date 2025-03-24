@@ -19,6 +19,8 @@ class SecureAddressBridge {
    * @param {Object} [config.webhooks] - Webhook configuration
    * @param {Object} [config.shipping] - Shipping options configuration
    * @param {string[]} [config.shipping.carriers] - Supported shipping carriers (e.g., ['usps', 'fedex', 'ups'])
+   * @param {boolean} [config.sandbox] - Enable sandbox mode for testing without real API calls
+   * @param {Object} [config.sandboxOptions] - Sandbox configuration options
    */
   constructor(config) {
     this.appId = config.appId;
@@ -34,6 +36,59 @@ class SecureAddressBridge {
       'fedex': ['Ground', '2Day', 'Express', 'Overnight'],
       'ups': ['Ground', 'Next Day Air', '2nd Day Air', '3 Day Select']
     };
+    
+    // Sandbox mode configuration
+    this.sandbox = config.sandbox || false;
+    this.sandboxOptions = config.sandboxOptions || {};
+    
+    // Initialize sandbox controller if in sandbox mode
+    if (this.sandbox && typeof window !== 'undefined') {
+      // In browser environments, dynamically import the sandbox controller
+      if (typeof require !== 'undefined') {
+        try {
+          // CommonJS environment
+          this.sandboxController = require('../services/sandbox/sandboxController');
+        } catch (e) {
+          console.warn('Sandbox controller not found. Using mock implementation.');
+          // Fallback to mock implementation
+          this.sandboxController = {
+            handleAuthorize: async () => ({ success: true, redirectUrl: '#' }),
+            handleCallback: async () => ({ success: true, accessToken: 'sandbox_token' }),
+            getAddress: async () => ({ success: true, address: { street: '123 Test St', city: 'Testville' } }),
+            validateToken: async () => ({ valid: true }),
+            connectWallet: async () => ({ success: true, address: '0x123' }),
+            linkAddressToWallet: async () => ({ success: true }),
+            createBlindShippingToken: async () => ({ success: true, shipping_token: 'sandbox_token' }),
+            requestShipment: async () => ({ success: true, tracking_number: 'TRACK123' }),
+            getTrackingInfo: async () => ({ success: true, status: 'in_transit' }),
+            registerWebhook: async () => ({ success: true, webhook_id: 'hook_123' }),
+            updateSandboxConfig: (config) => config
+          };
+        }
+      } else {
+        // ES modules environment or browser without require
+        console.warn('Sandbox controller not loaded. Using mock implementation.');
+        // Same fallback as above
+        this.sandboxController = {
+          handleAuthorize: async () => ({ success: true, redirectUrl: '#' }),
+          handleCallback: async () => ({ success: true, accessToken: 'sandbox_token' }),
+          getAddress: async () => ({ success: true, address: { street: '123 Test St', city: 'Testville' } }),
+          validateToken: async () => ({ valid: true }),
+          connectWallet: async () => ({ success: true, address: '0x123' }),
+          linkAddressToWallet: async () => ({ success: true }),
+          createBlindShippingToken: async () => ({ success: true, shipping_token: 'sandbox_token' }),
+          requestShipment: async () => ({ success: true, tracking_number: 'TRACK123' }),
+          getTrackingInfo: async () => ({ success: true, status: 'in_transit' }),
+          registerWebhook: async () => ({ success: true, webhook_id: 'hook_123' }),
+          updateSandboxConfig: (config) => config
+        };
+      }
+      
+      // Apply any sandbox options
+      if (this.sandboxOptions && this.sandboxController.updateSandboxConfig) {
+        this.sandboxController.updateSandboxConfig(this.sandboxOptions);
+      }
+    }
   }
 
   /**
@@ -55,6 +110,24 @@ class SecureAddressBridge {
    * @param {string} [options.state] - Optional state parameter for CSRF protection
    */
   authorize(options) {
+    // Use sandbox mode if enabled
+    if (this.sandbox && this.sandboxController) {
+      console.info('[SecureAddress SDK] Using sandbox mode for authorization');
+      this.sandboxController.handleAuthorize({
+        appId: this.appId,
+        redirectUri: this.redirectUri,
+        scope: options.scope,
+        expiryDays: options.expiryDays,
+        state: options.state
+      }).then(result => {
+        if (result.success && result.redirectUrl) {
+          window.location.href = result.redirectUrl;
+        }
+      });
+      return;
+    }
+    
+    // Normal API call
     const scope = Array.isArray(options.scope) ? options.scope.join(' ') : options.scope;
     const expiryDays = options.expiryDays || 30;
     
@@ -93,6 +166,19 @@ class SecureAddressBridge {
    * @returns {Promise<Object>} Result of the authorization
    */
   async handleCallback(options = { validateState: true }) {
+    // Use sandbox mode if enabled
+    if (this.sandbox && this.sandboxController) {
+      console.info('[SecureAddress SDK] Using sandbox mode for callback handling');
+      const result = await this.sandboxController.handleCallback();
+      
+      if (result.success && result.accessToken) {
+        this.accessToken = result.accessToken;
+      }
+      
+      return result;
+    }
+    
+    // Normal API call
     const urlParams = new URLSearchParams(window.location.search);
     const accessToken = urlParams.get('access_token');
     const error = urlParams.get('error');
@@ -142,6 +228,12 @@ class SecureAddressBridge {
    * @returns {Promise<Object>} The user's address information
    */
   async getAddress(options = {}) {
+    // Use sandbox mode if enabled
+    if (this.sandbox && this.sandboxController) {
+      console.info('[SecureAddress SDK] Using sandbox mode for address retrieval');
+      return this.sandboxController.getAddress(options);
+    }
+    
     if (!this.accessToken) {
       throw new Error('No access token. Call handleCallback first or set the access token.');
     }
@@ -185,6 +277,12 @@ class SecureAddressBridge {
    * @returns {Promise<Object>} Token validation result with detailed info
    */
   async validateToken() {
+    // Use sandbox mode if enabled
+    if (this.sandbox && this.sandboxController) {
+      console.info('[SecureAddress SDK] Using sandbox mode for token validation');
+      return this.sandboxController.validateToken();
+    }
+    
     if (!this.accessToken) {
       return { valid: false, error: 'No access token provided' };
     }
@@ -230,6 +328,12 @@ class SecureAddressBridge {
    * @returns {Promise<Object>} Webhook registration result
    */
   async registerWebhook(options) {
+    // Use sandbox mode if enabled
+    if (this.sandbox && this.sandboxController) {
+      console.info('[SecureAddress SDK] Using sandbox mode for webhook registration');
+      return this.sandboxController.registerWebhook(options);
+    }
+    
     if (!this.accessToken) {
       throw new Error('No access token. Authentication required to register webhooks.');
     }
@@ -298,6 +402,12 @@ class SecureAddressBridge {
    * @returns {Promise<Object>} Wallet connection result with address and chain info
    */
   async connectWallet(options = {}) {
+    // Use sandbox mode if enabled
+    if (this.sandbox && this.sandboxController) {
+      console.info('[SecureAddress SDK] Using sandbox mode for wallet connection');
+      return this.sandboxController.connectWallet(options);
+    }
+    
     const providerType = options.providerType || 'injected';
     
     if (providerType === 'injected') {
@@ -334,6 +444,12 @@ class SecureAddressBridge {
    * @returns {Promise<Object>} Result of the linking operation
    */
   async linkAddressToWallet(options) {
+    // Use sandbox mode if enabled
+    if (this.sandbox && this.sandboxController) {
+      console.info('[SecureAddress SDK] Using sandbox mode for address-to-wallet linking');
+      return this.sandboxController.linkAddressToWallet(options);
+    }
+    
     if (!this.accessToken) {
       throw new Error('No access token. Authentication required to link address to wallet.');
     }
@@ -579,6 +695,45 @@ class SecureAddressBridge {
     }
     
     return await response.json();
+  }
+
+  /**
+   * Configure sandbox mode settings
+   * Only applicable when the SDK is initialized with sandbox: true
+   * @param {Object} config - Sandbox configuration options
+   * @returns {Object|null} Updated sandbox configuration or null if sandbox is not enabled
+   */
+  configureSandbox(config) {
+    if (!this.sandbox || !this.sandboxController) {
+      console.warn('[SecureAddress SDK] Sandbox mode is not enabled');
+      return null;
+    }
+    
+    // Update sandbox configuration
+    if (this.sandboxController.updateSandboxConfig) {
+      return this.sandboxController.updateSandboxConfig(config);
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Reset sandbox configuration to defaults
+   * Only applicable when the SDK is initialized with sandbox: true
+   * @returns {Object|null} Default sandbox configuration or null if sandbox is not enabled
+   */
+  resetSandbox() {
+    if (!this.sandbox || !this.sandboxController) {
+      console.warn('[SecureAddress SDK] Sandbox mode is not enabled');
+      return null;
+    }
+    
+    // Reset sandbox configuration
+    if (this.sandboxController.resetSandboxConfig) {
+      return this.sandboxController.resetSandboxConfig();
+    }
+    
+    return null;
   }
 }
 

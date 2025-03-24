@@ -6,7 +6,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="secureaddress-bridge",
-    version="1.0.0",
+    version="1.1.0",
     author="SecureAddress Bridge Team",
     author_email="developers@secureaddress.bridge",
     description="Python SDK for SecureAddress Bridge to securely link blockchain wallets to verified physical addresses",
@@ -33,6 +33,7 @@ setup(
     ],
     extras_require={
         "async": ["aiohttp>=3.7.0"],
+        "sandbox": ["flask>=2.0.0"],
     },
     python_requires=">=3.7",
 )

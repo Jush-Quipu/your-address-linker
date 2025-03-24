@@ -1,6 +1,29 @@
 
 import React from 'react';
 
+export interface SandboxOptions {
+  responseDelay?: number;
+  simulateErrors?: boolean;
+  errorRate?: number;
+  verificationSuccess?: boolean;
+  walletConnectionSuccess?: boolean;
+  mockAddress?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+    country?: string;
+    verified?: boolean;
+    verification_method?: string;
+    verification_date?: string;
+  };
+  mockShipping?: {
+    carriers?: string[];
+    available?: boolean;
+    trackingAvailable?: boolean;
+  };
+}
+
 export interface SecureAddressBridgeConfig {
   appId: string;
   redirectUri: string;
@@ -14,6 +37,8 @@ export interface SecureAddressBridgeConfig {
   shipping?: {
     carriers?: string[];
   };
+  sandbox?: boolean;
+  sandboxOptions?: SandboxOptions;
 }
 
 export interface AuthorizeOptions {
@@ -113,6 +138,8 @@ export class SecureAddressBridge {
   requestShipment(options: ShipmentRequestOptions): Promise<Record<string, any>>;
   getTrackingInfo(trackingNumber: string, carrier: string): Promise<Record<string, any>>;
   confirmDelivery(trackingNumber: string, carrier: string): Promise<Record<string, any>>;
+  configureSandbox(config: SandboxOptions): SandboxOptions | null;
+  resetSandbox(): SandboxOptions | null;
 }
 
 export interface UseSecureAddressConfig extends Omit<SecureAddressBridgeConfig, 'redirectUri'> {

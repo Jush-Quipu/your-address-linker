@@ -48,6 +48,34 @@ address_data = client.get_address({
 print(f"User address: {address_data}")
 ```
 
+## Sandbox Mode
+
+The SDK also supports a sandbox mode for testing without making real API calls:
+
+```python
+# Initialize in sandbox mode
+client = SecureAddressBridge(
+    app_id="YOUR_APP_ID",
+    app_secret="YOUR_APP_SECRET",
+    sandbox=True
+)
+
+# Configure sandbox behavior
+client.configure_sandbox({
+    "simulate_errors": False,
+    "verification_success": True,
+    "mock_address": {
+        "street": "123 Privacy Lane",
+        "city": "Secureville",
+        "state": "California"
+    }
+})
+
+# Use the SDK normally - all API calls will be simulated
+address_data = client.get_address()
+print(f"Sandbox address data: {address_data}")
+```
+
 ## Features
 
 - **Address Verification**: Access verified physical addresses with user consent
@@ -55,6 +83,7 @@ print(f"User address: {address_data}")
 - **Blind Shipping**: Create secure shipments without exposing address details
 - **Webhook Support**: Receive real-time notifications about address changes
 - **Permission Management**: Detailed control and statistics on address access
+- **Sandbox Mode**: Test your integration without making real API calls
 
 ## Documentation
 

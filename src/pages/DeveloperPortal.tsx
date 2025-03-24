@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { CopyIcon, CheckIcon, ExternalLinkIcon } from 'lucide-react';
+import { CopyIcon, CheckIcon, ExternalLinkIcon, Beaker } from 'lucide-react';
 
 interface DeveloperApplication {
   id: string;
@@ -196,13 +197,26 @@ const DeveloperPortal: React.FC = () => {
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Register and manage your applications that integrate with SecureAddress Bridge.
             </p>
+            
+            {/* Add Sandbox Link */}
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              asChild
+            >
+              <Link to="/developer/sandbox">
+                <Beaker className="mr-2 h-4 w-4" />
+                SDK Sandbox Testing Environment
+              </Link>
+            </Button>
           </div>
           
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 mb-8">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-4 mb-8">
               <TabsTrigger value="apps">Register App</TabsTrigger>
               <TabsTrigger value="credentials">Credentials</TabsTrigger>
               <TabsTrigger value="docs">Documentation</TabsTrigger>
+              <TabsTrigger value="sandbox">Sandbox</TabsTrigger>
             </TabsList>
             
             <TabsContent value="apps" className="space-y-4">
@@ -464,6 +478,90 @@ const DeveloperPortal: React.FC = () => {
                           </Button>
                         </CardFooter>
                       </Card>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="sandbox">
+              <Card>
+                <CardHeader>
+                  <CardTitle>SDK Sandbox Environment</CardTitle>
+                  <CardDescription>
+                    Test your integration without making real API calls
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <p>
+                      Our SDK Sandbox Environment allows you to test your integration with 
+                      SecureAddress Bridge without making real API calls or requiring real user data.
+                    </p>
+                    
+                    <div className="grid gap-6 sm:grid-cols-2">
+                      <div>
+                        <h3 className="text-lg font-medium mb-2">Key Features</h3>
+                        <ul className="space-y-2">
+                          <li className="flex items-start">
+                            <span className="bg-primary/10 text-primary rounded-full p-1 mr-2 mt-0.5">
+                              <CheckIcon className="h-3 w-3" />
+                            </span>
+                            <span>Test all SDK functionality without real API calls</span>
+                          </li>
+                          <li className="flex items-start">
+                            <span className="bg-primary/10 text-primary rounded-full p-1 mr-2 mt-0.5">
+                              <CheckIcon className="h-3 w-3" />
+                            </span>
+                            <span>Simulate success and error scenarios</span>
+                          </li>
+                          <li className="flex items-start">
+                            <span className="bg-primary/10 text-primary rounded-full p-1 mr-2 mt-0.5">
+                              <CheckIcon className="h-3 w-3" />
+                            </span>
+                            <span>Customize mock address data and responses</span>
+                          </li>
+                          <li className="flex items-start">
+                            <span className="bg-primary/10 text-primary rounded-full p-1 mr-2 mt-0.5">
+                              <CheckIcon className="h-3 w-3" />
+                            </span>
+                            <span>Test wallet connections and shipping flows</span>
+                          </li>
+                          <li className="flex items-start">
+                            <span className="bg-primary/10 text-primary rounded-full p-1 mr-2 mt-0.5">
+                              <CheckIcon className="h-3 w-3" />
+                            </span>
+                            <span>Generate sample code for your integration</span>
+                          </li>
+                        </ul>
+                      </div>
+                      
+                      <div className="flex flex-col justify-between">
+                        <div>
+                          <h3 className="text-lg font-medium mb-2">Getting Started</h3>
+                          <p className="text-muted-foreground mb-4">
+                            The sandbox allows you to quickly test and prototype your integration 
+                            before connecting to the live API. It's the perfect way to get familiar 
+                            with the SDK without handling real user data.
+                          </p>
+                        </div>
+                        
+                        <Button size="lg" className="mt-4" asChild>
+                          <Link to="/developer/sandbox">
+                            <Beaker className="mr-2 h-4 w-4" />
+                            Open SDK Sandbox
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-muted p-4 rounded-lg text-sm">
+                      <p className="font-medium mb-2">Pro tip:</p>
+                      <p>
+                        Use the sandbox mode in your development environment by initializing the SDK 
+                        with <code className="bg-background px-1 rounded text-xs">sandbox: true</code> 
+                        and switch to production mode for your staging and production environments.
+                      </p>
                     </div>
                   </div>
                 </CardContent>

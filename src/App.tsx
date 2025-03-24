@@ -9,6 +9,7 @@ import Connect from "@/pages/Connect";
 import Dashboard from "@/pages/Dashboard";
 import DeveloperDocs from "@/pages/DeveloperDocs";
 import DeveloperPortal from "@/pages/DeveloperPortal";
+import SdkSandbox from "@/pages/SdkSandbox";
 import Permissions from "@/pages/Permissions";
 import AuthorizePage from "@/pages/AuthorizePage";
 import BlindShipping from "@/pages/BlindShipping";
@@ -49,6 +50,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/docs" element={<DeveloperDocs />} />
           <Route path="/developer" element={<DeveloperPortal />} />
+          <Route path="/developer/sandbox" element={<SdkSandbox />} />
           <Route path="/permissions" element={<Permissions />} />
           <Route path="/authorize" element={<AuthorizePage />} />
           <Route path="/blind-shipping" element={<BlindShipping />} />
