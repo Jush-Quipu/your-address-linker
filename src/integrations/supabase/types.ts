@@ -9,7 +9,184 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      access_logs: {
+        Row: {
+          accessed_at: string
+          accessed_fields: string[] | null
+          id: string
+          ip_address: string | null
+          permission_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          accessed_at?: string
+          accessed_fields?: string[] | null
+          id?: string
+          ip_address?: string | null
+          permission_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          accessed_at?: string
+          accessed_fields?: string[] | null
+          id?: string
+          ip_address?: string | null
+          permission_id?: string
+          user_agent?: string | null
+        }
+      }
+      address_permissions: {
+        Row: {
+          access_expiry: string | null
+          access_token: string
+          app_id: string
+          app_name: string
+          created_at: string
+          id: string
+          last_accessed: string | null
+          share_city: boolean
+          share_country: boolean
+          share_postal_code: boolean
+          share_state: boolean
+          share_street: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_expiry?: string | null
+          access_token: string
+          app_id: string
+          app_name: string
+          created_at?: string
+          id?: string
+          last_accessed?: string | null
+          share_city?: boolean
+          share_country?: boolean
+          share_postal_code?: boolean
+          share_state?: boolean
+          share_street?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_expiry?: string | null
+          access_token?: string
+          app_id?: string
+          app_name?: string
+          created_at?: string
+          id?: string
+          last_accessed?: string | null
+          share_city?: boolean
+          share_country?: boolean
+          share_postal_code?: boolean
+          share_state?: boolean
+          share_street?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+      }
+      physical_addresses: {
+        Row: {
+          city: string
+          country: string
+          created_at: string
+          id: string
+          postal_code: string
+          state: string
+          street_address: string
+          updated_at: string
+          user_id: string
+          verification_date: string | null
+          verification_method: string | null
+          verification_status: string
+        }
+        Insert: {
+          city: string
+          country: string
+          created_at?: string
+          id?: string
+          postal_code: string
+          state: string
+          street_address: string
+          updated_at?: string
+          user_id: string
+          verification_date?: string | null
+          verification_method?: string | null
+          verification_status?: string
+        }
+        Update: {
+          city?: string
+          country?: string
+          created_at?: string
+          id?: string
+          postal_code?: string
+          state?: string
+          street_address?: string
+          updated_at?: string
+          user_id?: string
+          verification_date?: string | null
+          verification_method?: string | null
+          verification_status?: string
+        }
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          default_privacy_settings: Json | null
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          default_privacy_settings?: Json | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          default_privacy_settings?: Json | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+      }
+      wallet_addresses: {
+        Row: {
+          address: string
+          chain_id: number
+          created_at: string
+          id: string
+          is_primary: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          chain_id: number
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          chain_id?: number
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
@@ -106,19 +283,4 @@ export type Enums<
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
     ? PublicSchema["Enums"][PublicEnumNameOrOptions]
-    : never
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof PublicSchema["CompositeTypes"]
-    | { schema: keyof Database },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof Database
-  }
-    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
-  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
-    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
