@@ -5,7 +5,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 // Define CORS headers for browser compatibility
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-app-id, x-sdk-version",
 };
 
 // Create a Supabase client
@@ -23,6 +23,12 @@ serve(async (req) => {
     // Extract the access token from the request
     let accessToken;
     let requestedFields = null;
+    let includeVerification = false;
+    const appId = req.headers.get('x-app-id');
+    const sdkVersion = req.headers.get('x-sdk-version');
+    
+    // Log request information for monitoring
+    console.log(`Address request: App ID: ${appId || 'not provided'}, SDK Version: ${sdkVersion || 'not provided'}`);
     
     // Check if the request is GET or POST
     if (req.method === "GET") {
@@ -32,10 +38,12 @@ serve(async (req) => {
       if (fields) {
         requestedFields = fields.split(",");
       }
+      includeVerification = url.searchParams.get("include_verification") === "true";
     } else if (req.method === "POST") {
       const body = await req.json();
       accessToken = body.access_token;
       requestedFields = body.fields || null;
+      includeVerification = body.include_verification || false;
     } else {
       return new Response(
         JSON.stringify({ error: "Method not allowed" }),
@@ -92,7 +100,10 @@ serve(async (req) => {
     // 2. Check if permission has expired
     if (permission.access_expiry && new Date(permission.access_expiry) < new Date()) {
       return new Response(
-        JSON.stringify({ error: "Access token has expired" }),
+        JSON.stringify({ 
+          error: "Access token has expired",
+          expiredAt: permission.access_expiry
+        }),
         {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -103,7 +114,11 @@ serve(async (req) => {
     // 3. Check if max access count reached
     if (permission.max_access_count !== null && permission.access_count >= permission.max_access_count) {
       return new Response(
-        JSON.stringify({ error: "Maximum access count reached for this token" }),
+        JSON.stringify({ 
+          error: "Maximum access count reached for this token",
+          maxCount: permission.max_access_count,
+          currentCount: permission.access_count
+        }),
         {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -133,7 +148,10 @@ serve(async (req) => {
     // Check verification status
     if (physicalAddress.verification_status !== "verified") {
       return new Response(
-        JSON.stringify({ error: "Address has not been verified yet" }),
+        JSON.stringify({ 
+          error: "Address has not been verified yet",
+          status: physicalAddress.verification_status
+        }),
         {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -141,7 +159,18 @@ serve(async (req) => {
       );
     }
 
-    // Log this access
+    // Get any linked wallets if available
+    const { data: linkedWallets, error: walletsError } = await supabase
+      .from("wallet_addresses")
+      .select("address, chain_id, is_primary")
+      .eq("user_id", permission.user_id)
+      .order("is_primary", { ascending: false });
+      
+    if (walletsError) {
+      console.error("Error fetching linked wallets:", walletsError);
+    }
+
+    // Log this access with enhanced information
     await supabase.from("access_logs").insert([
       {
         permission_id: permission.id,
@@ -152,6 +181,15 @@ serve(async (req) => {
     ]);
 
     // Increment access counter and update last accessed timestamp
+    const { error: incrementError } = await supabase.rpc(
+      "increment_counter",
+      { row_id: permission.id }
+    );
+
+    if (incrementError) {
+      console.error("Error incrementing counter:", incrementError);
+    }
+
     await supabase
       .from("address_permissions")
       .update({ 
@@ -163,8 +201,8 @@ serve(async (req) => {
     // Return only the fields the app is allowed to access
     const allowedAddress: Record<string, string> = {};
 
-    if (permission.share_street && (!requestedFields || requestedFields.includes("street_address"))) {
-      allowedAddress.street_address = physicalAddress.street_address;
+    if (permission.share_street && (!requestedFields || requestedFields.includes("street_address") || requestedFields.includes("street"))) {
+      allowedAddress.street = physicalAddress.street_address;
     }
 
     if (permission.share_city && (!requestedFields || requestedFields.includes("city"))) {
@@ -175,13 +213,39 @@ serve(async (req) => {
       allowedAddress.state = physicalAddress.state;
     }
 
-    if (permission.share_postal_code && (!requestedFields || requestedFields.includes("postal_code"))) {
+    if (permission.share_postal_code && (!requestedFields || requestedFields.includes("postal_code") || requestedFields.includes("zip"))) {
       allowedAddress.postal_code = physicalAddress.postal_code;
     }
 
     if (permission.share_country && (!requestedFields || requestedFields.includes("country"))) {
       allowedAddress.country = physicalAddress.country;
     }
+
+    // Prepare verification information if requested
+    let verificationInfo = null;
+    if (includeVerification) {
+      verificationInfo = {
+        status: physicalAddress.verification_status,
+        method: physicalAddress.verification_method,
+        date: physicalAddress.verification_date
+      };
+    }
+
+    // Prepare permission information
+    const permissionInfo = {
+      app_id: permission.app_id,
+      app_name: permission.app_name,
+      access_count: permission.access_count + 1,
+      max_access_count: permission.max_access_count,
+      access_expiry: permission.access_expiry,
+      permissions: {
+        share_street: permission.share_street,
+        share_city: permission.share_city,
+        share_state: permission.share_state,
+        share_postal_code: permission.share_postal_code,
+        share_country: permission.share_country
+      }
+    };
 
     // If notification is enabled, send a notification (in a real app)
     if (permission.access_notification) {
@@ -194,15 +258,24 @@ serve(async (req) => {
       console.log("Access notification would be sent to user:", permission.user_id);
     }
 
+    // Prepare the response with enhanced information
+    const response: Record<string, any> = {
+      address: allowedAddress,
+      permission: permissionInfo
+    };
+
+    // Add verification info if requested
+    if (verificationInfo) {
+      response.verification = verificationInfo;
+    }
+
+    // Add linked wallets if available and requested
+    if (linkedWallets && linkedWallets.length > 0 && includeVerification) {
+      response.linked_wallets = linkedWallets;
+    }
+
     return new Response(
-      JSON.stringify({
-        app_id: permission.app_id,
-        app_name: permission.app_name,
-        address: allowedAddress,
-        access_count: permission.access_count + 1,
-        max_access_count: permission.max_access_count,
-        access_expiry: permission.access_expiry
-      }),
+      JSON.stringify(response),
       {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -212,7 +285,10 @@ serve(async (req) => {
     console.error("Error processing request:", error.message);
     
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({ 
+        error: "Internal server error",
+        message: error.message
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
