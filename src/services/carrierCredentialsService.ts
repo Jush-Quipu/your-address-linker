@@ -2,12 +2,20 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CarrierAuth, CarrierCredentials } from './carriers';
 
+interface CarrierCredentialsRecord {
+  id: string;
+  carrier_id: string;
+  credentials: CarrierCredentials;
+  use_test_mode: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 /**
  * Service for managing carrier API credentials
  */
 export async function getCarrierCredentials(carrierId: string, useTestMode: boolean = false): Promise<CarrierAuth | null> {
   try {
-    // In a production app, we'd fetch encrypted credentials from the database
     const { data, error } = await supabase
       .from('carrier_credentials')
       .select('*')
@@ -24,8 +32,10 @@ export async function getCarrierCredentials(carrierId: string, useTestMode: bool
       return null;
     }
     
+    const record = data as CarrierCredentialsRecord;
+    
     // Return test or production credentials based on the useTestMode flag
-    const credentials = data.credentials as CarrierCredentials;
+    const credentials = record.credentials;
     return useTestMode ? credentials.test : credentials.production;
   } catch (error) {
     console.error('Error in getCarrierCredentials:', error);

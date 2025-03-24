@@ -192,10 +192,21 @@ export async function createShipment(
     );
     
     if (response.success) {
+      // Get the authenticated user's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        response.error = 'Authentication required';
+        response.success = false;
+        return response;
+      }
+      
       // Insert the shipment record
       const { data, error } = await supabase
         .from('shipments')
         .insert({
+          user_id: user.id,
           permission_id: permissionId,
           carrier: carrierId,
           service: shipmentDetails.service,

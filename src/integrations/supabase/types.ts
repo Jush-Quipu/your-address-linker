@@ -119,6 +119,33 @@ export type Database = {
         }
         Relationships: []
       }
+      carrier_credentials: {
+        Row: {
+          carrier_id: string
+          created_at: string
+          credentials: Json
+          id: string
+          updated_at: string
+          use_test_mode: boolean
+        }
+        Insert: {
+          carrier_id: string
+          created_at?: string
+          credentials: Json
+          id?: string
+          updated_at?: string
+          use_test_mode?: boolean
+        }
+        Update: {
+          carrier_id?: string
+          created_at?: string
+          credentials?: Json
+          id?: string
+          updated_at?: string
+          use_test_mode?: boolean
+        }
+        Relationships: []
+      }
       developer_apps: {
         Row: {
           app_name: string
