@@ -12,6 +12,9 @@ import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Permissions from "./pages/Permissions";
 import NotFound from "./pages/NotFound";
+import DeveloperDocs from "./pages/DeveloperDocs";
+import DeveloperPortal from "./pages/DeveloperPortal";
+import AuthorizePage from "./pages/AuthorizePage";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +32,9 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/permissions" element={<Permissions />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/developer-docs" element={<DeveloperDocs />} />
+            <Route path="/developer" element={<DeveloperPortal />} />
+            <Route path="/authorize" element={<AuthorizePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

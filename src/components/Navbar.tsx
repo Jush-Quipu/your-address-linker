@@ -1,127 +1,173 @@
 
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from '@/components/ui/sheet';
-import { Menu } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Button } from './ui/button';
+import { MenuIcon, X, User, LogOut, Shield, Home, MapPin, Wallet, Key, Code } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useMobile } from '@/hooks/use-mobile';
 
 const Navbar: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const { isAuthenticated, signOut, isLoading } = useAuth();
-
-  const closeMenu = () => setIsOpen(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isAuthenticated, signOut, user } = useAuth();
+  const isMobile = useMobile();
+  const location = useLocation();
+  
+  // Close mobile menu when navigating
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   return (
-    <header className="fixed w-full z-50 bg-background/90 backdrop-blur-sm border-b">
-      <div className="container mx-auto px-4 md:px-6 flex h-16 items-center justify-between">
-        <Link to="/" className="font-bold text-xl md:text-2xl">
-          SecureAddress Bridge
+    <header className="fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-sm z-50 border-b border-border">
+      <div className="max-w-7xl mx-auto px-6 h-16 md:h-20 flex items-center justify-between">
+        <Link to="/" className="flex items-center">
+          <Shield className="h-8 w-8 text-primary mr-2" />
+          <span className="font-bold text-xl">SecureAddress Bridge</span>
         </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
-          <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
-            Home
-          </Link>
-          {isAuthenticated && (
-            <>
-              <Link to="/dashboard" className="text-sm font-medium hover:text-primary transition-colors">
-                Dashboard
-              </Link>
-              <Link to="/verify" className="text-sm font-medium hover:text-primary transition-colors">
-                Verify Address
-              </Link>
-              <Link to="/connect" className="text-sm font-medium hover:text-primary transition-colors">
-                Connect Wallet
-              </Link>
-              <Link to="/permissions" className="text-sm font-medium hover:text-primary transition-colors">
-                Manage Access
-              </Link>
-            </>
-          )}
-        </nav>
-
-        {/* Auth Buttons - Desktop */}
-        <div className="hidden md:flex items-center gap-4">
-          {isAuthenticated ? (
-            <Button variant="outline" onClick={signOut} disabled={isLoading}>
-              Sign Out
+        {isMobile ? (
+          // Mobile navigation
+          <>
+            <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+              {isMenuOpen ? <X className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
             </Button>
-          ) : (
-            <Link to="/auth">
-              <Button>Sign In</Button>
-            </Link>
-          )}
-        </div>
-
-        {/* Mobile Navigation */}
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
-          <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon">
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Toggle menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-[75%] sm:w-[350px]">
-            <nav className="flex flex-col gap-4 mt-8">
-              <Link 
-                to="/" 
-                className="text-base font-medium hover:text-primary transition-colors"
-                onClick={closeMenu}
-              >
-                Home
-              </Link>
-              {isAuthenticated && (
-                <>
-                  <Link 
-                    to="/dashboard" 
-                    className="text-base font-medium hover:text-primary transition-colors"
-                    onClick={closeMenu}
-                  >
-                    Dashboard
+            
+            {isMenuOpen && (
+              <div className="absolute top-16 left-0 right-0 bg-background border-b border-border">
+                <nav className="flex flex-col p-4 space-y-4">
+                  <Link to="/" className="flex items-center px-4 py-2 hover:bg-accent rounded-md">
+                    <Home className="mr-2 h-4 w-4" />
+                    Home
                   </Link>
-                  <Link 
-                    to="/verify" 
-                    className="text-base font-medium hover:text-primary transition-colors"
-                    onClick={closeMenu}
-                  >
+                  
+                  <Link to="/verify" className="flex items-center px-4 py-2 hover:bg-accent rounded-md">
+                    <MapPin className="mr-2 h-4 w-4" />
                     Verify Address
                   </Link>
-                  <Link 
-                    to="/connect" 
-                    className="text-base font-medium hover:text-primary transition-colors"
-                    onClick={closeMenu}
-                  >
+                  
+                  <Link to="/connect" className="flex items-center px-4 py-2 hover:bg-accent rounded-md">
+                    <Wallet className="mr-2 h-4 w-4" />
                     Connect Wallet
                   </Link>
-                  <Link 
-                    to="/permissions" 
-                    className="text-base font-medium hover:text-primary transition-colors"
-                    onClick={closeMenu}
-                  >
-                    Manage Access
+                  
+                  {isAuthenticated && (
+                    <>
+                      <Link to="/dashboard" className="flex items-center px-4 py-2 hover:bg-accent rounded-md">
+                        <User className="mr-2 h-4 w-4" />
+                        Dashboard
+                      </Link>
+                      
+                      <Link to="/permissions" className="flex items-center px-4 py-2 hover:bg-accent rounded-md">
+                        <Key className="mr-2 h-4 w-4" />
+                        Permissions
+                      </Link>
+                    </>
+                  )}
+                  
+                  <div className="pt-2 border-t border-border">
+                    <Link to="/developer" className="flex items-center px-4 py-2 hover:bg-accent rounded-md">
+                      <Code className="mr-2 h-4 w-4" />
+                      Developers
+                    </Link>
+                  </div>
+                  
+                  <div className="pt-2 border-t border-border">
+                    {isAuthenticated ? (
+                      <Button variant="destructive" className="w-full" onClick={() => signOut()}>
+                        <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                      </Button>
+                    ) : (
+                      <Button className="w-full" asChild>
+                        <Link to="/auth">Sign In</Link>
+                      </Button>
+                    )}
+                  </div>
+                </nav>
+              </div>
+            )}
+          </>
+        ) : (
+          // Desktop navigation
+          <div className="flex items-center space-x-1">
+            <nav className="flex items-center space-x-1 mr-4">
+              <Link to="/">
+                <Button variant="ghost">Home</Button>
+              </Link>
+              <Link to="/verify">
+                <Button variant="ghost">Verify Address</Button>
+              </Link>
+              <Link to="/connect">
+                <Button variant="ghost">Connect Wallet</Button>
+              </Link>
+
+              {isAuthenticated && (
+                <>
+                  <Link to="/dashboard">
+                    <Button variant="ghost">Dashboard</Button>
+                  </Link>
+                  <Link to="/permissions">
+                    <Button variant="ghost">Permissions</Button>
                   </Link>
                 </>
               )}
-              <div className="mt-4">
-                {isAuthenticated ? (
-                  <Button variant="outline" onClick={() => { signOut(); closeMenu(); }} disabled={isLoading} className="w-full">
-                    Sign Out
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost">
+                    <Code className="mr-2 h-4 w-4" />
+                    Developers
                   </Button>
-                ) : (
-                  <Link to="/auth" onClick={closeMenu} className="w-full block">
-                    <Button className="w-full">Sign In</Button>
-                  </Link>
-                )}
-              </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link to="/developer">Developer Portal</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/developer-docs">API Documentation</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </nav>
-          </SheetContent>
-        </Sheet>
+
+            {isAuthenticated ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <User className="h-4 w-4 mr-2" />
+                    {user?.email ? user.email.split('@')[0] : 'Account'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard">Dashboard</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/permissions">Manage Permissions</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button asChild>
+                <Link to="/auth">Sign In</Link>
+              </Button>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );
