@@ -13,8 +13,16 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Supported carriers configuration
-const SUPPORTED_CARRIERS = {
+// Carrier interface
+interface CarrierConfig {
+  name: string;
+  authKey: string;
+  baseUrl: string;
+  services: string[];
+}
+
+// Carrier API modules
+const Carriers: Record<string, CarrierConfig> = {
   "usps": {
     name: "USPS",
     authKey: Deno.env.get("USPS_API_KEY") || "",
@@ -37,13 +45,62 @@ const SUPPORTED_CARRIERS = {
 
 // Verify if a carrier's API key is valid
 async function verifyCarrierApiKey(carrierId: string, apiKey: string): Promise<boolean> {
-  if (!SUPPORTED_CARRIERS[carrierId]) {
+  const carrier = Carriers[carrierId];
+  if (!carrier) {
     return false;
   }
   
-  // Mock verification for now
-  // In a real implementation, you would verify with the carrier's API
+  // For USPS
+  if (carrierId === "usps") {
+    return verifyUSPSApiKey(apiKey);
+  }
+  
+  // For FedEx 
+  if (carrierId === "fedex") {
+    return verifyFedExApiKey(apiKey);
+  }
+  
+  // For UPS
+  if (carrierId === "ups") {
+    return verifyUPSApiKey(apiKey);
+  }
+  
+  // Default verification (simple length check)
   return apiKey.length > 10;
+}
+
+// Carrier-specific verification functions
+async function verifyUSPSApiKey(apiKey: string): Promise<boolean> {
+  try {
+    // In production, make a test call to USPS API to verify the key
+    console.log("Verifying USPS API key");
+    return apiKey.length > 10;
+  } catch (error) {
+    console.error("USPS API key verification error:", error);
+    return false;
+  }
+}
+
+async function verifyFedExApiKey(apiKey: string): Promise<boolean> {
+  try {
+    // In production, make a test call to FedEx API to verify the key
+    console.log("Verifying FedEx API key");
+    return apiKey.length > 10;
+  } catch (error) {
+    console.error("FedEx API key verification error:", error);
+    return false;
+  }
+}
+
+async function verifyUPSApiKey(apiKey: string): Promise<boolean> {
+  try {
+    // In production, make a test call to UPS API to verify the key
+    console.log("Verifying UPS API key");
+    return apiKey.length > 10;
+  } catch (error) {
+    console.error("UPS API key verification error:", error);
+    return false;
+  }
 }
 
 // Process a shipment with the carrier API
@@ -53,7 +110,7 @@ async function processShipment(
   shipmentDetails: any
 ): Promise<any> {
   try {
-    const carrier = SUPPORTED_CARRIERS[carrierId];
+    const carrier = Carriers[carrierId];
     if (!carrier) {
       throw new Error(`Unsupported carrier: ${carrierId}`);
     }
@@ -63,25 +120,81 @@ async function processShipment(
       shipment: shipmentDetails
     });
     
-    // Mock shipment processing for now
-    // In a real implementation, you would call the carrier's API
-    const trackingNumber = `${carrier.name.substr(0, 2)}${Date.now().toString().substr(-8)}US`;
-    
-    return {
-      success: true,
-      carrier: carrier.name,
-      trackingNumber,
-      labelUrl: `https://example.com/labels/${trackingNumber}.pdf`,
-      estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-      cost: {
-        currency: "USD",
-        amount: Math.random() * 20 + 5
-      }
-    };
+    // Call carrier-specific functions based on carrier ID
+    if (carrierId === "usps") {
+      return processUSPSShipment(recipientAddress, shipmentDetails);
+    } else if (carrierId === "fedex") {
+      return processFedExShipment(recipientAddress, shipmentDetails);
+    } else if (carrierId === "ups") {
+      return processUPSShipment(recipientAddress, shipmentDetails);
+    } else {
+      throw new Error(`Unsupported carrier: ${carrierId}`);
+    }
   } catch (error) {
     console.error(`Error processing shipment with ${carrierId}:`, error);
     throw error;
   }
+}
+
+// Carrier-specific shipment processing
+async function processUSPSShipment(recipientAddress: any, shipmentDetails: any): Promise<any> {
+  // USPS API integration would go here
+  console.log("Processing USPS shipment");
+  
+  // Mock tracking number generation
+  const trackingNumber = `9400${Math.floor(10000000000000 + Math.random() * 90000000000000)}`;
+  
+  return {
+    success: true,
+    carrier: "USPS",
+    trackingNumber,
+    labelUrl: `https://example.com/labels/${trackingNumber}.pdf`,
+    estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    cost: {
+      currency: "USD",
+      amount: Math.random() * 20 + 5
+    }
+  };
+}
+
+async function processFedExShipment(recipientAddress: any, shipmentDetails: any): Promise<any> {
+  // FedEx API integration would go here
+  console.log("Processing FedEx shipment");
+  
+  // Mock tracking number generation
+  const trackingNumber = `7891${Math.floor(10000000000 + Math.random() * 90000000000)}`;
+  
+  return {
+    success: true,
+    carrier: "FedEx",
+    trackingNumber,
+    labelUrl: `https://example.com/labels/${trackingNumber}.pdf`,
+    estimatedDelivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    cost: {
+      currency: "USD",
+      amount: Math.random() * 30 + 15
+    }
+  };
+}
+
+async function processUPSShipment(recipientAddress: any, shipmentDetails: any): Promise<any> {
+  // UPS API integration would go here
+  console.log("Processing UPS shipment");
+  
+  // Mock tracking number generation for UPS
+  const trackingNumber = `1Z${Math.random().toString(36).substring(2, 11).toUpperCase()}`;
+  
+  return {
+    success: true,
+    carrier: "UPS",
+    trackingNumber,
+    labelUrl: `https://example.com/labels/${trackingNumber}.pdf`,
+    estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    cost: {
+      currency: "USD",
+      amount: Math.random() * 35 + 20
+    }
+  };
 }
 
 // Update shipment record with carrier response
@@ -208,6 +321,105 @@ async function getAddressForShippingToken(
     console.error('Error getting address for shipping token:', error);
     throw error;
   }
+}
+
+// Track a shipment with the carrier
+async function trackShipmentWithCarrier(
+  carrierId: string,
+  trackingNumber: string
+): Promise<any> {
+  try {
+    if (carrierId === "usps") {
+      return await trackUSPSShipment(trackingNumber);
+    } else if (carrierId === "fedex") {
+      return await trackFedExShipment(trackingNumber);
+    } else if (carrierId === "ups") {
+      return await trackUPSShipment(trackingNumber);
+    } else {
+      throw new Error(`Unsupported carrier: ${carrierId}`);
+    }
+  } catch (error) {
+    console.error(`Error tracking shipment with ${carrierId}:`, error);
+    throw error;
+  }
+}
+
+// Carrier-specific tracking functions
+async function trackUSPSShipment(trackingNumber: string): Promise<any> {
+  // USPS tracking implementation would go here
+  console.log("Tracking USPS shipment:", trackingNumber);
+  
+  return {
+    trackingNumber,
+    status: "in_transit",
+    estimatedDelivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    lastUpdate: new Date().toISOString(),
+    trackingHistory: [
+      {
+        status: "accepted",
+        location: "USPS Facility, SAN JOSE, CA",
+        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        status: "in_transit",
+        location: "USPS Regional Facility, SAN FRANCISCO, CA",
+        timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    ]
+  };
+}
+
+async function trackFedExShipment(trackingNumber: string): Promise<any> {
+  // FedEx tracking implementation would go here
+  console.log("Tracking FedEx shipment:", trackingNumber);
+  
+  return {
+    trackingNumber,
+    status: "picked_up",
+    estimatedDelivery: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
+    lastUpdate: new Date().toISOString(),
+    trackingHistory: [
+      {
+        status: "label_created",
+        location: "Shipper Location",
+        timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        status: "picked_up",
+        location: "FedEx Facility, SUNNYVALE, CA",
+        timestamp: new Date().toISOString()
+      }
+    ]
+  };
+}
+
+async function trackUPSShipment(trackingNumber: string): Promise<any> {
+  // UPS tracking implementation would go here
+  console.log("Tracking UPS shipment:", trackingNumber);
+  
+  return {
+    trackingNumber,
+    status: "out_for_delivery",
+    estimatedDelivery: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+    lastUpdate: new Date().toISOString(),
+    trackingHistory: [
+      {
+        status: "information_received",
+        location: "Shipper Location",
+        timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        status: "in_transit",
+        location: "UPS Facility, OAKLAND, CA",
+        timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        status: "out_for_delivery",
+        location: "Local UPS Facility",
+        timestamp: new Date().toISOString()
+      }
+    ]
+  };
 }
 
 serve(async (req) => {
@@ -390,6 +602,51 @@ serve(async (req) => {
       }
     }
     
+    // Tracking endpoint 
+    if (endpoint === "track" && req.method === "POST") {
+      const body = await req.json();
+      const carrierId = req.headers.get("x-carrier-id") || body.carrierId;
+      const carrierKey = req.headers.get("x-carrier-key") || body.carrierKey;
+      const trackingNumber = body.tracking_number;
+      
+      if (!carrierId || !carrierKey || !trackingNumber) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Missing required parameters",
+            required: ["carrierId", "carrierKey", "tracking_number"] 
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Verify carrier key
+      const isValidCarrierKey = await verifyCarrierApiKey(carrierId, carrierKey);
+      if (!isValidCarrierKey) {
+        return new Response(
+          JSON.stringify({ error: "Invalid carrier API key" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Track shipment
+      try {
+        const trackingInfo = await trackShipmentWithCarrier(carrierId, trackingNumber);
+        
+        return new Response(
+          JSON.stringify(trackingInfo),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (error) {
+        return new Response(
+          JSON.stringify({ 
+            error: "Failed to track shipment",
+            details: error instanceof Error ? error.message : "Unknown error" 
+          }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+    
     // Tracking webhook endpoint for carriers to send status updates
     if (endpoint === "tracking" && req.method === "POST") {
       const body = await req.json();
@@ -490,7 +747,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: "Unknown endpoint",
-        available_endpoints: ["/resolve", "/create", "/tracking"] 
+        available_endpoints: ["/resolve", "/create", "/track", "/tracking"] 
       }),
       { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -501,7 +758,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: "Internal server error",
-        message: error.message || "Unknown error"
+        message: error instanceof Error ? error.message : "Unknown error"
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

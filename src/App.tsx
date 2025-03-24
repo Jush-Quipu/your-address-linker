@@ -12,6 +12,7 @@ import DeveloperPortal from "@/pages/DeveloperPortal";
 import Permissions from "@/pages/Permissions";
 import AuthorizePage from "@/pages/AuthorizePage";
 import BlindShipping from "@/pages/BlindShipping";
+import MyShipments from "@/pages/MyShipments";
 import NotFound from "@/pages/NotFound";
 import "./App.css";
 
@@ -30,6 +31,7 @@ function App() {
           <Route path="/permissions" element={<Permissions />} />
           <Route path="/authorize" element={<AuthorizePage />} />
           <Route path="/blind-shipping" element={<BlindShipping />} />
+          <Route path="/my-shipments" element={<MyShipments />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />
