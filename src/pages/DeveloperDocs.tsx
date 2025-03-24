@@ -3,8 +3,12 @@ import React from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ApiDocumentation from '@/components/ApiDocumentation';
+import { useSearchParams } from 'react-router-dom';
 
 const DeveloperDocs: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const tab = searchParams.get('tab') || 'api-reference';
+
   return (
     <div className="min-h-screen">
       <Navbar />

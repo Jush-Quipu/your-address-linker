@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -17,8 +16,8 @@ import { CopyIcon, CheckIcon, ExternalLinkIcon } from 'lucide-react';
 interface DeveloperApplication {
   id: string;
   app_name: string;
-  description: string;
-  website_url: string;
+  description: string | null;
+  website_url: string | null;
   callback_urls: string[];
   app_secret?: string;
   created_at: string;
@@ -39,12 +38,10 @@ const DeveloperPortal: React.FC = () => {
   const [copiedAppId, setCopiedAppId] = useState<string | null>(null);
   const [copiedSecret, setCopiedSecret] = useState<string | null>(null);
 
-  // Redirect to login if not authenticated
   if (!isLoading && !isAuthenticated) {
     return <Navigate to="/auth" />;
   }
 
-  // Fetch developer applications
   useEffect(() => {
     const fetchApplications = async () => {
       if (!isAuthenticated || !user) return;
@@ -58,7 +55,7 @@ const DeveloperPortal: React.FC = () => {
           
         if (error) throw error;
         
-        setApplications(data || []);
+        setApplications(data as DeveloperApplication[] || []);
       } catch (error) {
         console.error('Error fetching applications:', error);
         toast.error('Failed to load your applications');
@@ -70,13 +67,11 @@ const DeveloperPortal: React.FC = () => {
     fetchApplications();
   }, [isAuthenticated, user]);
 
-  // Handle form input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -85,7 +80,6 @@ const DeveloperPortal: React.FC = () => {
       return;
     }
     
-    // Validate form
     if (!formData.appName) {
       toast.error('App name is required');
       return;
@@ -96,7 +90,6 @@ const DeveloperPortal: React.FC = () => {
       return;
     }
     
-    // Parse callback URLs
     const callbackUrls = formData.callbackUrls
       .split('\n')
       .map(url => url.trim())
@@ -107,7 +100,6 @@ const DeveloperPortal: React.FC = () => {
       return;
     }
     
-    // Check URL format
     const urlRegex = /^https?:\/\//i;
     const invalidUrls = callbackUrls.filter(url => !urlRegex.test(url));
     
@@ -121,13 +113,11 @@ const DeveloperPortal: React.FC = () => {
     setSubmitting(true);
     
     try {
-      // Generate app ID and secret
       const appId = `app_${Date.now()}`;
       const appSecret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
       
-      // Save the application
       const { data, error } = await supabase
         .from('developer_apps')
         .insert({
@@ -144,15 +134,12 @@ const DeveloperPortal: React.FC = () => {
         
       if (error) throw error;
       
-      // Add to the applications list
       setApplications(prev => [data as DeveloperApplication, ...prev]);
       
-      // Show success message
       toast.success('Application registered successfully', {
         description: 'Your app credentials have been generated'
       });
       
-      // Reset form
       setFormData({
         appName: '',
         description: '',
@@ -160,7 +147,6 @@ const DeveloperPortal: React.FC = () => {
         callbackUrls: ''
       });
       
-      // Switch to the credentials tab to show the new app
       setActiveTab('credentials');
     } catch (error) {
       console.error('Error registering application:', error);
@@ -172,7 +158,6 @@ const DeveloperPortal: React.FC = () => {
     }
   };
 
-  // Copy to clipboard
   const copyToClipboard = (text: string, type: 'appId' | 'secret', id: string) => {
     navigator.clipboard.writeText(text);
     

@@ -116,6 +116,39 @@ export type Database = {
         }
         Relationships: []
       }
+      developer_apps: {
+        Row: {
+          app_name: string
+          app_secret: string | null
+          callback_urls: string[]
+          created_at: string
+          description: string | null
+          id: string
+          user_id: string
+          website_url: string | null
+        }
+        Insert: {
+          app_name: string
+          app_secret?: string | null
+          callback_urls: string[]
+          created_at?: string
+          description?: string | null
+          id: string
+          user_id: string
+          website_url?: string | null
+        }
+        Update: {
+          app_name?: string
+          app_secret?: string | null
+          callback_urls?: string[]
+          created_at?: string
+          description?: string | null
+          id?: string
+          user_id?: string
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       encryption_keys: {
         Row: {
           active: boolean
