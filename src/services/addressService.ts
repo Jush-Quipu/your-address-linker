@@ -355,9 +355,10 @@ export const logAddressAccess = async (permissionId: string, accessedFields: str
 export const incrementAccessCount = async (permissionId: string): Promise<void> => {
   try {
     // Using a direct SQL query with RPC instead of the typed functions
+    // Fix the type issue by using a type assertion for the parameters object
     const { error } = await supabase.rpc('increment_counter', { 
       row_id: permissionId 
-    });
+    } as any);
     
     if (error) {
       console.error('Error incrementing access count:', error);
