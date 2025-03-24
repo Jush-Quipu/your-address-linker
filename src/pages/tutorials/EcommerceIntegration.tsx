@@ -162,7 +162,7 @@ module.exports = router;`;
       
       <h2>Step 3: Set Up the Server-Side Integration</h2>
       <p>
-        For a complete e-commerce integration, you'll want to set up server-side components that can validate address tokens
+        For a complete e-commerce integration, you&apos;ll want to set up server-side components that can validate address tokens
         and send shipping information to carriers without exposing customer addresses in your database.
       </p>
       <CodeBlock
@@ -220,12 +220,12 @@ function ShippingAddressSection() {
       
       <h2>Step 5: Implement Blind Shipping (Optional)</h2>
       <p>
-        For enhanced privacy, you can implement blind shipping so that the sender never sees the recipient's address:
+        For enhanced privacy, you can implement blind shipping so that the sender never sees the recipient&apos;s address:
       </p>
       <ul>
         <li>Configure your shipping provider integration to use SecureAddress tokens directly</li>
         <li>Use the SecureAddress Bridge API to generate shipping labels without exposing addresses to your system</li>
-        <li>Implement customer notification systems that don't require you to know their exact address</li>
+        <li>Implement customer notification systems that don&apos;t require you to know their exact address</li>
       </ul>
       
       <h2>Testing Your Integration</h2>
@@ -233,7 +233,7 @@ function ShippingAddressSection() {
         SecureAddress Bridge provides a sandbox environment for testing your integration. To use it:
       </p>
       <ol>
-        <li>Set your SDK to sandbox mode: <code>new SecureAddressBridge({ appId: 'YOUR_APP_ID', sandbox: true })</code></li>
+        <li>Set your SDK to sandbox mode: <code>new SecureAddressBridge({'{'} appId: &apos;YOUR_APP_ID&apos;, sandbox: true {'}'})</code></li>
         <li>Use test accounts from the developer portal for authentication</li>
         <li>Test the complete checkout flow, including address selection and order completion</li>
       </ol>
@@ -250,7 +250,7 @@ function ShippingAddressSection() {
       
       <h2>Next Steps</h2>
       <p>
-        Now that you've integrated SecureAddress Bridge into your checkout flow, consider exploring:
+        Now that you&apos;ve integrated SecureAddress Bridge into your checkout flow, consider exploring:
       </p>
       <ul>
         <li>Web3 wallet linking for blockchain-verified shipping</li>
