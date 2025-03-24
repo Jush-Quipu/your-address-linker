@@ -1,0 +1,37 @@
+
+{
+  "name": "@secureaddress/bridge-sdk",
+  "version": "2.1.0",
+  "description": "SecureAddress Bridge JavaScript SDK for securely linking blockchain wallets to verified physical addresses",
+  "main": "secureaddress-bridge-sdk.js",
+  "types": "secureaddress-bridge-sdk.d.ts",
+  "author": "SecureAddress Bridge Team",
+  "license": "MIT",
+  "keywords": [
+    "blockchain",
+    "address",
+    "verification",
+    "web3",
+    "privacy",
+    "shipping",
+    "zero-knowledge"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/secureaddress/bridge-sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/secureaddress/bridge-sdk/issues"
+  },
+  "homepage": "https://docs.secureaddress.bridge",
+  "dependencies": {
+    "eth-crypto": "^2.4.0"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "typescript": "^4.9.5"
+  }
+}

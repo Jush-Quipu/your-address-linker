@@ -1,0 +1,38 @@
+
+{
+  "name": "@secureaddress/bridge-sdk-react-native",
+  "version": "1.2.0",
+  "description": "React Native SDK for SecureAddress Bridge to securely link blockchain wallets to verified physical addresses",
+  "main": "secureaddress-bridge-react-native.js",
+  "author": "SecureAddress Bridge Team",
+  "license": "MIT",
+  "keywords": [
+    "react-native",
+    "blockchain",
+    "address",
+    "verification",
+    "web3",
+    "privacy",
+    "shipping",
+    "zero-knowledge"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/secureaddress/bridge-sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/secureaddress/bridge-sdk/issues"
+  },
+  "homepage": "https://docs.secureaddress.bridge/sdk/react-native",
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^1.17.11"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-native": ">=0.60.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-native": "^0.70.0"
+  }
+}

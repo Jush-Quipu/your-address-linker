@@ -1,7 +1,9 @@
+
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ApiDocumentation from '@/components/ApiDocumentation';
+import SdkLibraries from '@/components/SdkLibraries';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,33 +17,6 @@ const DeveloperDocs: React.FC = () => {
   const tab = searchParams.get('tab') || 'api-reference';
   const [copied, setCopied] = useState<string | null>(null);
   const navigate = useNavigate();
-
-  const sdkOptions = [
-    {
-      name: 'JavaScript/TypeScript',
-      version: 'v2.0.0',
-      installCommand: 'npm install @secureaddress/bridge-sdk',
-      size: '42KB',
-      downloadUrl: 'https://github.com/secureaddress/bridge-sdk/releases/download/v2.0.0/secureaddress-bridge-sdk-v2.0.0.zip',
-      docsUrl: 'https://docs.secureaddress.bridge/sdk/js'
-    },
-    {
-      name: 'React Native',
-      version: 'v1.2.0',
-      installCommand: 'npm install @secureaddress/bridge-sdk-react-native',
-      size: '39KB',
-      downloadUrl: 'https://github.com/secureaddress/bridge-sdk/releases/download/v1.2.0/secureaddress-bridge-sdk-react-native-v1.2.0.zip',
-      docsUrl: 'https://docs.secureaddress.bridge/sdk/react-native'
-    },
-    {
-      name: 'Python',
-      version: 'v1.0.0',
-      installCommand: 'pip install secureaddress-bridge',
-      size: '24KB',
-      downloadUrl: 'https://github.com/secureaddress/bridge-sdk/releases/download/v1.0.0/secureaddress-bridge-python-v1.0.0.zip',
-      docsUrl: 'https://docs.secureaddress.bridge/sdk/python'
-    }
-  ];
 
   const tutorialOptions = [
     {
@@ -81,15 +56,6 @@ const DeveloperDocs: React.FC = () => {
     setSearchParams({ tab: value });
   };
 
-  const handleDownload = (sdkUrl: string, sdkName: string) => {
-    toast.success(`Downloading ${sdkName} SDK`);
-    window.open(sdkUrl, '_blank');
-  };
-
-  const handleOpenDocs = (docsUrl: string) => {
-    window.open(docsUrl, '_blank');
-  };
-
   const handleViewTutorial = (tutorialUrl: string) => {
     navigate(tutorialUrl);
   };
@@ -119,178 +85,7 @@ const DeveloperDocs: React.FC = () => {
             </TabsContent>
             
             <TabsContent value="sdk" className="space-y-8">
-              <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
-                {sdkOptions.map((sdk, index) => (
-                  <Card key={index}>
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        {sdk.name}
-                        <span className="text-sm bg-primary/10 text-primary rounded-full px-2 py-1">
-                          {sdk.version}
-                        </span>
-                      </CardTitle>
-                      <CardDescription>
-                        Size: {sdk.size}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="bg-muted rounded-md p-2 flex items-center justify-between">
-                        <code className="text-xs sm:text-sm">{sdk.installCommand}</code>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => handleCopy(sdk.installCommand, `sdk-${index}`)}
-                        >
-                          {copied === `sdk-${index}` ? (
-                            <CheckCircle className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="flex gap-2">
-                      <Button 
-                        variant="secondary" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleDownload(sdk.downloadUrl, sdk.name)}
-                      >
-                        <ArrowDownToLine className="h-4 w-4 mr-2" />
-                        Download
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleOpenDocs(sdk.docsUrl)}
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Docs
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-              
-              <Card className="mt-8">
-                <CardHeader>
-                  <CardTitle>Quick Start Guide</CardTitle>
-                  <CardDescription>
-                    Get started with the SecureAddress Bridge SDK in just a few minutes
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">1. Install the SDK</h3>
-                      <CodeBlock
-                        code="npm install @secureaddress/bridge-sdk"
-                        language="bash"
-                        showLineNumbers={false}
-                      />
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">2. Initialize the SDK</h3>
-                      <CodeBlock
-                        code={`import { SecureAddressBridge } from '@secureaddress/bridge-sdk';
-
-// Initialize with your app credentials
-const client = new SecureAddressBridge({
-  appId: 'YOUR_APP_ID',
-  redirectUri: 'https://your-app.com/callback'
-});`}
-                        language="javascript"
-                        showLineNumbers={true}
-                      />
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">3. Request Address Access</h3>
-                      <CodeBlock
-                        code={`// Generate a random state for CSRF protection
-const state = Math.random().toString(36).substring(2, 15);
-localStorage.setItem('secureaddress_state', state);
-
-// Redirect user to authorization page
-client.authorize({
-  scope: ['street', 'city', 'state', 'postal_code', 'country'],
-  expiryDays: 30,
-  state: state
-});`}
-                        language="javascript"
-                        showLineNumbers={true}
-                      />
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">4. Handle Callback & Get Address</h3>
-                      <CodeBlock
-                        code={`// In your callback handler
-async function handleCallback() {
-  // Process the callback and validate state parameter
-  const result = await client.handleCallback();
-  
-  if (result.success) {
-    // Get the user's address
-    const data = await client.getAddress();
-    console.log('User address:', data.address);
-    
-    // Clear URL parameters
-    window.history.replaceState({}, document.title, window.location.pathname);
-  } else {
-    console.error('Authorization failed:', result.errorDescription);
-  }
-}`}
-                        language="javascript"
-                        showLineNumbers={true}
-                      />
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-lg font-medium mb-2">5. Using the React Hook (Optional)</h3>
-                      <CodeBlock
-                        code={`import { useSecureAddress } from '@secureaddress/bridge-sdk';
-
-function AddressComponent() {
-  const { 
-    address, 
-    isLoading, 
-    error, 
-    requestAccess, 
-    hasValidPermission 
-  } = useSecureAddress({
-    appId: 'YOUR_APP_ID'
-  });
-  
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-  
-  return (
-    <div>
-      {!hasValidPermission ? (
-        <button onClick={() => requestAccess()}>
-          Get Address
-        </button>
-      ) : (
-        <div>
-          <h3>Address:</h3>
-          <p>{address.street}</p>
-          <p>{address.city}, {address.state} {address.postal_code}</p>
-          <p>{address.country}</p>
-        </div>
-      )}
-    </div>
-  );
-}`}
-                        language="javascript"
-                        showLineNumbers={true}
-                      />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <SdkLibraries />
             </TabsContent>
             
             <TabsContent value="tutorials" className="space-y-8">
