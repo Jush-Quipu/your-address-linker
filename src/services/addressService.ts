@@ -42,18 +42,14 @@ export const createPhysicalAddress = async (
   address: Omit<PhysicalAddress, 'id' | 'created_at' | 'updated_at'>
 ): Promise<PhysicalAddress> => {
   try {
-    // Check if user has an active encryption key
     let encryptionKey = await getActiveEncryptionKey(address.user_id);
     
-    // If no key exists, create one
     if (!encryptionKey) {
       encryptionKey = await createAndStoreEncryptionKey(address.user_id);
     }
     
-    // Import the public key
     const publicKey = await importPublicKey(encryptionKey.public_key);
     
-    // Encrypt the address data
     const encryptedAddressData = await encryptAddress(publicKey, {
       street_address: address.street_address,
       city: address.city,
@@ -62,9 +58,8 @@ export const createPhysicalAddress = async (
       country: address.country
     });
     
-    // Generate ZKP for address ownership
     const zkpData = await generateAddressProof(
-      'new_address', // This will be replaced with the actual ID after creation
+      'new_address',
       {
         street_address: address.street_address,
         city: address.city,
@@ -74,7 +69,6 @@ export const createPhysicalAddress = async (
       }
     );
     
-    // Combine regular address fields with encrypted data and ZKP
     const addressWithEncryption = {
       ...address,
       encryption_public_key: encryptionKey.public_key,
@@ -85,7 +79,6 @@ export const createPhysicalAddress = async (
       zkp_created_at: new Date().toISOString()
     };
     
-    // Insert the address with encrypted data
     const { data, error } = await supabase
       .from('physical_addresses')
       .insert([addressWithEncryption])
@@ -113,7 +106,6 @@ export const createPhysicalAddress = async (
 
 export const updatePhysicalAddress = async (id: string, updates: Partial<PhysicalAddress>): Promise<PhysicalAddress> => {
   try {
-    // First get the current address to get the user ID
     const { data: currentAddress, error: fetchError } = await supabase
       .from('physical_addresses')
       .select('user_id')
@@ -127,7 +119,6 @@ export const updatePhysicalAddress = async (id: string, updates: Partial<Physica
     
     const userId = currentAddress.user_id;
     
-    // If address fields are being updated, re-encrypt them
     if (
       updates.street_address !== undefined ||
       updates.city !== undefined ||
@@ -135,7 +126,6 @@ export const updatePhysicalAddress = async (id: string, updates: Partial<Physica
       updates.postal_code !== undefined ||
       updates.country !== undefined
     ) {
-      // Get the complete address data (including fields not being updated)
       const { data: fullAddress, error: fullAddressError } = await supabase
         .from('physical_addresses')
         .select('street_address, city, state, postal_code, country')
@@ -147,7 +137,6 @@ export const updatePhysicalAddress = async (id: string, updates: Partial<Physica
         throw fullAddressError || new Error('Full address data not found');
       }
       
-      // Combine current data with updates
       const updatedAddressData = {
         street_address: updates.street_address || fullAddress.street_address,
         city: updates.city || fullAddress.city,
@@ -156,26 +145,21 @@ export const updatePhysicalAddress = async (id: string, updates: Partial<Physica
         country: updates.country || fullAddress.country
       };
       
-      // Get encryption key
       const encryptionKey = await getActiveEncryptionKey(userId);
       
       if (!encryptionKey) {
         throw new Error('No encryption key found for user');
       }
       
-      // Import the public key
       const publicKey = await importPublicKey(encryptionKey.public_key);
       
-      // Encrypt the updated address data
       const encryptedAddressData = await encryptAddress(publicKey, updatedAddressData);
       
-      // Generate new ZKP for the updated address
       const zkpData = await generateAddressProof(
         id,
         updatedAddressData
       );
       
-      // Add encryption fields to updates
       updates = {
         ...updates,
         ...encryptedAddressData,
@@ -187,7 +171,6 @@ export const updatePhysicalAddress = async (id: string, updates: Partial<Physica
       };
     }
     
-    // Update the address
     const { data, error } = await supabase
       .from('physical_addresses')
       .update(updates)
@@ -353,20 +336,16 @@ export const logAddressAccess = async (permissionId: string, accessedFields: str
 // Fix type issue in increment counter function
 export const incrementAccessCount = async (permissionId: string): Promise<void> => {
   try {
-    // Use a properly typed approach with correct parameter structure
-    // Include count in the parameters object rather than as a separate argument
-    const { error } = await supabase.rpc(
+    const { error } = await (supabase.rpc as any)(
       'increment_counter', 
       { 
-        row_id: permissionId,
-        count: 1
+        row_id: permissionId
       }
     );
     
     if (error) {
       console.error('Error incrementing access count:', error);
     } else {
-      // Update the last_accessed timestamp
       await supabase
         .from('address_permissions')
         .update({ 
@@ -424,17 +403,14 @@ export const checkPermissionValidity = async (permissionId: string): Promise<{
       return { isValid: false, reason: 'Permission not found' };
     }
     
-    // Check if revoked
     if (data.revoked) {
       return { isValid: false, reason: 'Permission has been revoked' };
     }
     
-    // Check expiry date
     if (data.access_expiry && new Date(data.access_expiry) < new Date()) {
       return { isValid: false, reason: 'Permission has expired' };
     }
     
-    // Check if maximum access count reached
     if (data.max_access_count !== null && data.access_count >= data.max_access_count) {
       return { isValid: false, reason: 'Maximum access count reached' };
     }
