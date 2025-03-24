@@ -86,7 +86,7 @@ app.post('/secureaddress/webhook', (req, res) => {
       // User revoked access to their address
       break;
     default:
-      console.log(`Unhandled event: ${event}`);
+      console.log(\`Unhandled event: \${event}\`);
   }
   
   res.status(200).send('Webhook received');
@@ -164,6 +164,40 @@ function populateShippingForm(address) {
   document.getElementById('shipping-state').textContent = address.state;
   document.getElementById('shipping-zip').textContent = address.postal_code;
   document.getElementById('shipping-country').textContent = address.country;
+}`;
+
+  // Example for marketplace verification
+  const marketplaceVerificationExample = `// Check if seller has a verified address
+const sellerStatus = await client.getAddressVerification({
+  userId: sellerId,
+  accessToken: token,
+});
+
+if (sellerStatus.verification_status === 'verified') {
+  // Show "Verified Seller" badge
+  displayVerifiedBadge();
+} else {
+  // Prompt seller to verify their address
+  promptForVerification();
+}`;
+
+  // Example for service area check
+  const serviceAreaExample = `// Check if user is in service area
+function checkServiceArea(address) {
+  // Extract postal code or city/state
+  const { postal_code, city, state } = address;
+  
+  // Check against your service area database
+  const isInServiceArea = serviceAreaDB.includes(postal_code);
+  
+  if (isInServiceArea) {
+    showServiceAvailable();
+  } else {
+    showServiceUnavailable();
+  }
+  
+  // No need to store the full address
+  return isInServiceArea;
 }`;
 
   return (
@@ -539,19 +573,7 @@ Content-Type: application/json
                   Verify a seller's address without revealing it to buyers, using address verification status.
                 </p>
                 <CodeBlock
-                  code={`// Check if seller has a verified address
-const sellerStatus = await client.getAddressVerification({
-  userId: sellerId,
-  accessToken: token,
-});
-
-if (sellerStatus.verification_status === 'verified') {
-  // Show "Verified Seller" badge
-  displayVerifiedBadge();
-} else {
-  // Prompt seller to verify their address
-  promptForVerification();
-}`}
+                  code={marketplaceVerificationExample}
                   language="javascript"
                   showLineNumbers={true}
                 />
@@ -561,23 +583,7 @@ if (sellerStatus.verification_status === 'verified') {
                   Check if a user is within your service area without storing their exact address.
                 </p>
                 <CodeBlock
-                  code={`// Check if user is in service area
-function checkServiceArea(address) {
-  // Extract postal code or city/state
-  const { postal_code, city, state } = address;
-  
-  // Check against your service area database
-  const isInServiceArea = serviceAreaDB.includes(postal_code);
-  
-  if (isInServiceArea) {
-    showServiceAvailable();
-  } else {
-    showServiceUnavailable();
-  }
-  
-  // No need to store the full address
-  return isInServiceArea;
-}`}
+                  code={serviceAreaExample}
                   language="javascript"
                   showLineNumbers={true}
                 />

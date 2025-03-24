@@ -1,4 +1,8 @@
 
+# This file controls the configuration for Supabase CLI
+# Only the most commonly used config options are in this file
+# See this page for all options: https://supabase.com/docs/guides/cli/config
+
 project_id = "akfieehzgpcapuhdujvf"
 
 [api]
@@ -13,4 +17,5 @@ port = 54322
 port = 54323
 
 [functions]
+[functions.serve]
 port = 54324
