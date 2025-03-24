@@ -31,6 +31,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ onConnect }) => {
             address: primaryWallet.address,
             chainId: primaryWallet.chain_id,
             balance: '0', // We don't store balance in DB, would need to fetch from chain
+            provider: null, // Setting null for already connected wallets from DB
           });
           setIsConnected(true);
         }

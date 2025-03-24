@@ -66,7 +66,8 @@ const AddressVerification: React.FC = () => {
         postal_code: formData.postalCode,
         country: formData.country,
         verification_status: 'pending', // Address is pending verification
-        verification_method: 'form_submission'
+        verification_method: 'form_submission',
+        verification_date: null // Adding this missing field
       });
 
       toast.success('Address submitted successfully!', {
