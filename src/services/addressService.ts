@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
@@ -353,17 +354,21 @@ export const logAddressAccess = async (permissionId: string, accessedFields: str
 // Fix type issue in increment counter function
 export const incrementAccessCount = async (permissionId: string): Promise<void> => {
   try {
-    // Using the update method directly instead of RPC
-    const { error } = await supabase
-      .from('address_permissions')
-      .update({ 
-        access_count: supabase.rpc('increment_counter', { row_id: permissionId }) as unknown as number,
-        last_accessed: new Date().toISOString()
-      })
-      .eq('id', permissionId);
-      
+    // Using a direct SQL query with RPC instead of the typed functions
+    const { error } = await supabase.rpc('increment_counter', { 
+      row_id: permissionId 
+    });
+    
     if (error) {
       console.error('Error incrementing access count:', error);
+    } else {
+      // Update the last_accessed timestamp
+      await supabase
+        .from('address_permissions')
+        .update({ 
+          last_accessed: new Date().toISOString() 
+        })
+        .eq('id', permissionId);
     }
   } catch (error) {
     console.error('Error in incrementAccessCount:', error);
