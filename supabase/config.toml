@@ -70,5 +70,4 @@ redirect_uri = ""
 url = ""
 
 [functions]
-# Port to use for the Functions API URL.
 port = 54328

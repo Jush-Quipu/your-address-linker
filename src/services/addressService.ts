@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
@@ -351,6 +350,54 @@ export const logAddressAccess = async (permissionId: string, accessedFields: str
   }
 };
 
+// Fix type issue in increment counter function
+export const incrementAccessCount = async (permissionId: string): Promise<void> => {
+  try {
+    // Using the update method directly instead of RPC
+    const { error } = await supabase
+      .from('address_permissions')
+      .update({ 
+        access_count: supabase.rpc('increment_counter', { row_id: permissionId }) as unknown as number,
+        last_accessed: new Date().toISOString()
+      })
+      .eq('id', permissionId);
+      
+    if (error) {
+      console.error('Error incrementing access count:', error);
+    }
+  } catch (error) {
+    console.error('Error in incrementAccessCount:', error);
+  }
+};
+
+// Export the getAccessLogs function that is used in Dashboard.tsx
+export const getAccessLogs = async (userId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('address_permissions')
+      .select(`
+        id,
+        app_name,
+        access_count,
+        last_accessed,
+        revoked,
+        access_logs (*)
+      `)
+      .eq('user_id', userId)
+      .order('last_accessed', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching access logs:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error in getAccessLogs:', error);
+    throw error;
+  }
+};
+
 // New function to check if an address permission has expired
 export const checkPermissionValidity = async (permissionId: string): Promise<{
   isValid: boolean;
@@ -387,25 +434,6 @@ export const checkPermissionValidity = async (permissionId: string): Promise<{
   } catch (error) {
     console.error('Error in checkPermissionValidity:', error);
     return { isValid: false, reason: 'Error checking permission validity' };
-  }
-};
-
-// New function to increment access count
-export const incrementAccessCount = async (permissionId: string): Promise<void> => {
-  try {
-    const { error } = await supabase
-      .from('address_permissions')
-      .update({ 
-        access_count: supabase.rpc('increment_counter', { row_id: permissionId }),
-        last_accessed: new Date().toISOString()
-      })
-      .eq('id', permissionId);
-      
-    if (error) {
-      console.error('Error incrementing access count:', error);
-    }
-  } catch (error) {
-    console.error('Error in incrementAccessCount:', error);
   }
 };
 

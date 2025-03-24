@@ -151,8 +151,8 @@ const AddressVerification: React.FC = () => {
         verificationMethod = 'document_upload';
       }
       
-      // Save the address to Supabase
-      await createPhysicalAddress({
+      // Create the address data with required fields for the updated schema
+      const addressData = {
         user_id: user!.id,
         street_address: formData.streetAddress,
         city: formData.city,
@@ -161,8 +161,23 @@ const AddressVerification: React.FC = () => {
         country: formData.country,
         verification_status: verificationStatus,
         verification_method: verificationMethod,
-        verification_date: null // Will be set when verified by admin
-      });
+        verification_date: null,
+        // Add new required fields with null values for encrypted data
+        encrypted_street_address: null,
+        encrypted_city: null,
+        encrypted_state: null,
+        encrypted_postal_code: null, 
+        encrypted_country: null,
+        encryption_nonce: null,
+        encryption_public_key: null,
+        encryption_version: 1,
+        zkp_proof: null,
+        zkp_public_inputs: null,
+        zkp_created_at: null
+      };
+      
+      // Save the address to Supabase
+      await createPhysicalAddress(addressData);
 
       toast.success('Address submitted successfully!', {
         description: 'Your address has been submitted for verification.',
