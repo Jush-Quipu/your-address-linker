@@ -1,7 +1,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { getCarrierService } from './carriers';
-import { ShipmentRequest, ShipmentResponse } from './carriers/carrier.interface';
+import { ShipmentRequest, ShipmentResponse, ShipmentAddress } from './carriers/carrier.interface';
+import { generateMockCredentials } from './carrierCredentialsService';
+import { toast } from 'sonner';
 
 export interface Shipment {
   id: string;
@@ -38,6 +40,29 @@ export async function getUserShipments(): Promise<Shipment[]> {
     return data || [];
   } catch (error) {
     console.error('Error in getUserShipments:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get shipments by permission ID
+ */
+export async function getShipmentsByPermissionId(permissionId: string): Promise<Shipment[]> {
+  try {
+    const { data, error } = await supabase
+      .from('shipments')
+      .select('*')
+      .eq('permission_id', permissionId)
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching shipments by permission ID:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error in getShipmentsByPermissionId:', error);
     throw error;
   }
 }
@@ -115,14 +140,9 @@ export async function trackShipment(shipmentId: string): Promise<any> {
       throw new Error(`Carrier ${shipment.carrier} not supported`);
     }
     
-    // In a production app, we'd store and retrieve the carrier API credentials
-    // For now use a mock
-    const mockCredentials = {
-      apiKey: 'mock-api-key-for-' + shipment.carrier,
-      accountNumber: 'mock-account',
-      username: 'mock-user',
-      password: 'mock-pass'
-    };
+    // In a production app, we'd retrieve the actual credentials
+    // For now, we'll use the mock credentials 
+    const mockCredentials = generateMockCredentials(shipment.carrier);
     
     // Track with the carrier
     const trackingInfo = await carrierService.trackShipment(
@@ -149,7 +169,7 @@ export async function trackShipment(shipmentId: string): Promise<any> {
  */
 export async function createShipment(
   permissionId: string,
-  recipientAddress: any,
+  recipientAddress: ShipmentAddress,
   carrierId: string,
   shipmentDetails: ShipmentRequest
 ): Promise<ShipmentResponse> {
@@ -160,14 +180,9 @@ export async function createShipment(
       throw new Error(`Carrier ${carrierId} not supported`);
     }
     
-    // In a production app, we'd store and retrieve the carrier API credentials
-    // For now use a mock
-    const mockCredentials = {
-      apiKey: 'mock-api-key-for-' + carrierId,
-      accountNumber: 'mock-account',
-      username: 'mock-user',
-      password: 'mock-pass'
-    };
+    // In a production app, we'd retrieve the actual credentials
+    // For now, we'll use the mock credentials
+    const mockCredentials = generateMockCredentials(carrierId);
     
     // Create shipment with the carrier
     const response = await carrierService.createShipment(
@@ -180,7 +195,7 @@ export async function createShipment(
       // Insert the shipment record
       const { data, error } = await supabase
         .from('shipments')
-        .insert([{
+        .insert({
           permission_id: permissionId,
           carrier: carrierId,
           service: shipmentDetails.service,
@@ -188,7 +203,7 @@ export async function createShipment(
           status: 'created',
           package_details: shipmentDetails,
           carrier_details: response
-        }])
+        })
         .select()
         .single();
         
@@ -231,4 +246,54 @@ export async function confirmDelivery(shipmentId: string): Promise<void> {
     console.error('Error in confirmDelivery:', error);
     throw error;
   }
+}
+
+/**
+ * Cancel a shipment
+ */
+export async function cancelShipment(shipmentId: string): Promise<boolean> {
+  try {
+    const shipment = await getShipmentById(shipmentId);
+    if (!shipment) {
+      throw new Error('Shipment not found');
+    }
+
+    // Only allow cancellation for shipments that are not yet in transit
+    if (['in_transit', 'out_for_delivery', 'delivered', 'exception'].includes(shipment.status)) {
+      toast.error('Cannot cancel a shipment that is already in transit or delivered');
+      return false;
+    }
+
+    // In a real implementation, we would call the carrier's API to cancel the shipment
+    // For now, we'll just update the status
+    const { error } = await supabase
+      .from('shipments')
+      .update({
+        status: 'cancelled',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', shipmentId);
+
+    if (error) {
+      console.error('Error cancelling shipment:', error);
+      throw error;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in cancelShipment:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get available carrier services for creating a shipment
+ */
+export function getAvailableCarriers() {
+  return [
+    { id: 'usps', name: 'USPS' },
+    { id: 'fedex', name: 'FedEx' },
+    { id: 'ups', name: 'UPS' },
+    { id: 'dhl', name: 'DHL' }
+  ];
 }
