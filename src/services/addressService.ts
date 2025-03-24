@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
@@ -354,11 +353,13 @@ export const logAddressAccess = async (permissionId: string, accessedFields: str
 // Fix type issue in increment counter function
 export const incrementAccessCount = async (permissionId: string): Promise<void> => {
   try {
-    // Using a direct SQL query with RPC instead of the typed functions
-    // Fix the type issue by using a type assertion for the parameters object
-    const { error } = await supabase.rpc('increment_counter', { 
-      row_id: permissionId 
-    } as any);
+    // Use a properly typed approach instead of direct casting
+    // Call the RPC function with the correct parameter structure
+    const { error } = await supabase.rpc(
+      'increment_counter', 
+      { row_id: permissionId },
+      { count: 1 } // Optional headers/options
+    );
     
     if (error) {
       console.error('Error incrementing access count:', error);
