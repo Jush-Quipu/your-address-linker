@@ -1,11 +1,12 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { CarrierAuth, CarrierCredentials } from './carriers';
+import { Json } from '@/integrations/supabase/types';
 
 interface CarrierCredentialsRecord {
   id: string;
   carrier_id: string;
-  credentials: CarrierCredentials;
+  credentials: Json; // Changed from CarrierCredentials to Json for database compatibility
   use_test_mode: boolean;
   created_at: string;
   updated_at: string;
@@ -35,7 +36,8 @@ export async function getCarrierCredentials(carrierId: string, useTestMode: bool
     const record = data as CarrierCredentialsRecord;
     
     // Return test or production credentials based on the useTestMode flag
-    const credentials = record.credentials;
+    // Safely cast the JSON data to our expected type
+    const credentials = record.credentials as unknown as CarrierCredentials;
     return useTestMode ? credentials.test : credentials.production;
   } catch (error) {
     console.error('Error in getCarrierCredentials:', error);
@@ -56,7 +58,8 @@ export async function saveCarrierCredentials(
       .upsert(
         { 
           carrier_id: carrierId,
-          credentials,
+          // Cast the credentials to Json type for database compatibility
+          credentials: credentials as unknown as Json,
           updated_at: new Date().toISOString()
         },
         { onConflict: 'carrier_id' }

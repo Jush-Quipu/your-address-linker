@@ -4,6 +4,7 @@ import { getCarrierService } from './carriers';
 import { ShipmentRequest, ShipmentResponse, ShipmentAddress } from './carriers/carrier.interface';
 import { generateMockCredentials } from './carrierCredentialsService';
 import { toast } from 'sonner';
+import { Json } from '@/integrations/supabase/types';
 
 export interface Shipment {
   id: string;
@@ -202,19 +203,21 @@ export async function createShipment(
         return response;
       }
       
-      // Insert the shipment record
+      // Insert the shipment record, properly cast complex objects to JSON
+      const shipmentRecord = {
+        user_id: user.id,
+        permission_id: permissionId,
+        carrier: carrierId,
+        service: shipmentDetails.service,
+        tracking_number: response.trackingNumber,
+        status: 'created',
+        package_details: shipmentDetails as unknown as Json,
+        carrier_details: response as unknown as Json
+      };
+      
       const { data, error } = await supabase
         .from('shipments')
-        .insert({
-          user_id: user.id,
-          permission_id: permissionId,
-          carrier: carrierId,
-          service: shipmentDetails.service,
-          tracking_number: response.trackingNumber,
-          status: 'created',
-          package_details: shipmentDetails,
-          carrier_details: response
-        })
+        .insert(shipmentRecord)
         .select()
         .single();
         
