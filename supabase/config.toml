@@ -17,5 +17,4 @@ port = 54322
 port = 54323
 
 [functions]
-[functions.serve]
-port = 54324
+# Remove the port key from the serve section as it's not supported
