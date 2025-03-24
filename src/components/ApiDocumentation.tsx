@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CodeBlock from '@/components/CodeBlock';
@@ -352,6 +353,36 @@ console.log(stats);
 //   average_permission_duration: 27.3  // in days
 // }`;
 
+  // Complete verifiable credential example that was truncated
+  const verifiableCredentialExample = `// Create a verifiable credential linking an address to a wallet
+const credential = await client.linkAddressToWallet({
+  walletAddress: '0x1234...5678',
+  chainId: '0x1',
+  createVerifiableCredential: true
+});
+
+console.log(credential);
+// {
+//   id: 'vc_1234567890',
+//   issuanceDate: '2023-07-15T10:30:00Z',
+//   expirationDate: '2024-07-15T10:30:00Z',
+//   credential: {
+//     type: ['VerifiableCredential', 'AddressVerification'],
+//     issuer: 'did:web:secureaddress.bridge',
+//     subject: '0x1234...5678',
+//     status: 'verified',
+//     countryVerified: true,
+//     cityVerified: true,
+//     proof: {
+//       type: 'EcdsaSecp256k1Signature2019',
+//       created: '2023-07-15T10:30:00Z',
+//       verificationMethod: 'did:web:secureaddress.bridge#key-1',
+//       proofPurpose: 'assertionMethod',
+//       jws: 'eyJhbGci...'
+//     }
+//   }
+// }`;
+
   return (
     <div className="space-y-8">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -499,7 +530,7 @@ Content-Type: application/json
     "app_id": "app_123456",
     "app_name": "Example Shop",
     "access_count": 3,
-    "max_access_count: 10,
+    "max_access_count": 10,
     "access_expiry": "2023-08-15T00:00:00Z"
   }
 }`}
@@ -930,25 +961,146 @@ const handleConnect = async () => {
                   Generate verifiable credentials for on-chain address verification that can be used in dApps.
                 </p>
                 <CodeBlock
-                  code={`// Create a verifiable credential linking an address to a wallet
-const credential = await client.linkAddressToWallet({
-  walletAddress: '0x1234...5678',
-  chainId: '0x1',
-  createVerifiableCredential: true
+                  code={verifiableCredentialExample}
+                  language="javascript"
+                  showLineNumbers={true}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="examples" className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>React Integration Example</CardTitle>
+              <CardDescription>
+                Complete example of integrating the SDK in a React application.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CodeBlock
+                code={sdkExample}
+                language="javascript"
+                showLineNumbers={true}
+              />
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Marketplace Verification</CardTitle>
+              <CardDescription>
+                Example of verifying marketplace seller addresses.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CodeBlock
+                code={marketplaceVerificationExample}
+                language="javascript"
+                showLineNumbers={true}
+              />
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Usage Statistics</CardTitle>
+              <CardDescription>
+                Example of getting usage statistics for your application.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CodeBlock
+                code={usageStatsExample}
+                language="javascript"
+                showLineNumbers={true}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="webhooks" className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Webhook Integration</CardTitle>
+              <CardDescription>
+                Set up webhooks to receive real-time notifications about address and permission changes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <h3 className="text-lg font-medium">Setting Up Webhooks</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Register a webhook URL to receive notifications when users update their addresses or modify permissions.
+                </p>
+                <CodeBlock
+                  code={`// Register a webhook URL
+const result = await client.registerWebhook({
+  url: 'https://your-app.com/webhooks/secureaddress',
+  events: ['address.updated', 'address.verified', 'permission.granted', 'permission.revoked'],
+  secret: 'your-webhook-secret' // Store this securely
 });
 
-console.log(credential);
+console.log(result);
 // {
-//   id: 'vc_1234567890',
-//   issuanceDate: '2023-07-15T10:30:00Z',
-//   expirationDate: '2024-07-15T10:30:00Z',
-//   credential: {
-//     type: ['VerifiableCredential', 'AddressVerification'],
-//     issuer: 'did:web:secureaddress.bridge',
-//     subject: '0x1234...5678',
-//     status: 'verified',
-//     countryVerified: true,
-//     cityVerified: true,
-//     proof: {
-//       type: 'EcdsaSecp256k1Signature2019',
-//       created: '2
+//   id: 'webhook_123456',
+//   url: 'https://your-app.com/webhooks/secureaddress',
+//   events: ['address.updated', 'address.verified', 'permission.granted', 'permission.revoked'],
+//   created_at: '2023-07-15T10:30:00Z'
+// }`}
+                  language="javascript"
+                  showLineNumbers={true}
+                />
+                
+                <h3 className="text-lg font-medium mt-6">Handling Webhook Events</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Set up a server endpoint to receive and process webhook events with signature verification.
+                </p>
+                <CodeBlock
+                  code={webhookExample}
+                  language="javascript"
+                  showLineNumbers={true}
+                />
+                
+                <h3 className="text-lg font-medium mt-6">Webhook Event Types</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Event</TableHead>
+                      <TableHead>Description</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>address.updated</TableCell>
+                      <TableCell>User updated their address information</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>address.verified</TableCell>
+                      <TableCell>User's address was verified successfully</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>permission.granted</TableCell>
+                      <TableCell>User granted permission to access their address</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>permission.revoked</TableCell>
+                      <TableCell>User revoked permission to access their address</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>wallet.linked</TableCell>
+                      <TableCell>User linked a blockchain wallet to their address</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default ApiDocumentation;
