@@ -15,6 +15,9 @@ import BlindShipping from "@/pages/BlindShipping";
 import MyShipments from "@/pages/MyShipments";
 import CreateShipment from "@/pages/CreateShipment";
 import NotFound from "@/pages/NotFound";
+import Tutorials from "@/pages/Tutorials";
+import EcommerceIntegration from "@/pages/tutorials/EcommerceIntegration";
+import Web3WalletLinking from "@/pages/tutorials/Web3WalletLinking";
 import "./App.css";
 
 function App() {
@@ -34,6 +37,9 @@ function App() {
           <Route path="/blind-shipping" element={<BlindShipping />} />
           <Route path="/my-shipments" element={<MyShipments />} />
           <Route path="/create-shipment" element={<CreateShipment />} />
+          <Route path="/tutorials" element={<Tutorials />} />
+          <Route path="/tutorials/ecommerce-integration" element={<EcommerceIntegration />} />
+          <Route path="/tutorials/web3-wallet-linking" element={<Web3WalletLinking />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         <Toaster />

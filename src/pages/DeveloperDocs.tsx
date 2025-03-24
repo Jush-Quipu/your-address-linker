@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ApiDocumentation from '@/components/ApiDocumentation';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,7 @@ const DeveloperDocs: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') || 'api-reference';
   const [copied, setCopied] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const sdkOptions = [
     {
@@ -91,12 +91,7 @@ const DeveloperDocs: React.FC = () => {
   };
 
   const handleViewTutorial = (tutorialUrl: string) => {
-    // For demonstration purposes, we'll show a toast
-    // In a real app, we would navigate to the tutorial page
-    toast.info('Tutorial content coming soon!');
-    
-    // Uncomment this when actual tutorial pages are ready
-    // window.open(tutorialUrl, '_blank');
+    navigate(tutorialUrl);
   };
 
   return (
