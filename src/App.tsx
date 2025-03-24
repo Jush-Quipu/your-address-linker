@@ -17,8 +17,8 @@ import "./App.css";
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
@@ -32,9 +32,9 @@ function App() {
           <Route path="/blind-shipping" element={<BlindShipping />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </Router>
-      <Toaster />
-    </AuthProvider>
+        <Toaster />
+      </AuthProvider>
+    </Router>
   );
 }
 
