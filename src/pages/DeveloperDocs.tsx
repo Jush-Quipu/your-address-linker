@@ -8,43 +8,95 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowDownToLine, Copy, CheckCircle, ExternalLink } from 'lucide-react';
-import { useState as useHookState } from 'react';
+import { toast } from 'sonner';
 import CodeBlock from '@/components/CodeBlock';
 
 const DeveloperDocs: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') || 'api-reference';
-  const [copied, setCopied] = useHookState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
 
   const sdkOptions = [
     {
       name: 'JavaScript/TypeScript',
       version: 'v2.0.0',
       installCommand: 'npm install @secureaddress/bridge-sdk',
-      size: '42KB'
+      size: '42KB',
+      downloadUrl: 'https://github.com/secureaddress/bridge-sdk/releases/download/v2.0.0/secureaddress-bridge-sdk-v2.0.0.zip',
+      docsUrl: 'https://docs.secureaddress.bridge/sdk/js'
     },
     {
       name: 'React Native',
       version: 'v1.2.0',
       installCommand: 'npm install @secureaddress/bridge-sdk-react-native',
-      size: '39KB'
+      size: '39KB',
+      downloadUrl: 'https://github.com/secureaddress/bridge-sdk/releases/download/v1.2.0/secureaddress-bridge-sdk-react-native-v1.2.0.zip',
+      docsUrl: 'https://docs.secureaddress.bridge/sdk/react-native'
     },
     {
       name: 'Python',
       version: 'v1.0.0',
       installCommand: 'pip install secureaddress-bridge',
-      size: '24KB'
+      size: '24KB',
+      downloadUrl: 'https://github.com/secureaddress/bridge-sdk/releases/download/v1.0.0/secureaddress-bridge-python-v1.0.0.zip',
+      docsUrl: 'https://docs.secureaddress.bridge/sdk/python'
+    }
+  ];
+
+  const tutorialOptions = [
+    {
+      title: 'E-commerce Integration',
+      description: 'Learn how to integrate SecureAddress Bridge into your e-commerce checkout flow',
+      content: 'This tutorial shows how to streamline your checkout process by securely accessing user shipping addresses without storing sensitive data in your database.',
+      url: '/tutorials/ecommerce-integration'
+    },
+    {
+      title: 'Web3 Wallet Linking',
+      description: 'Connect verified addresses to blockchain wallets for enhanced trust',
+      content: 'Learn how to link verified physical addresses to blockchain wallets and generate verifiable credentials for use in dApps and smart contracts.',
+      url: '/tutorials/web3-wallet-linking'
+    },
+    {
+      title: 'Webhook Integration',
+      description: 'Receive real-time notifications about address changes and permission updates',
+      content: 'Set up secure webhooks to be notified when users update their addresses or modify permissions, allowing your application to stay in sync with user data.',
+      url: '/tutorials/webhook-integration'
+    },
+    {
+      title: 'Zero-Knowledge Proofs',
+      description: 'Implement advanced privacy features with ZK proofs',
+      content: 'Learn how to use zero-knowledge proofs to verify properties about a user\'s address (like country or region) without revealing the complete address information.',
+      url: '/tutorials/zk-proofs'
     }
   ];
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
     setCopied(id);
+    toast.success('Copied to clipboard!');
     setTimeout(() => setCopied(null), 2000);
   };
 
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value });
+  };
+
+  const handleDownload = (sdkUrl: string, sdkName: string) => {
+    toast.success(`Downloading ${sdkName} SDK`);
+    window.open(sdkUrl, '_blank');
+  };
+
+  const handleOpenDocs = (docsUrl: string) => {
+    window.open(docsUrl, '_blank');
+  };
+
+  const handleViewTutorial = (tutorialUrl: string) => {
+    // For demonstration purposes, we'll show a toast
+    // In a real app, we would navigate to the tutorial page
+    toast.info('Tutorial content coming soon!');
+    
+    // Uncomment this when actual tutorial pages are ready
+    // window.open(tutorialUrl, '_blank');
   };
 
   return (
@@ -103,11 +155,21 @@ const DeveloperDocs: React.FC = () => {
                       </div>
                     </CardContent>
                     <CardFooter className="flex gap-2">
-                      <Button variant="secondary" size="sm" className="flex-1">
+                      <Button 
+                        variant="secondary" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleDownload(sdk.downloadUrl, sdk.name)}
+                      >
                         <ArrowDownToLine className="h-4 w-4 mr-2" />
                         Download
                       </Button>
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleOpenDocs(sdk.docsUrl)}
+                      >
                         <ExternalLink className="h-4 w-4 mr-2" />
                         Docs
                       </Button>
@@ -238,77 +300,29 @@ function AddressComponent() {
             
             <TabsContent value="tutorials" className="space-y-8">
               <div className="grid gap-6 sm:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>E-commerce Integration</CardTitle>
-                    <CardDescription>
-                      Learn how to integrate SecureAddress Bridge into your e-commerce checkout flow
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      This tutorial shows how to streamline your checkout process by securely accessing user
-                      shipping addresses without storing sensitive data in your database.
-                    </p>
-                  </CardContent>
-                  <CardFooter>
-                    <Button className="w-full">View Tutorial</Button>
-                  </CardFooter>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Web3 Wallet Linking</CardTitle>
-                    <CardDescription>
-                      Connect verified addresses to blockchain wallets for enhanced trust
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Learn how to link verified physical addresses to blockchain wallets and generate 
-                      verifiable credentials for use in dApps and smart contracts.
-                    </p>
-                  </CardContent>
-                  <CardFooter>
-                    <Button className="w-full">View Tutorial</Button>
-                  </CardFooter>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Webhook Integration</CardTitle>
-                    <CardDescription>
-                      Receive real-time notifications about address changes and permission updates
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Set up secure webhooks to be notified when users update their addresses or modify
-                      permissions, allowing your application to stay in sync with user data.
-                    </p>
-                  </CardContent>
-                  <CardFooter>
-                    <Button className="w-full">View Tutorial</Button>
-                  </CardFooter>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Zero-Knowledge Proofs</CardTitle>
-                    <CardDescription>
-                      Implement advanced privacy features with ZK proofs
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Learn how to use zero-knowledge proofs to verify properties about a user's address 
-                      (like country or region) without revealing the complete address information.
-                    </p>
-                  </CardContent>
-                  <CardFooter>
-                    <Button className="w-full">View Tutorial</Button>
-                  </CardFooter>
-                </Card>
+                {tutorialOptions.map((tutorial, index) => (
+                  <Card key={index}>
+                    <CardHeader>
+                      <CardTitle>{tutorial.title}</CardTitle>
+                      <CardDescription>
+                        {tutorial.description}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        {tutorial.content}
+                      </p>
+                    </CardContent>
+                    <CardFooter>
+                      <Button 
+                        className="w-full"
+                        onClick={() => handleViewTutorial(tutorial.url)}
+                      >
+                        View Tutorial
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
               </div>
               
               <Card className="mt-8">
