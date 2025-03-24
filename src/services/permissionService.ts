@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { generateAccessToken } from '@/utils/auth-helpers';
 import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
+import { checkPermissionValidity, incrementAccessCount, logAddressAccess } from './addressService';
 
 export type AccessPermission = {
   appId: string;
@@ -15,6 +16,8 @@ export type AccessPermission = {
   sharePostalCode: boolean;
   shareCountry: boolean;
   accessExpiry?: string | null;
+  maxAccessCount?: number | null;
+  accessNotification?: boolean;
 };
 
 export const createAccessPermission = async (permission: Omit<AccessPermission, 'accessToken'>): Promise<string> => {
@@ -34,7 +37,11 @@ export const createAccessPermission = async (permission: Omit<AccessPermission, 
         share_state: permission.shareState,
         share_postal_code: permission.sharePostalCode,
         share_country: permission.shareCountry,
-        access_expiry: permission.accessExpiry || null
+        access_expiry: permission.accessExpiry || null,
+        max_access_count: permission.maxAccessCount || null,
+        access_notification: permission.accessNotification || false,
+        access_count: 0,
+        revoked: false
       }])
       .select()
       .single();
@@ -69,11 +76,16 @@ export const validateAccessToken = async (accessToken: string): Promise<Tables<'
       return null;
     }
     
-    // Check if permission has expired
-    if (data.access_expiry && new Date(data.access_expiry) < new Date()) {
-      console.error('Access token has expired');
+    // Enhanced permission validation
+    const validityCheck = await checkPermissionValidity(data.id);
+    
+    if (!validityCheck.isValid) {
+      console.error(`Access token invalid: ${validityCheck.reason}`);
       return null;
     }
+    
+    // Increment access count
+    await incrementAccessCount(data.id);
     
     return data;
   } catch (error) {
@@ -116,19 +128,13 @@ export const getAddressForToken = async (
       throw new Error('Address has not been verified yet');
     }
     
-    // Log this access
-    await supabase
-      .from('access_logs')
-      .insert([{
-        permission_id: permission.id,
-        accessed_fields: requestedFields.length > 0 ? requestedFields : null
-      }]);
+    // Log this access with the fields being accessed
+    await logAddressAccess(permission.id, requestedFields.length > 0 ? requestedFields : null);
     
-    // Update last accessed timestamp
-    await supabase
-      .from('address_permissions')
-      .update({ last_accessed: new Date().toISOString() })
-      .eq('id', permission.id);
+    // Send notification if enabled
+    if (permission.access_notification) {
+      await sendAccessNotification(permission, requestedFields);
+    }
     
     // Return only the fields the app is allowed to access
     const allowedAddress: any = {};
@@ -170,7 +176,9 @@ export const createAppPermission = async (
     sharePostalCode: boolean;
     shareCountry: boolean;
   },
-  expiryDays: number = 30
+  expiryDays: number = 30,
+  maxAccesses: number | null = null,
+  enableNotifications: boolean = false
 ): Promise<string> => {
   try {
     // Calculate expiry date
@@ -189,7 +197,9 @@ export const createAppPermission = async (
       shareState: privacySettings.shareState,
       sharePostalCode: privacySettings.sharePostalCode,
       shareCountry: privacySettings.shareCountry,
-      accessExpiry: expiryDate.toISOString()
+      accessExpiry: expiryDate.toISOString(),
+      maxAccessCount: maxAccesses,
+      accessNotification: enableNotifications
     });
     
     toast.success('Permission granted successfully', {
@@ -202,6 +212,56 @@ export const createAppPermission = async (
     toast.error('Failed to grant permission', {
       description: error instanceof Error ? error.message : 'Unknown error'
     });
+    throw error;
+  }
+};
+
+// Function to send a notification about address access
+// This is a mock implementation - in a real app you'd use email, push notifications, etc.
+async function sendAccessNotification(
+  permission: Tables<'address_permissions'>,
+  accessedFields: string[] | null
+): Promise<void> {
+  try {
+    // Mock notification - in a real app, this would send an email or push notification
+    console.log(`[NOTIFICATION] Address accessed by ${permission.app_name}`);
+    console.log(`Fields accessed: ${accessedFields ? accessedFields.join(', ') : 'all permitted fields'}`);
+    
+    // Update last notification timestamp
+    await supabase
+      .from('address_permissions')
+      .update({ last_notification_at: new Date().toISOString() })
+      .eq('id', permission.id);
+    
+  } catch (error) {
+    console.error('Error sending access notification:', error);
+  }
+}
+
+// Get access logs for a user
+export const getAccessLogs = async (userId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('address_permissions')
+      .select(`
+        id,
+        app_name,
+        access_count,
+        last_accessed,
+        revoked,
+        access_logs (*)
+      `)
+      .eq('user_id', userId)
+      .order('last_accessed', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching access logs:', error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error in getAccessLogs:', error);
     throw error;
   }
 };

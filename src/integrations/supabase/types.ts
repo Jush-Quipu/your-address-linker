@@ -46,13 +46,20 @@ export type Database = {
       }
       address_permissions: {
         Row: {
+          access_count: number | null
           access_expiry: string | null
+          access_notification: boolean | null
           access_token: string
           app_id: string
           app_name: string
           created_at: string
           id: string
           last_accessed: string | null
+          last_notification_at: string | null
+          max_access_count: number | null
+          revocation_reason: string | null
+          revoked: boolean | null
+          revoked_at: string | null
           share_city: boolean
           share_country: boolean
           share_postal_code: boolean
@@ -62,13 +69,20 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          access_count?: number | null
           access_expiry?: string | null
+          access_notification?: boolean | null
           access_token: string
           app_id: string
           app_name: string
           created_at?: string
           id?: string
           last_accessed?: string | null
+          last_notification_at?: string | null
+          max_access_count?: number | null
+          revocation_reason?: string | null
+          revoked?: boolean | null
+          revoked_at?: string | null
           share_city?: boolean
           share_country?: boolean
           share_postal_code?: boolean
@@ -78,13 +92,20 @@ export type Database = {
           user_id: string
         }
         Update: {
+          access_count?: number | null
           access_expiry?: string | null
+          access_notification?: boolean | null
           access_token?: string
           app_id?: string
           app_name?: string
           created_at?: string
           id?: string
           last_accessed?: string | null
+          last_notification_at?: string | null
+          max_access_count?: number | null
+          revocation_reason?: string | null
+          revoked?: boolean | null
+          revoked_at?: string | null
           share_city?: boolean
           share_country?: boolean
           share_postal_code?: boolean
@@ -95,11 +116,49 @@ export type Database = {
         }
         Relationships: []
       }
+      encryption_keys: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          key_type: string
+          public_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          key_type?: string
+          public_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          key_type?: string
+          public_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       physical_addresses: {
         Row: {
           city: string
           country: string
           created_at: string
+          encrypted_city: string | null
+          encrypted_country: string | null
+          encrypted_postal_code: string | null
+          encrypted_state: string | null
+          encrypted_street_address: string | null
+          encryption_nonce: string | null
+          encryption_public_key: string | null
+          encryption_version: number | null
           id: string
           postal_code: string
           state: string
@@ -109,11 +168,22 @@ export type Database = {
           verification_date: string | null
           verification_method: string | null
           verification_status: string
+          zkp_created_at: string | null
+          zkp_proof: string | null
+          zkp_public_inputs: string | null
         }
         Insert: {
           city: string
           country: string
           created_at?: string
+          encrypted_city?: string | null
+          encrypted_country?: string | null
+          encrypted_postal_code?: string | null
+          encrypted_state?: string | null
+          encrypted_street_address?: string | null
+          encryption_nonce?: string | null
+          encryption_public_key?: string | null
+          encryption_version?: number | null
           id?: string
           postal_code: string
           state: string
@@ -123,11 +193,22 @@ export type Database = {
           verification_date?: string | null
           verification_method?: string | null
           verification_status?: string
+          zkp_created_at?: string | null
+          zkp_proof?: string | null
+          zkp_public_inputs?: string | null
         }
         Update: {
           city?: string
           country?: string
           created_at?: string
+          encrypted_city?: string | null
+          encrypted_country?: string | null
+          encrypted_postal_code?: string | null
+          encrypted_state?: string | null
+          encrypted_street_address?: string | null
+          encryption_nonce?: string | null
+          encryption_public_key?: string | null
+          encryption_version?: number | null
           id?: string
           postal_code?: string
           state?: string
@@ -137,6 +218,9 @@ export type Database = {
           verification_date?: string | null
           verification_method?: string | null
           verification_status?: string
+          zkp_created_at?: string | null
+          zkp_proof?: string | null
+          zkp_public_inputs?: string | null
         }
         Relationships: []
       }
@@ -199,6 +283,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      zkp_verifications: {
+        Row: {
+          id: string
+          is_valid: boolean
+          physical_address_id: string
+          verification_data: Json | null
+          verification_type: string
+          verified_at: string
+          verifier_app_id: string
+        }
+        Insert: {
+          id?: string
+          is_valid: boolean
+          physical_address_id: string
+          verification_data?: Json | null
+          verification_type: string
+          verified_at?: string
+          verifier_app_id: string
+        }
+        Update: {
+          id?: string
+          is_valid?: boolean
+          physical_address_id?: string
+          verification_data?: Json | null
+          verification_type?: string
+          verified_at?: string
+          verifier_app_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zkp_verifications_physical_address_id_fkey"
+            columns: ["physical_address_id"]
+            isOneToOne: false
+            referencedRelation: "physical_addresses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

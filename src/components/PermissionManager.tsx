@@ -9,7 +9,6 @@ import { toast } from 'sonner';
 import { createAppPermission } from '@/services/permissionService';
 import { useAuth } from '@/context/AuthContext';
 import { Separator } from './ui/separator';
-import { Checkbox } from './ui/checkbox';
 import { 
   Dialog,
   DialogContent,
@@ -17,9 +16,21 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Info } from 'lucide-react';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const PermissionManager: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
@@ -34,7 +45,9 @@ const PermissionManager: React.FC = () => {
     shareState: true,
     sharePostalCode: false,
     shareCountry: true,
-    expiryDays: 30
+    expiryDays: 30,
+    maxAccesses: '',
+    enableNotifications: false
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -44,6 +57,10 @@ const PermissionManager: React.FC = () => {
 
   const handleSwitchChange = (field: string) => {
     setFormData(prev => ({ ...prev, [field]: !prev[field as keyof typeof prev] }));
+  };
+
+  const handleSelectChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,6 +82,10 @@ const PermissionManager: React.FC = () => {
     
     setLoading(true);
     try {
+      // Parse numeric values
+      const expiryDays = parseInt(formData.expiryDays.toString());
+      const maxAccesses = formData.maxAccesses ? parseInt(formData.maxAccesses) : null;
+      
       const token = await createAppPermission(
         user.id,
         formData.appName,
@@ -75,7 +96,9 @@ const PermissionManager: React.FC = () => {
           sharePostalCode: formData.sharePostalCode,
           shareCountry: formData.shareCountry
         },
-        formData.expiryDays
+        expiryDays,
+        maxAccesses,
+        formData.enableNotifications
       );
       
       // Show the token to the user
@@ -90,7 +113,9 @@ const PermissionManager: React.FC = () => {
         shareState: true,
         sharePostalCode: false,
         shareCountry: true,
-        expiryDays: 30
+        expiryDays: 30,
+        maxAccesses: '',
+        enableNotifications: false
       });
     } catch (error) {
       console.error('Error granting permission:', error);
@@ -206,19 +231,77 @@ const PermissionManager: React.FC = () => {
             </div>
             
             <div className="space-y-4">
-              <Label htmlFor="expiryDays">Access Duration (days)</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="expiryDays">Access Duration</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-help">
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="w-80">How long the application will have access to your address information</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Select
+                value={formData.expiryDays.toString()}
+                onValueChange={(value) => handleSelectChange('expiryDays', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select duration" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 day</SelectItem>
+                  <SelectItem value="7">7 days</SelectItem>
+                  <SelectItem value="30">30 days</SelectItem>
+                  <SelectItem value="90">90 days</SelectItem>
+                  <SelectItem value="365">1 year</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="maxAccesses">Maximum Access Count</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="cursor-help">
+                        <Info className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="w-80">Maximum number of times the application can access your address information. Leave empty for unlimited.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <Input
-                id="expiryDays"
-                name="expiryDays"
+                id="maxAccesses"
+                name="maxAccesses"
                 type="number"
                 min="1"
-                max="365"
-                value={formData.expiryDays}
+                placeholder="Unlimited"
+                value={formData.maxAccesses}
                 onChange={handleChange}
               />
-              <p className="text-xs text-muted-foreground">
-                The application will have access to your address for this number of days.
-              </p>
+            </div>
+            
+            <div className="flex items-center justify-between space-x-2">
+              <div className="space-y-0.5">
+                <Label htmlFor="enableNotifications">Access Notifications</Label>
+                <p className="text-xs text-muted-foreground">
+                  Get notified when your address is accessed
+                </p>
+              </div>
+              <Switch 
+                id="enableNotifications" 
+                checked={formData.enableNotifications}
+                onCheckedChange={() => handleSwitchChange('enableNotifications')}
+              />
             </div>
           </form>
         </CardContent>
