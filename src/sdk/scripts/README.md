@@ -5,12 +5,13 @@ This directory contains scripts for preparing and publishing the SecureAddress B
 
 ## Available Scripts
 
+- `setup-permissions.sh`: Sets the correct permissions for all scripts
 - `publish-with-token.sh`: Main script to publish all packages with the provided npm token
 - `release.js`: Handles versioning and releasing all JavaScript packages
 - `publish.js`: Publishes JavaScript packages to npm
 - `package-prep.js`: Prepares packages for publishing (creates README files, etc.)
 - `publish-python.js`: Publishes the Python SDK to PyPI
-- `setup-permissions.sh`: Sets the correct permissions for all scripts
+- `python/setup-pypi.sh`: Sets up PyPI credentials and publishes Python SDK
 
 ## Quick Start
 
@@ -38,8 +39,8 @@ To publish the Python SDK, you'll need to set your PyPI token:
 # Set your PyPI token
 export PYPI_TOKEN=your-pypi-token
 
-# Run the Python publishing script
-node publish-python.js
+# Run the Python publishing setup script
+./python/setup-pypi.sh
 ```
 
 ## Notes
@@ -47,3 +48,4 @@ node publish-python.js
 - The npm token is built into the `publish-with-token.sh` script
 - For security, do not commit or share this token with others
 - Make sure you have the appropriate permissions to publish to the @secureaddress organization on npm
+- For PyPI publishing, you must set the PYPI_TOKEN environment variable before running the scripts

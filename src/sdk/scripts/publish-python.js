@@ -30,6 +30,13 @@ try {
   process.exit(1);
 }
 
+// Check if PYPI_TOKEN is set
+if (!process.env.PYPI_TOKEN) {
+  console.error('❌ PYPI_TOKEN environment variable is not set');
+  console.error('Please set it with: export PYPI_TOKEN=your-pypi-token');
+  process.exit(1);
+}
+
 // Install required Python packages for publishing
 console.log('\n📦 Installing required Python packages...');
 try {
@@ -72,7 +79,7 @@ try {
   
   fs.writeFileSync(pypiRcPath, `[pypi]
 username = __token__
-password = ${process.env.PYPI_TOKEN || 'your-pypi-token'}
+password = ${process.env.PYPI_TOKEN}
 `);
   
   // Build the package
