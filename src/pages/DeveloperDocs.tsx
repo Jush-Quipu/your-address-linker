@@ -60,6 +60,10 @@ const DeveloperDocs: React.FC = () => {
     navigate(tutorialUrl);
   };
 
+  const navigateToApiTesting = () => {
+    navigate('/api-testing');
+  };
+
   return (
     <div className="min-h-screen">
       <Navbar />

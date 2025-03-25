@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CodeBlock from '@/components/CodeBlock';
@@ -102,7 +103,7 @@ const client = new SecureAddressBridge({
 });
 
 // Or specify in direct API calls
-fetch('https://api.secureaddress-bridge.com/v1/validate-token', {
+fetch('https://akfieehzgpcapuhdujvf.supabase.co/functions/v1/validate-token', {
   headers: {
     'Authorization': 'Bearer YOUR_TOKEN',
     'Content-Type': 'application/json',
@@ -343,7 +344,7 @@ X-SDK-Version: 2.3.0 (Optional)"
                 <h3 className="text-lg font-medium">Request</h3>
                 <CodeBlock
                   code={`GET /v1/address?fields=street,city,state,postal_code&include_verification=true HTTP/1.1
-Host: api.secureaddress-bridge.com
+Host: akfieehzgpcapuhdujvf.supabase.co/functions
 Authorization: Bearer USER_ACCESS_TOKEN
 X-App-ID: YOUR_APP_ID
 X-SDK-Version: 2.3.0`}
@@ -428,7 +429,7 @@ X-Request-Id: req_1234567890abcdef
                 <h3 className="text-lg font-medium">Request</h3>
                 <CodeBlock
                   code={`GET /v1/verification-status?user_id=user-123 HTTP/1.1
-Host: api.secureaddress-bridge.com
+Host: akfieehzgpcapuhdujvf.supabase.co/functions
 Authorization: Bearer YOUR_ACCESS_TOKEN
 X-App-ID: YOUR_APP_ID
 X-SDK-Version: 2.3.0`}

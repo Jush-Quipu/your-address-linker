@@ -91,3 +91,32 @@ export async function checkApiHealth(apiUrl: string): Promise<ApiResponse> {
     return formatApiError(error);
   }
 }
+
+// Test API connection for SDK
+export async function testConnection(
+  apiUrl: string = 'https://akfieehzgpcapuhdujvf.supabase.co/functions/v1',
+  appId: string = 'test-app-id'
+): Promise<ApiResponse> {
+  try {
+    console.log(`Testing connection to ${apiUrl}/health-check`);
+    const response = await fetch(`${apiUrl}/health-check`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-App-ID': appId || 'test-app-id',
+        'Accept': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      console.error(`API connection test failed with status: ${response.status}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('API connection test successful:', data);
+    return data;
+  } catch (error) {
+    console.error('API connection test error:', error);
+    return formatApiError(error);
+  }
+}
