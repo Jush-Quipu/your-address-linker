@@ -124,19 +124,74 @@ serve(async (req) => {
         );
       }
 
-      // TODO: In a real implementation, we would verify the code with the database
-      // For now, we'll simulate a successful code exchange
+      // Verify the authorization code from the database
+      const { data: authCodeData, error: authCodeError } = await supabase
+        .from('authorization_codes')
+        .select('*')
+        .eq('code', code)
+        .eq('app_id', appId)
+        .eq('redirect_uri', redirectUri)
+        .eq('used', false)
+        .gt('expires_at', new Date().toISOString())
+        .single();
+      
+      if (authCodeError || !authCodeData) {
+        return new Response(
+          JSON.stringify(createErrorResponse(
+            'invalid_grant', 
+            'Invalid authorization code or code has expired'
+          )),
+          {
+            status: 400,
+            headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      
+      // Mark the authorization code as used
+      await supabase
+        .from('authorization_codes')
+        .update({ used: true, used_at: new Date().toISOString() })
+        .eq('id', authCodeData.id);
+      
+      // Generate new access and refresh tokens
       const accessToken = generateToken();
-      const refreshToken = generateToken();
+      const newRefreshToken = generateToken();
       const expiresIn = 3600; // 1 hour
+      
+      // Store the tokens in the database
+      const { error: tokenError } = await supabase
+        .from('access_tokens')
+        .insert([{
+          token: accessToken,
+          refresh_token: newRefreshToken,
+          user_id: authCodeData.user_id,
+          app_id: appId,
+          expires_at: new Date(Date.now() + expiresIn * 1000).toISOString(),
+          scope: authCodeData.scope
+        }]);
+      
+      if (tokenError) {
+        console.error('Error storing token:', tokenError);
+        return new Response(
+          JSON.stringify(createErrorResponse(
+            'server_error', 
+            'Error storing token'
+          )),
+          {
+            status: 500,
+            headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
       
       // Generate response
       const responseData = createSuccessResponse({
         access_token: accessToken,
         token_type: 'bearer',
         expires_in: expiresIn,
-        refresh_token: refreshToken,
-        scope: 'street,city,state,postal_code,country' // Default scope
+        refresh_token: newRefreshToken,
+        scope: authCodeData.scope
       });
       
       return new Response(JSON.stringify(responseData), {
@@ -163,11 +218,67 @@ serve(async (req) => {
         );
       }
 
-      // TODO: In a real implementation, we would verify the refresh token with the database
-      // For now, we'll simulate a successful token refresh
+      // Verify the refresh token from the database
+      const { data: tokenData, error: tokenError } = await supabase
+        .from('access_tokens')
+        .select('*')
+        .eq('refresh_token', refreshToken)
+        .eq('app_id', appId)
+        .eq('revoked', false)
+        .gt('refresh_token_expires_at', new Date().toISOString())
+        .single();
+      
+      if (tokenError || !tokenData) {
+        return new Response(
+          JSON.stringify(createErrorResponse(
+            'invalid_grant', 
+            'Invalid refresh token or token has expired'
+          )),
+          {
+            status: 400,
+            headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      
+      // Generate new access and refresh tokens
       const newAccessToken = generateToken();
       const newRefreshToken = generateToken();
       const expiresIn = 3600; // 1 hour
+      
+      // Invalidate the old token pair
+      await supabase
+        .from('access_tokens')
+        .update({ revoked: true, revoked_at: new Date().toISOString() })
+        .eq('id', tokenData.id);
+      
+      // Store the new tokens in the database
+      const { error: newTokenError } = await supabase
+        .from('access_tokens')
+        .insert([{
+          token: newAccessToken,
+          refresh_token: newRefreshToken,
+          user_id: tokenData.user_id,
+          app_id: appId,
+          expires_at: new Date(Date.now() + expiresIn * 1000).toISOString(),
+          refresh_token_expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+          scope: tokenData.scope,
+          previous_token_id: tokenData.id
+        }]);
+      
+      if (newTokenError) {
+        console.error('Error storing new token:', newTokenError);
+        return new Response(
+          JSON.stringify(createErrorResponse(
+            'server_error', 
+            'Error storing token'
+          )),
+          {
+            status: 500,
+            headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
       
       // Generate response
       const responseData = createSuccessResponse({
@@ -175,7 +286,7 @@ serve(async (req) => {
         token_type: 'bearer',
         expires_in: expiresIn,
         refresh_token: newRefreshToken,
-        scope: 'street,city,state,postal_code,country' // Default scope
+        scope: tokenData.scope
       });
       
       return new Response(JSON.stringify(responseData), {
