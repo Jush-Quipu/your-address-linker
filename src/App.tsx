@@ -23,6 +23,9 @@ import Tutorials from '@/pages/Tutorials'; // Import Tutorials page
 import PermissionsPage from '@/pages/Permissions'; // Import Permissions page
 import BlindShippingPage from '@/pages/BlindShipping'; // Import BlindShipping page
 import AuthorizePage from '@/pages/AuthorizePage'; // Import Authorization page
+import DashboardAddresses from '@/pages/DashboardAddresses'; // Import Address management page
+import DashboardApiKeys from '@/pages/DashboardApiKeys'; // Import API Keys page
+import DashboardSettings from '@/pages/DashboardSettings'; // Import Settings page
 
 function App() {
   return (
@@ -36,6 +39,9 @@ function App() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/connect" element={<Connect />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard/addresses" element={<DashboardAddresses />} />
+          <Route path="/dashboard/api-keys" element={<DashboardApiKeys />} />
+          <Route path="/dashboard/settings" element={<DashboardSettings />} />
           <Route path="/features" element={<Features />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/careers" element={<Careers />} />

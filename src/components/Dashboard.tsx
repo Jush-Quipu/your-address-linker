@@ -1,10 +1,12 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Shield, Truck, Key, Wallet, Home, Settings, History } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 interface DashboardProps {
   physicalAddresses: any[];
@@ -17,6 +19,37 @@ const Dashboard: React.FC<DashboardProps> = ({
   walletAddresses = [], 
   permissions = [] 
 }) => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  const handleManageAddresses = () => {
+    // This would typically navigate to an address management page
+    // For now, we'll create a toast and navigate to a future page
+    toast.info('Navigating to address management');
+    navigate('/dashboard/addresses');
+  };
+
+  const handleConnectWallet = () => {
+    navigate('/connect');
+  };
+
+  const handleCreateShippingToken = () => {
+    navigate('/blind-shipping');
+  };
+
+  const handleManageApiKeys = () => {
+    // This would typically navigate to an API keys management page
+    // For now, we'll create a toast and navigate to a future page
+    toast.info('Navigating to API key management');
+    navigate('/dashboard/api-keys');
+  };
+
+  const handleAccountSettings = () => {
+    // This would typically navigate to account settings page
+    toast.info('Navigating to account settings');
+    navigate('/dashboard/settings');
+  };
+
   return (
     <div className="space-y-8">
       <Tabs defaultValue="overview" className="w-full">
@@ -48,7 +81,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </p>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" className="w-full">Manage Addresses</Button>
+                <Button variant="outline" className="w-full" onClick={handleManageAddresses}>Manage Addresses</Button>
               </CardFooter>
             </Card>
             
@@ -69,7 +102,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </p>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" className="w-full">Connect Wallet</Button>
+                <Button variant="outline" className="w-full" onClick={handleConnectWallet}>Connect Wallet</Button>
               </CardFooter>
             </Card>
             
@@ -111,9 +144,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </p>
               </CardContent>
               <CardFooter>
-                <Link to="/blind-shipping" className="w-full">
-                  <Button variant="outline" className="w-full">Create Shipping Token</Button>
-                </Link>
+                <Button variant="outline" className="w-full" onClick={handleCreateShippingToken}>Create Shipping Token</Button>
               </CardFooter>
             </Card>
             
@@ -132,7 +163,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </p>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" className="w-full">Manage API Keys</Button>
+                <Button variant="outline" className="w-full" onClick={handleManageApiKeys}>Manage API Keys</Button>
               </CardFooter>
             </Card>
             
@@ -151,7 +182,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </p>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" className="w-full">Account Settings</Button>
+                <Button variant="outline" className="w-full" onClick={handleAccountSettings}>Account Settings</Button>
               </CardFooter>
             </Card>
           </div>
