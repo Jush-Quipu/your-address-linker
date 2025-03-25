@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -41,7 +42,7 @@ const Index: React.FC = () => {
                 </Button>
               </Link>
             )}
-            <Link to="/connect">
+            <Link to="/features">
               <Button variant="outline" size="lg" className="font-medium">
                 Learn More
               </Button>

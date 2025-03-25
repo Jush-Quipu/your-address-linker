@@ -21,7 +21,7 @@ const Hero: React.FC = () => {
       </p>
       
       <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animate-delay-300">
-        <Link to="/connect">
+        <Link to="/auth">
           <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-8">
             Get Started
           </Button>
