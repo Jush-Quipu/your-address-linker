@@ -16,8 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import CodeBlock from '@/components/CodeBlock';
 import { Navigate } from 'react-router-dom';
 
-// Import the sandbox controller
+// Import the sandbox controller and the SDK types
 import * as sandboxController from '@/services/sandbox/sandboxController';
+import { SecureAddressBridge } from '@/sdk/secureaddress-bridge-sdk';
 
 const SdkSandbox: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -27,6 +28,35 @@ const SdkSandbox: React.FC = () => {
   const [testResults, setTestResults] = useState<any[]>([]);
   const [sdkInstance, setSdkInstance] = useState<any | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [sdkLoaded, setSdkLoaded] = useState<boolean>(false);
+  
+  // Check if SDK is loaded in window
+  useEffect(() => {
+    const checkSdkLoaded = () => {
+      if (typeof window !== 'undefined' && window.SecureAddressBridge) {
+        setSdkLoaded(true);
+      } else {
+        console.warn('SecureAddressBridge SDK not found in window. Loading might be delayed.');
+        // Try again in a moment
+        setTimeout(checkSdkLoaded, 500);
+      }
+    };
+    
+    checkSdkLoaded();
+    
+    // Add script to load SDK if not already present
+    if (typeof window !== 'undefined' && !window.SecureAddressBridge) {
+      const script = document.createElement('script');
+      script.src = '/sdk/secureaddress-bridge-sdk.js';
+      script.async = true;
+      script.onload = () => setSdkLoaded(true);
+      document.body.appendChild(script);
+      
+      return () => {
+        document.body.removeChild(script);
+      };
+    }
+  }, []);
   
   // Update the sandbox configuration when testConfig changes
   useEffect(() => {
@@ -67,6 +97,11 @@ const SdkSandbox: React.FC = () => {
   // Initialize SDK instance
   const initializeSDK = () => {
     try {
+      if (!sdkLoaded) {
+        toast.error('SDK not loaded yet. Please wait a moment and try again.');
+        return;
+      }
+      
       if (window.SecureAddressBridge) {
         const sdk = new window.SecureAddressBridge({
           appId: 'app_sandbox',
@@ -412,6 +447,11 @@ async function testSDK() {
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Test the SecureAddress Bridge SDK in a sandbox environment without making real API calls
             </p>
+            {!sdkLoaded && (
+              <div className="mt-4 p-4 bg-yellow-100 text-yellow-800 rounded-md">
+                Loading SDK... Please wait a moment.
+              </div>
+            )}
           </div>
           
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
