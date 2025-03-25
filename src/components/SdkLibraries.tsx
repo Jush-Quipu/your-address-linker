@@ -18,7 +18,7 @@ const SdkLibraries: React.FC = () => {
       installCommand: 'npm install secureaddress-bridge-sdk',
       size: '42KB',
       downloadUrl: 'https://github.com/secureaddress/bridge-sdk/releases/download/v2.2.2/secureaddress-bridge-sdk-v2.2.2.zip',
-      docsUrl: 'https://docs.secureaddress.bridge/sdk/js'
+      docsUrl: 'https://www.npmjs.com/package/secureaddress-bridge-sdk'
     },
     {
       id: 'react-native',
@@ -27,7 +27,7 @@ const SdkLibraries: React.FC = () => {
       installCommand: 'npm install secureaddress-bridge-sdk-react-native',
       size: '39KB',
       downloadUrl: 'https://github.com/secureaddress/bridge-sdk/releases/download/v1.3.1/secureaddress-bridge-sdk-react-native-v1.3.1.zip',
-      docsUrl: 'https://docs.secureaddress.bridge/sdk/react-native'
+      docsUrl: 'https://www.npmjs.com/package/secureaddress-bridge-sdk-react-native'
     },
     {
       id: 'python',
@@ -36,7 +36,7 @@ const SdkLibraries: React.FC = () => {
       installCommand: 'pip install secureaddress-bridge',
       size: '24KB',
       downloadUrl: 'https://github.com/secureaddress/bridge-sdk/releases/download/v1.0.0/secureaddress-bridge-python-v1.0.0.zip',
-      docsUrl: 'https://docs.secureaddress.bridge/sdk/python'
+      docsUrl: 'https://pypi.org/project/secureaddress-bridge/'
     }
   ];
 
@@ -54,7 +54,7 @@ const SdkLibraries: React.FC = () => {
 
   const handleOpenDocs = (docsUrl: string) => {
     // Add fallback URL in case the docs URL is invalid
-    const fallbackUrl = 'https://docs.secureaddress.bridge';
+    const fallbackUrl = 'https://www.npmjs.com/org/secureaddress';
     try {
       const url = new URL(docsUrl);
       window.open(docsUrl, '_blank');
