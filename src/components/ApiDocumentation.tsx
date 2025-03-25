@@ -11,7 +11,7 @@ const ApiDocumentation: React.FC = () => {
 
   // Authentication code example
   const authCodeExample = `// Using our JavaScript SDK
-import { SecureAddressBridge } from '@secureaddress/bridge-sdk';
+import { SecureAddressBridge } from 'secureaddress-bridge-sdk';
 
 // Initialize with your app credentials
 const client = new SecureAddressBridge({
@@ -142,7 +142,7 @@ app.listen(3000, () => console.log('Webhook server running on port 3000'));`;
   // SDK usage example with React
   const sdkExample = `// Complete example of using the SDK with React hooks
 import React, { useState } from 'react';
-import { useSecureAddress } from '@secureaddress/bridge-sdk';
+import { useSecureAddress } from 'secureaddress-bridge-sdk';
 
 function CheckoutForm() {
   const [orderData, setOrderData] = useState({});
@@ -266,7 +266,7 @@ if (sellerWalletConnected) {
 
   // Example for wallet linking
   const walletLinkingExample = `// Link a verified address to a blockchain wallet
-import { useSecureAddress } from '@secureaddress/bridge-sdk';
+import { useSecureAddress } from 'secureaddress-bridge-sdk';
 
 function AddressWalletLinker() {
   const { 
@@ -595,7 +595,7 @@ Content-Type: application/json
             <CardHeader>
               <CardTitle className="flex items-center">
                 JavaScript SDK
-                <Badge variant="outline" className="ml-2">v2.0.0</Badge>
+                <Badge variant="outline" className="ml-2">v2.2.2</Badge>
               </CardTitle>
               <CardDescription>
                 The SecureAddress Bridge JavaScript SDK simplifies integration into web applications
@@ -606,7 +606,7 @@ Content-Type: application/json
               <div className="space-y-6">
                 <h3 className="text-lg font-medium">Installation</h3>
                 <CodeBlock
-                  code="npm install @secureaddress/bridge-sdk"
+                  code="npm install secureaddress-bridge-sdk"
                   language="bash"
                   showLineNumbers={false}
                 />
@@ -626,7 +626,7 @@ Content-Type: application/json
                   The SDK includes a convenient React hook for easy integration.
                 </p>
                 <CodeBlock
-                  code={`import { useSecureAddress } from '@secureaddress/bridge-sdk';
+                  code={`import { useSecureAddress } from 'secureaddress-bridge-sdk';
 
 function AddressComponent() {
   const { 
