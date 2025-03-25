@@ -40,13 +40,14 @@ serve(async (req) => {
   }
 
   try {
-    const { supabaseClient } = await import 'https://esm.sh/@supabase/supabase-js@2.33.1';
+    // Import the Supabase client with correct syntax
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.33.1");
     
     // Create a supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://akfieehzgpcapuhdujvf.supabase.co';
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     
-    const supabase = supabaseClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Parse request body
     const formData: ContactFormData = await req.json();
