@@ -1,6 +1,4 @@
 
-#!/usr/bin/env node
-
 /**
  * Script to create a new release of all SecureAddress Bridge SDK packages
  * This script will:

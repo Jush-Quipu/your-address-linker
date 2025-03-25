@@ -1,6 +1,4 @@
 
-#!/usr/bin/env node
-
 /**
  * Script to prepare packages for publishing
  * This ensures README files exist and package.json files are properly configured

@@ -15,4 +15,3 @@ chmod +x $(dirname "$0")/package-prep.js
 
 # Run the release script with node explicitly
 node $(dirname "$0")/release.js $RELEASE_TYPE
-

@@ -1,6 +1,4 @@
 
-#!/usr/bin/env node
-
 /**
  * Script to publish SecureAddress Bridge SDK packages to npm
  */
