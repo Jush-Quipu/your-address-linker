@@ -9,12 +9,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Key, Copy, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+interface ApiKey {
+  id: string;
+  name: string;
+  key: string;
+  created_at: string;
+  last_used: string | null;
+}
 
 const DashboardApiKeys: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [apiKeys, setApiKeys] = useState<any[]>([]);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [showNewKeyDialog, setShowNewKeyDialog] = useState(false);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [generatingKey, setGeneratingKey] = useState(false);
 
   useEffect(() => {
     // Redirect if not authenticated
@@ -28,13 +43,20 @@ const DashboardApiKeys: React.FC = () => {
 
   useEffect(() => {
     const fetchApiKeys = async () => {
+      if (!isAuthenticated || !user) return;
+      
       // Here you would fetch API keys from your backend
       setLoading(true);
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        // Mock data for now
-        setApiKeys([]);
+        const { data, error } = await supabase
+          .from('api_keys')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        setApiKeys(data || []);
       } catch (error) {
         console.error('Error fetching API keys:', error);
         toast.error('Failed to load API keys', {
@@ -48,10 +70,62 @@ const DashboardApiKeys: React.FC = () => {
     if (isAuthenticated) {
       fetchApiKeys();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
-  const handleGenerateApiKey = () => {
-    toast.info('API key generation coming soon!');
+  const generateApiKey = () => {
+    const array = new Uint8Array(32);
+    window.crypto.getRandomValues(array);
+    return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  };
+
+  const handleGenerateApiKey = async () => {
+    setShowNewKeyDialog(true);
+  };
+
+  const submitNewApiKey = async () => {
+    if (!user) return;
+    
+    if (!newKeyName.trim()) {
+      toast.error('API key name is required');
+      return;
+    }
+    
+    setGeneratingKey(true);
+    
+    try {
+      const apiKey = generateApiKey();
+      
+      const { data, error } = await supabase
+        .from('api_keys')
+        .insert([{
+          user_id: user.id,
+          name: newKeyName.trim(),
+          key: apiKey,
+        }])
+        .select();
+      
+      if (error) throw error;
+      
+      setApiKeys(prev => [...(data || []), ...prev]);
+      
+      toast.success('API key generated successfully', {
+        description: 'Make sure to copy your key now. You won\'t be able to see it again.'
+      });
+      
+      // Copy to clipboard automatically
+      navigator.clipboard.writeText(apiKey);
+      
+      // Reset and close dialog
+      setNewKeyName('');
+      setShowNewKeyDialog(false);
+    } catch (error) {
+      console.error('Error generating API key:', error);
+      toast.error('Failed to generate API key', {
+        description: 'Please try again later',
+      });
+    } finally {
+      setGeneratingKey(false);
+    }
   };
 
   const handleCopyApiKey = (key: string) => {
@@ -59,12 +133,57 @@ const DashboardApiKeys: React.FC = () => {
     toast.success('API key copied to clipboard');
   };
 
-  const handleRegenerateApiKey = (id: string) => {
-    toast.info('API key regeneration coming soon!');
+  const handleRegenerateApiKey = async (id: string) => {
+    if (!user) return;
+    
+    try {
+      const apiKey = generateApiKey();
+      
+      const { error } = await supabase
+        .from('api_keys')
+        .update({ key: apiKey })
+        .eq('id', id)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      // Update the key in state
+      setApiKeys(prev => 
+        prev.map(key => key.id === id ? { ...key, key: apiKey } : key)
+      );
+      
+      // Copy to clipboard
+      navigator.clipboard.writeText(apiKey);
+      
+      toast.success('API key regenerated', {
+        description: 'New key copied to clipboard'
+      });
+    } catch (error) {
+      console.error('Error regenerating API key:', error);
+      toast.error('Failed to regenerate API key');
+    }
   };
 
-  const handleRevokeApiKey = (id: string) => {
-    toast.info('API key revocation coming soon!');
+  const handleRevokeApiKey = async (id: string) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('api_keys')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      // Remove the key from state
+      setApiKeys(prev => prev.filter(key => key.id !== id));
+      
+      toast.success('API key revoked');
+    } catch (error) {
+      console.error('Error revoking API key:', error);
+      toast.error('Failed to revoke API key');
+    }
   };
 
   return (
@@ -138,6 +257,45 @@ const DashboardApiKeys: React.FC = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* New API Key Dialog */}
+          <Dialog open={showNewKeyDialog} onOpenChange={setShowNewKeyDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Generate New API Key</DialogTitle>
+                <DialogDescription>
+                  Give your API key a descriptive name. You'll only see the full key once.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">
+                    Name
+                  </Label>
+                  <Input 
+                    id="name" 
+                    value={newKeyName} 
+                    onChange={(e) => setNewKeyName(e.target.value)} 
+                    className="col-span-3" 
+                    placeholder="My API Key"
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowNewKeyDialog(false)}>Cancel</Button>
+                <Button onClick={submitNewApiKey} disabled={generatingKey || !newKeyName.trim()}>
+                  {generatingKey ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>Generate</>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </main>
       <Footer />
