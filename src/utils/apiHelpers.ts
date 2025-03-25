@@ -1,14 +1,21 @@
 
-/**
- * Standardized API response utilities
- */
+// API Error Codes
+export enum ErrorCodes {
+  INVALID_REQUEST = 'invalid_request',
+  INVALID_TOKEN = 'invalid_token',
+  UNAUTHORIZED = 'unauthorized',
+  FORBIDDEN = 'forbidden',
+  NOT_FOUND = 'not_found',
+  RATE_LIMIT = 'rate_limit',
+  SERVER_ERROR = 'server_error',
+}
 
-// Standard API response structure
+// Standardized API Response format
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
   error?: {
-    code: string;
+    code: ErrorCodes | string;
     message: string;
     details?: any;
   };
@@ -19,90 +26,68 @@ export interface ApiResponse<T = any> {
   };
 }
 
-// Generate a successful API response
-export function createSuccessResponse<T>(data: T, meta?: Partial<ApiResponse['meta']>): ApiResponse<T> {
-  return {
-    success: true,
-    data,
-    meta: {
-      version: 'v1',
-      timestamp: new Date().toISOString(),
-      ...meta
-    }
-  };
-}
-
-// Generate an error API response
-export function createErrorResponse(
-  code: string,
-  message: string,
-  details?: any,
-  meta?: Partial<ApiResponse['meta']>
-): ApiResponse {
-  return {
-    success: false,
-    error: {
-      code,
-      message,
-      details
-    },
-    meta: {
-      version: 'v1',
-      timestamp: new Date().toISOString(),
-      ...meta
-    }
-  };
-}
-
-// Common error codes
-export const ErrorCodes = {
-  UNAUTHORIZED: 'unauthorized',
-  FORBIDDEN: 'forbidden',
-  NOT_FOUND: 'not_found',
-  VALIDATION_ERROR: 'validation_error',
-  RATE_LIMIT_EXCEEDED: 'rate_limit_exceeded',
-  INTERNAL_SERVER_ERROR: 'internal_server_error',
-  TOKEN_EXPIRED: 'token_expired',
-  INVALID_REQUEST: 'invalid_request',
-  ADDRESS_NOT_VERIFIED: 'address_not_verified',
-  PERMISSION_REVOKED: 'permission_revoked',
-  MAX_ACCESS_EXCEEDED: 'max_access_exceeded'
-};
-
-// Generate a request ID for tracking
-export function generateRequestId(): string {
-  return `req_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-}
-
-// Simple rate limiting helper based on IP address
-// Note: In production, use a more robust solution like Redis
-const ipRequestCounts: Record<string, { count: number, resetTime: number }> = {};
-
-export function checkRateLimit(
-  ip: string, 
-  maxRequests = 100, 
-  windowMs = 60000
-): { limited: boolean; remaining: number; resetTime: number } {
-  const now = Date.now();
-  
-  // Initialize or reset if window expired
-  if (!ipRequestCounts[ip] || ipRequestCounts[ip].resetTime < now) {
-    ipRequestCounts[ip] = { 
-      count: 0, 
-      resetTime: now + windowMs 
+// Format API errors in a consistent way
+export function formatApiError(error: any): ApiResponse {
+  if (typeof error === 'string') {
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.SERVER_ERROR,
+        message: error,
+      },
+      meta: {
+        version: '1.0.0',
+        timestamp: new Date().toISOString(),
+      }
     };
   }
   
-  // Increment count
-  ipRequestCounts[ip].count += 1;
+  if (error instanceof Error) {
+    return {
+      success: false,
+      error: {
+        code: ErrorCodes.SERVER_ERROR,
+        message: error.message,
+        details: error.stack,
+      },
+      meta: {
+        version: '1.0.0',
+        timestamp: new Date().toISOString(),
+      }
+    };
+  }
   
-  // Check if rate limited
-  const isLimited = ipRequestCounts[ip].count > maxRequests;
-  const remaining = Math.max(0, maxRequests - ipRequestCounts[ip].count);
-  
-  return { 
-    limited: isLimited, 
-    remaining, 
-    resetTime: ipRequestCounts[ip].resetTime 
+  return {
+    success: false,
+    error: {
+      code: ErrorCodes.SERVER_ERROR,
+      message: 'Unknown error',
+      details: error,
+    },
+    meta: {
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+    }
   };
+}
+
+// Check API health
+export async function checkApiHealth(apiUrl: string): Promise<ApiResponse> {
+  try {
+    const response = await fetch(`${apiUrl}/health-check`, {
+      headers: {
+        'Content-Type': 'application/json',
+        'X-App-ID': 'test-app-id',
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    return formatApiError(error);
+  }
 }

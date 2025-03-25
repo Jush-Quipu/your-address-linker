@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -11,6 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { CheckCircle, XCircle, AlertTriangle, Play, CheckSquare } from 'lucide-react';
+import { toast } from 'sonner';
 import { SecureAddressBridge } from '@/sdk/secureaddress-bridge-sdk';
 import { ApiTestCase, ApiTestResult, runApiTest, runApiTests, standardApiTests, formatTestReport } from '@/utils/apiTesting';
 import CodeBlock from '@/components/CodeBlock';
@@ -30,45 +30,48 @@ const ApiTesting: React.FC = () => {
   
   const navigate = useNavigate();
 
-  // Initialize SDK
-  const initializeSdk = () => {
-    try {
-      const sdk = new SecureAddressBridge({
-        appId: 'test-app-id',
-        redirectUri: window.location.origin + '/callback',
-        debug: true
-      });
-      
-      setSdkInstance(sdk);
-      setSdkInitialized(true);
-      return sdk;
-    } catch (error) {
-      console.error('Error initializing SDK:', error);
-      return null;
-    }
-  };
+  // Initialize SDK on component mount
+  useEffect(() => {
+    // Create SDK instance for testing
+    const sdk = new SecureAddressBridge({
+      appId: 'test-app-id',
+      redirectUri: window.location.origin + '/callback',
+      debug: true
+    });
+    
+    setSdkInstance(sdk);
+    setSdkInitialized(true);
+  }, []);
 
   // Test API connectivity using the SDK
   const testApiConnection = async () => {
     try {
       setApiStatus({ status: 'idle' });
       
-      const sdk = sdkInstance || initializeSdk();
-      if (!sdk) {
-        setApiStatus({ 
-          status: 'error', 
-          message: 'Failed to initialize SDK' 
+      if (!sdkInstance) {
+        const sdk = new SecureAddressBridge({
+          appId: 'test-app-id',
+          redirectUri: window.location.origin + '/callback',
+          debug: true
         });
-        return;
+        setSdkInstance(sdk);
+        
+        const result = await sdk.testConnection();
+        setApiStatus({
+          status: result.status,
+          message: result.message,
+          version: result.version
+        });
+      } else {
+        const result = await sdkInstance.testConnection();
+        setApiStatus({
+          status: result.status,
+          message: result.message,
+          version: result.version
+        });
       }
-      
-      const result = await sdk.testConnection();
-      setApiStatus({
-        status: result.status,
-        message: result.message,
-        version: result.version
-      });
     } catch (error) {
+      console.error('API connection test error:', error);
       setApiStatus({ 
         status: 'error', 
         message: error instanceof Error ? error.message : 'Unknown error testing API connection'
