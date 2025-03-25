@@ -918,12 +918,13 @@ X-Request-Id: req_1234567890abcdef
           </p>
           <div className="flex justify-center">
             <Button
-              component="a"
-              href="/api-testing"
+              asChild
               className="flex items-center gap-2"
             >
-              <Play className="h-4 w-4" />
-              Go to API Testing
+              <a href="/api-testing">
+                <Play className="h-4 w-4" />
+                Go to API Testing
+              </a>
             </Button>
           </div>
         </CardContent>
