@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,11 +40,12 @@ const ApiDocumentation: React.FC = () => {
       </div>
       
       <Tabs defaultValue="overview">
-        <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 h-auto">
+        <TabsList className="w-full grid grid-cols-2 md:grid-cols-5 lg:grid-cols-6 h-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="authentication">Authentication</TabsTrigger>
           <TabsTrigger value="address">Address API</TabsTrigger>
           <TabsTrigger value="wallet">Wallet API</TabsTrigger>
+          <TabsTrigger value="developer">Developer</TabsTrigger>
           <TabsTrigger value="webhook">Webhooks</TabsTrigger>
         </TabsList>
         
@@ -78,6 +78,7 @@ const ApiDocumentation: React.FC = () => {
                   <li><strong>Authentication API</strong> - OAuth 2.0 endpoints for secure access</li>
                   <li><strong>Address API</strong> - Verify and access user address information</li>
                   <li><strong>Wallet API</strong> - Link blockchain wallets to verified addresses</li>
+                  <li><strong>Developer API</strong> - Create and manage your developer apps</li>
                   <li><strong>Webhook API</strong> - Receive real-time notifications</li>
                 </ul>
               </div>
@@ -412,6 +413,230 @@ console.log(data); // { verified: true, wallet_id: '...', is_primary: true, ... 
           </Card>
         </TabsContent>
         
+        <TabsContent value="developer" className="space-y-4 pt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Developer API</CardTitle>
+              <CardDescription>
+                Create and manage applications that integrate with SecureAddress Bridge
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Create App</h3>
+                <p className="text-sm text-muted-foreground">
+                  Register a new developer application.
+                </p>
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <span className="px-2 py-1 rounded bg-primary-foreground">POST</span>
+                  <span className="font-mono">/developer-app</span>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Request Headers:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>Authorization</code> - Bearer token (user session token)</li>
+                  </ul>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Request Body:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>app_name</code> - Name of your application</li>
+                    <li><code>description</code> - (Optional) Description of your application</li>
+                    <li><code>website_url</code> - (Optional) URL to your website</li>
+                    <li><code>callback_urls</code> - Array of authorized redirect URIs</li>
+                  </ul>
+                </div>
+                
+                <CodeBlock 
+                  language="javascript" 
+                  code={`// Example create app request
+const response = await fetch('${baseUrl}/developer-app', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': \`Bearer \${userSessionToken}\`
+  },
+  body: JSON.stringify({
+    app_name: 'My E-commerce App',
+    description: 'An e-commerce app that uses SecureAddress Bridge for shipping',
+    website_url: 'https://myecommerceapp.com',
+    callback_urls: [
+      'https://myecommerceapp.com/callback',
+      'https://myecommerceapp.com/auth/callback'
+    ]
+  })
+});
+
+const { data } = await response.json();
+// Save these credentials securely - the app_secret will only be shown once
+console.log(data); // { id: 'app_123', app_name: '...', app_secret: '...', created_at: '...' }`}
+                  onCopy={(text) => handleCopy(text, 'create-app-example')}
+                  copied={copiedId === 'create-app-example'}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">List Apps</h3>
+                <p className="text-sm text-muted-foreground">
+                  Get all developer applications for the authenticated user.
+                </p>
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <span className="px-2 py-1 rounded bg-primary-foreground">GET</span>
+                  <span className="font-mono">/developer-app</span>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Request Headers:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>Authorization</code> - Bearer token (user session token)</li>
+                  </ul>
+                </div>
+                
+                <CodeBlock 
+                  language="javascript" 
+                  code={`// Example list apps request
+const response = await fetch('${baseUrl}/developer-app', {
+  method: 'GET',
+  headers: {
+    'Authorization': \`Bearer \${userSessionToken}\`
+  }
+});
+
+const { data } = await response.json();
+console.log(data); // Array of developer apps`}
+                  onCopy={(text) => handleCopy(text, 'list-apps-example')}
+                  copied={copiedId === 'list-apps-example'}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Update App</h3>
+                <p className="text-sm text-muted-foreground">
+                  Update an existing developer application.
+                </p>
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <span className="px-2 py-1 rounded bg-primary-foreground">PATCH</span>
+                  <span className="font-mono">/developer-app-details/:app_id</span>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Request Headers:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>Authorization</code> - Bearer token (user session token)</li>
+                  </ul>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Request Body:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>app_name</code> - (Optional) New name for your application</li>
+                    <li><code>description</code> - (Optional) New description for your application</li>
+                    <li><code>website_url</code> - (Optional) New URL for your website</li>
+                    <li><code>callback_urls</code> - (Optional) New array of authorized redirect URIs</li>
+                  </ul>
+                </div>
+                
+                <CodeBlock 
+                  language="javascript" 
+                  code={`// Example update app request
+const response = await fetch('${baseUrl}/developer-app-details/app_123', {
+  method: 'PATCH',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': \`Bearer \${userSessionToken}\`
+  },
+  body: JSON.stringify({
+    app_name: 'My Updated App Name',
+    callback_urls: [
+      'https://myecommerceapp.com/callback',
+      'https://myecommerceapp.com/auth/callback',
+      'https://myecommerceapp.com/oauth/callback'
+    ]
+  })
+});
+
+const { data } = await response.json();
+console.log(data); // Updated app details`}
+                  onCopy={(text) => handleCopy(text, 'update-app-example')}
+                  copied={copiedId === 'update-app-example'}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Delete App</h3>
+                <p className="text-sm text-muted-foreground">
+                  Delete a developer application.
+                </p>
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <span className="px-2 py-1 rounded bg-primary-foreground">DELETE</span>
+                  <span className="font-mono">/developer-app-details/:app_id</span>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Request Headers:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>Authorization</code> - Bearer token (user session token)</li>
+                  </ul>
+                </div>
+                
+                <CodeBlock 
+                  language="javascript" 
+                  code={`// Example delete app request
+const response = await fetch('${baseUrl}/developer-app-details/app_123', {
+  method: 'DELETE',
+  headers: {
+    'Authorization': \`Bearer \${userSessionToken}\`
+  }
+});
+
+const { data } = await response.json();
+console.log(data); // { deleted: true }`}
+                  onCopy={(text) => handleCopy(text, 'delete-app-example')}
+                  copied={copiedId === 'delete-app-example'}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Rotate App Secret</h3>
+                <p className="text-sm text-muted-foreground">
+                  Generate a new secret for an application (invalidates the old secret).
+                </p>
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <span className="px-2 py-1 rounded bg-primary-foreground">POST</span>
+                  <span className="font-mono">/developer-app-details/:app_id</span>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Request Headers:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>Authorization</code> - Bearer token (user session token)</li>
+                  </ul>
+                </div>
+                
+                <CodeBlock 
+                  language="javascript" 
+                  code={`// Example rotate app secret request
+const response = await fetch('${baseUrl}/developer-app-details/app_123', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': \`Bearer \${userSessionToken}\`
+  }
+});
+
+const { data } = await response.json();
+// Save this new secret securely - it will only be shown once
+console.log(data); // { new_secret: '...', message: '...' }`}
+                  onCopy={(text) => handleCopy(text, 'rotate-secret-example')}
+                  copied={copiedId === 'rotate-secret-example'}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
         <TabsContent value="webhook" className="space-y-4 pt-4">
           <Card>
             <CardHeader>
@@ -427,10 +652,56 @@ console.log(data); // { verified: true, wallet_id: '...', is_primary: true, ... 
               </p>
               
               <div className="space-y-2">
-                <h3 className="text-lg font-medium">Setting Up Webhooks</h3>
+                <h3 className="text-lg font-medium">Register a Webhook</h3>
                 <p className="text-sm text-muted-foreground">
-                  Register webhook endpoints in your developer dashboard.
+                  Create a new webhook endpoint for your application.
                 </p>
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <span className="px-2 py-1 rounded bg-primary-foreground">POST</span>
+                  <span className="font-mono">/register-webhook</span>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Request Headers:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>Authorization</code> - Bearer token (user session token)</li>
+                  </ul>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Request Body:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>app_id</code> - ID of your developer application</li>
+                    <li><code>url</code> - The URL where webhook events will be sent</li>
+                    <li><code>events</code> - Array of event types to subscribe to</li>
+                    <li><code>description</code> - (Optional) Description of the webhook</li>
+                    <li><code>secret</code> - (Optional) Custom secret for signing webhook payloads</li>
+                  </ul>
+                </div>
+                
+                <CodeBlock 
+                  language="javascript" 
+                  code={`// Example webhook registration
+const response = await fetch('${baseUrl}/register-webhook', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': \`Bearer \${userSessionToken}\`
+  },
+  body: JSON.stringify({
+    app_id: 'app_123',
+    url: 'https://myapp.com/webhooks/secureaddress',
+    events: ['address.verified', 'permission.revoked', 'address.accessed'],
+    description: 'Notifications for address events'
+  })
+});
+
+const { data } = await response.json();
+// Save this webhook secret securely - it will only be shown once
+console.log(data); // { id: 'wh_123', url: '...', webhook_secret: '...', ... }`}
+                  onCopy={(text) => handleCopy(text, 'register-webhook-example')}
+                  copied={copiedId === 'register-webhook-example'}
+                />
                 
                 <div className="mt-4 mb-6">
                   <h4 className="text-sm font-medium">Available Events:</h4>

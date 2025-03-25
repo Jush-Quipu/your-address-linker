@@ -1,7 +1,77 @@
 
 project_id = "akfieehzgpcapuhdujvf"
+# General Functions
+[[functions]]
+name = "health-check"
+verify_jwt = false
 
-[global.env]
-RESEND_API_KEY = "{{RESEND_API_KEY}}"
-SUPABASE_URL = "https://akfieehzgpcapuhdujvf.supabase.co"
-SUPABASE_SERVICE_ROLE_KEY = "{{SUPABASE_SERVICE_ROLE_KEY}}"
+# Authentication & Token Functions
+[[functions]]
+name = "authorize"
+verify_jwt = false
+
+[[functions]]
+name = "callback"
+verify_jwt = false
+
+[[functions]]
+name = "token"
+verify_jwt = false
+
+[[functions]]
+name = "validate-token"
+verify_jwt = false
+
+[[functions]]
+name = "revoke"
+verify_jwt = false
+
+[[functions]]
+name = "userinfo"
+verify_jwt = false
+
+# Address Related Functions
+[[functions]]
+name = "address"
+verify_jwt = false
+
+[[functions]]
+name = "get-address"
+verify_jwt = false
+
+[[functions]]
+name = "get-verification-status"
+verify_jwt = false
+
+[[functions]]
+name = "verify-address-document"
+verify_jwt = false
+
+# Wallet Related Functions
+[[functions]]
+name = "wallet-verify" 
+verify_jwt = false
+
+# Shipping Functions
+[[functions]]
+name = "blind-shipping"
+verify_jwt = false
+
+# Contact Form
+[[functions]]
+name = "contact-form"
+verify_jwt = false
+
+# Developer Functions
+[[functions]]
+name = "developer-app"
+verify_jwt = false
+
+[[functions]]
+name = "developer-app-details"
+verify_jwt = false
+
+# Webhook Functions
+[[functions]]
+name = "register-webhook"
+verify_jwt = false
