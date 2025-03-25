@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CodeBlock from '@/components/CodeBlock';
@@ -191,7 +192,7 @@ X-RateLimit-Reset: 58
 
   return (
     <div className="space-y-8">
-      <Alert variant="info" className="mb-8">
+      <Alert variant="warning" className="mb-8">
         <InfoIcon className="h-4 w-4" />
         <AlertTitle>API Improvements</AlertTitle>
         <AlertDescription>
@@ -775,7 +776,7 @@ X-Request-Id: req_1234567890abcdef
                     <TableRow>
                       <TableCell>v1</TableCell>
                       <TableCell>
-                        <Badge variant="success">Current</Badge>
+                        <Badge variant="secondary">Current</Badge>
                       </TableCell>
                       <TableCell>August 2023</TableCell>
                       <TableCell>TBD</TableCell>
@@ -907,3 +908,4 @@ X-Request-Id: req_1234567890abcdef
 };
 
 export default ApiDocumentation;
+
