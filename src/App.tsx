@@ -20,6 +20,9 @@ import Terms from '@/pages/Terms'; // Import Terms page
 import Compliance from '@/pages/Compliance'; // Import Compliance page
 import Cookies from '@/pages/Cookies'; // Import Cookies page
 import Tutorials from '@/pages/Tutorials'; // Import Tutorials page
+import PermissionsPage from '@/pages/Permissions'; // Import Permissions page
+import BlindShippingPage from '@/pages/BlindShipping'; // Import BlindShipping page
+import AuthorizePage from '@/pages/AuthorizePage'; // Import Authorization page
 
 function App() {
   return (
@@ -44,6 +47,9 @@ function App() {
           <Route path="/compliance" element={<Compliance />} />
           <Route path="/cookies" element={<Cookies />} />
           <Route path="/tutorials" element={<Tutorials />} />
+          <Route path="/permissions" element={<PermissionsPage />} />
+          <Route path="/blind-shipping" element={<BlindShippingPage />} />
+          <Route path="/authorize" element={<AuthorizePage />} />
         </Routes>
       </AuthProvider>
     </Router>
