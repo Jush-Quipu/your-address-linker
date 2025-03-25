@@ -2,8 +2,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const ADMIN_EMAIL = "admin@secureaddress.bridge"; // Change this to your admin email
+// Initialize Resend with API key
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const resend = new Resend(RESEND_API_KEY);
+
+// Change this to your actual admin email
+const ADMIN_EMAIL = "your-email@example.com"; 
 
 // Define CORS headers
 const corsHeaders = {
@@ -47,6 +51,15 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://akfieehzgpcapuhdujvf.supabase.co';
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     
+    // Log environment variables for debugging (without revealing full values)
+    console.log('SUPABASE_URL available:', !!Deno.env.get('SUPABASE_URL'));
+    console.log('SUPABASE_SERVICE_ROLE_KEY available:', !!Deno.env.get('SUPABASE_SERVICE_ROLE_KEY'));
+    console.log('RESEND_API_KEY available:', !!RESEND_API_KEY);
+    
+    if (!RESEND_API_KEY) {
+      throw new Error('RESEND_API_KEY environment variable is not set');
+    }
+    
     const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Parse request body
@@ -78,45 +91,51 @@ serve(async (req) => {
       throw new Error(`Database error: ${dbError.message}`);
     }
     
+    console.log('Successfully saved to database, now sending emails');
+    
     // Send notification email to admin
-    const { data: emailData, error: emailError } = await resend.emails.send({
-      from: 'SecureAddress Bridge <onboarding@resend.dev>',
-      to: [ADMIN_EMAIL],
-      subject: `New Contact Form: ${subject}`,
-      html: `
-        <h1>New Contact Form Submission</h1>
-        <p><strong>From:</strong> ${name} (${email})</p>
-        <p><strong>Subject:</strong> ${subject}</p>
-        <h2>Message:</h2>
-        <p>${message.replace(/\n/g, '<br>')}</p>
-        <hr>
-        <p>This message was sent from the SecureAddress Bridge contact form.</p>
-      `,
-    });
-
-    if (emailError) {
-      console.error('Email error:', emailError);
-      // We don't throw here - we've already saved the message to the database
+    try {
+      const adminEmailData = await resend.emails.send({
+        from: 'SecureAddress Bridge <onboarding@resend.dev>',
+        to: [ADMIN_EMAIL],
+        subject: `New Contact Form: ${subject}`,
+        html: `
+          <h1>New Contact Form Submission</h1>
+          <p><strong>From:</strong> ${name} (${email})</p>
+          <p><strong>Subject:</strong> ${subject}</p>
+          <h2>Message:</h2>
+          <p>${message.replace(/\n/g, '<br>')}</p>
+          <hr>
+          <p>This message was sent from the SecureAddress Bridge contact form.</p>
+        `,
+      });
+      
+      console.log('Admin notification email sent:', adminEmailData);
+    } catch (emailError) {
+      console.error('Error sending admin email:', emailError);
+      // We continue to attempt sending the confirmation email
     }
     
     // Send confirmation email to the user
-    const { data: confirmationData, error: confirmationError } = await resend.emails.send({
-      from: 'SecureAddress Bridge <onboarding@resend.dev>',
-      to: [email],
-      subject: 'Thank you for contacting SecureAddress Bridge',
-      html: `
-        <h1>Thank You for Contacting Us</h1>
-        <p>Dear ${name},</p>
-        <p>We have received your message about "${subject}" and will get back to you as soon as possible.</p>
-        <p>For your records, here's a copy of your message:</p>
-        <blockquote>${message.replace(/\n/g, '<br>')}</blockquote>
-        <p>Best regards,<br>The SecureAddress Bridge Team</p>
-      `,
-    });
-
-    if (confirmationError) {
-      console.error('Confirmation email error:', confirmationError);
-      // We don't throw here - we've already saved the message and sent the admin notification
+    try {
+      const confirmationData = await resend.emails.send({
+        from: 'SecureAddress Bridge <onboarding@resend.dev>',
+        to: [email],
+        subject: 'Thank you for contacting SecureAddress Bridge',
+        html: `
+          <h1>Thank You for Contacting Us</h1>
+          <p>Dear ${name},</p>
+          <p>We have received your message about "${subject}" and will get back to you as soon as possible.</p>
+          <p>For your records, here's a copy of your message:</p>
+          <blockquote>${message.replace(/\n/g, '<br>')}</blockquote>
+          <p>Best regards,<br>The SecureAddress Bridge Team</p>
+        `,
+      });
+      
+      console.log('Confirmation email sent:', confirmationData);
+    } catch (confirmationError) {
+      console.error('Error sending confirmation email:', confirmationError);
+      // We still return success since the message was saved to the database
     }
 
     // Return success response
