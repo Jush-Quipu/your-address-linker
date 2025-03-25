@@ -14,19 +14,19 @@ const SdkLibraries: React.FC = () => {
     {
       id: 'javascript',
       name: 'JavaScript/TypeScript',
-      version: 'v2.1.0',
-      installCommand: 'npm install @secureaddress/bridge-sdk',
+      version: 'v2.2.2',
+      installCommand: 'npm install secureaddress-bridge-sdk',
       size: '42KB',
-      downloadUrl: 'https://github.com/secureaddress/bridge-sdk/releases/download/v2.1.0/secureaddress-bridge-sdk-v2.1.0.zip',
+      downloadUrl: 'https://github.com/secureaddress/bridge-sdk/releases/download/v2.2.2/secureaddress-bridge-sdk-v2.2.2.zip',
       docsUrl: 'https://docs.secureaddress.bridge/sdk/js'
     },
     {
       id: 'react-native',
       name: 'React Native',
-      version: 'v1.2.0',
-      installCommand: 'npm install @secureaddress/bridge-sdk-react-native',
+      version: 'v1.3.1',
+      installCommand: 'npm install secureaddress-bridge-sdk-react-native',
       size: '39KB',
-      downloadUrl: 'https://github.com/secureaddress/bridge-sdk/releases/download/v1.2.0/secureaddress-bridge-sdk-react-native-v1.2.0.zip',
+      downloadUrl: 'https://github.com/secureaddress/bridge-sdk/releases/download/v1.3.1/secureaddress-bridge-sdk-react-native-v1.3.1.zip',
       docsUrl: 'https://docs.secureaddress.bridge/sdk/react-native'
     },
     {
@@ -53,7 +53,16 @@ const SdkLibraries: React.FC = () => {
   };
 
   const handleOpenDocs = (docsUrl: string) => {
-    window.open(docsUrl, '_blank');
+    // Add fallback URL in case the docs URL is invalid
+    const fallbackUrl = 'https://docs.secureaddress.bridge';
+    try {
+      const url = new URL(docsUrl);
+      window.open(docsUrl, '_blank');
+    } catch (error) {
+      console.error('Invalid docs URL:', error);
+      toast.error('Documentation URL is currently unavailable');
+      window.open(fallbackUrl, '_blank');
+    }
   };
 
   return (
@@ -131,7 +140,7 @@ const SdkLibraries: React.FC = () => {
               <div>
                 <h3 className="text-lg font-medium mb-2">1. Install the SDK</h3>
                 <CodeBlock
-                  code="npm install @secureaddress/bridge-sdk"
+                  code="npm install secureaddress-bridge-sdk"
                   language="bash"
                   showLineNumbers={false}
                 />
@@ -140,7 +149,7 @@ const SdkLibraries: React.FC = () => {
               <div>
                 <h3 className="text-lg font-medium mb-2">2. Initialize the SDK</h3>
                 <CodeBlock
-                  code={`import { SecureAddressBridge } from '@secureaddress/bridge-sdk';
+                  code={`import { SecureAddressBridge } from 'secureaddress-bridge-sdk';
 
 // Initialize with your app credentials
 const client = new SecureAddressBridge({
@@ -209,7 +218,7 @@ async function handleCallback() {
               <div>
                 <h3 className="text-lg font-medium mb-2">1. Install the SDK</h3>
                 <CodeBlock
-                  code="npm install @secureaddress/bridge-sdk-react-native"
+                  code="npm install secureaddress-bridge-sdk-react-native"
                   language="bash"
                   showLineNumbers={false}
                 />
@@ -218,7 +227,7 @@ async function handleCallback() {
               <div>
                 <h3 className="text-lg font-medium mb-2">2. Initialize the SDK</h3>
                 <CodeBlock
-                  code={`import { SecureAddressBridgeNative, useSecureAddressNative } from '@secureaddress/bridge-sdk-react-native';
+                  code={`import { SecureAddressBridgeNative, useSecureAddressNative } from 'secureaddress-bridge-sdk-react-native';
 
 // Initialize with your app credentials
 const client = new SecureAddressBridgeNative({
@@ -235,7 +244,7 @@ const client = new SecureAddressBridgeNative({
                 <CodeBlock
                   code={`import React from 'react';
 import { View, Text, Button, ActivityIndicator } from 'react-native';
-import { useSecureAddressNative } from '@secureaddress/bridge-sdk-react-native';
+import { useSecureAddressNative } from 'secureaddress-bridge-sdk-react-native';
 
 function AddressScreen() {
   const { 
