@@ -1,7 +1,18 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createErrorResponse, createSuccessResponse, corsHeaders, checkRateLimit, getRateLimitHeaders, ErrorCodes } from '../_shared/apiHelpers.ts';
-import { ethers } from 'https://cdn.ethers.io/lib/ethers-5.2.esm.min.js';
+
+// Define a minimal ethers-like interface for verifying messages
+const verifyMessage = async (message: string, signature: string): Promise<string> => {
+  try {
+    // Import ethers dynamically to avoid the import issue with the CDN
+    const { ethers } = await import('https://esm.sh/ethers@5.7.2');
+    return ethers.utils.verifyMessage(message, signature);
+  } catch (error) {
+    console.error("Error importing or using ethers:", error);
+    throw new Error("Failed to verify message signature");
+  }
+};
 
 serve(async (req) => {
   console.log('Request to wallet-verify endpoint received:', req.url);
@@ -81,7 +92,7 @@ serve(async (req) => {
     
     // Verify the signature
     try {
-      const recoveredAddress = ethers.utils.verifyMessage(message, signature);
+      const recoveredAddress = await verifyMessage(message, signature);
       
       if (recoveredAddress.toLowerCase() !== normalizedAddress) {
         return new Response(

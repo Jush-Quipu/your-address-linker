@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -7,19 +6,31 @@ interface CodeBlockProps {
   code: string;
   language: string;
   showLineNumbers?: boolean;
+  onCopy?: (text: string) => void;
+  copied?: boolean;
 }
 
 const CodeBlock: React.FC<CodeBlockProps> = ({ 
   code, 
   language, 
-  showLineNumbers = true 
+  showLineNumbers = true,
+  onCopy,
+  copied: externalCopied,
 }) => {
-  const [copied, setCopied] = useState(false);
+  const [internalCopied, setInternalCopied] = useState(false);
+  const isCopied = externalCopied !== undefined ? externalCopied : internalCopied;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    
+    if (onCopy) {
+      // Use the external copy handler if provided
+      onCopy(code);
+    } else {
+      // Otherwise use internal state
+      setInternalCopied(true);
+      setTimeout(() => setInternalCopied(false), 2000);
+    }
   };
 
   return (
@@ -44,7 +55,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
         className="absolute top-2 right-2 p-2 rounded-md bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
         aria-label="Copy code"
       >
-        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+        {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
       </button>
       <div className="absolute top-0 right-0 px-3 py-1 rounded-bl rounded-tr-md text-xs font-medium text-muted-foreground bg-secondary/90">
         {language}
