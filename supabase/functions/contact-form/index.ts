@@ -6,8 +6,9 @@ import { Resend } from "npm:resend@2.0.0";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const resend = new Resend(RESEND_API_KEY);
 
-// Change this to your actual admin email
-const ADMIN_EMAIL = "your-email@example.com"; 
+// Set admin email to the verified email for testing
+// IMPORTANT: In production, change this to your actual admin email after verifying a domain
+const ADMIN_EMAIL = "jush922@gmail.com"; 
 
 // Define CORS headers
 const corsHeaders = {
@@ -95,9 +96,11 @@ serve(async (req) => {
     
     // Send notification email to admin
     try {
+      // IMPORTANT: For Resend testing, you can only send to the same email that's verified
+      // For production, you need to verify a domain and use an email from that domain as the "from" address
       const adminEmailData = await resend.emails.send({
-        from: 'SecureAddress Bridge <onboarding@resend.dev>',
-        to: [ADMIN_EMAIL],
+        from: 'onboarding@resend.dev', // Use Resend's test sender
+        to: [ADMIN_EMAIL], // Send to the verified email
         subject: `New Contact Form: ${subject}`,
         html: `
           <h1>New Contact Form Submission</h1>
@@ -111,16 +114,19 @@ serve(async (req) => {
       });
       
       console.log('Admin notification email sent:', adminEmailData);
-    } catch (emailError) {
+    } catch (emailError: any) {
       console.error('Error sending admin email:', emailError);
+      console.error('Error details:', JSON.stringify(emailError));
       // We continue to attempt sending the confirmation email
     }
     
-    // Send confirmation email to the user
+    // Send confirmation email to the user (for testing, also send to verified email)
     try {
+      // For testing: Use the verified email as both the sender and recipient
+      // For production: Change "from" to use your verified domain
       const confirmationData = await resend.emails.send({
-        from: 'SecureAddress Bridge <onboarding@resend.dev>',
-        to: [email],
+        from: 'onboarding@resend.dev', // Use Resend's test sender
+        to: [ADMIN_EMAIL], // For testing, send to verified email instead of user email
         subject: 'Thank you for contacting SecureAddress Bridge',
         html: `
           <h1>Thank You for Contacting Us</h1>
@@ -133,8 +139,9 @@ serve(async (req) => {
       });
       
       console.log('Confirmation email sent:', confirmationData);
-    } catch (confirmationError) {
+    } catch (confirmationError: any) {
       console.error('Error sending confirmation email:', confirmationError);
+      console.error('Error details:', JSON.stringify(confirmationError));
       // We still return success since the message was saved to the database
     }
 
