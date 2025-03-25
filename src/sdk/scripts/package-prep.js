@@ -20,13 +20,13 @@ to securely access verified physical addresses with enhanced blockchain support 
 ## Installation
 
 \`\`\`bash
-npm install @secureaddress/bridge-sdk
+npm install secureaddress-bridge-sdk
 \`\`\`
 
 ## Quick Start
 
 \`\`\`javascript
-import { SecureAddressBridge } from '@secureaddress/bridge-sdk';
+import { SecureAddressBridge } from 'secureaddress-bridge-sdk';
 
 // Initialize with your app credentials
 const client = new SecureAddressBridge({
@@ -56,7 +56,7 @@ async function handleCallback() {
 ## React Integration
 
 \`\`\`jsx
-import { useSecureAddress } from '@secureaddress/bridge-sdk';
+import { useSecureAddress } from 'secureaddress-bridge-sdk';
 
 function AddressComponent() {
   const {
@@ -119,7 +119,7 @@ allowing you to securely access verified physical addresses with enhanced blockc
 ## Installation
 
 \`\`\`bash
-npm install @secureaddress/bridge-sdk-react-native @react-native-async-storage/async-storage
+npm install secureaddress-bridge-sdk-react-native @react-native-async-storage/async-storage
 \`\`\`
 
 ## Usage
@@ -127,7 +127,7 @@ npm install @secureaddress/bridge-sdk-react-native @react-native-async-storage/a
 \`\`\`jsx
 import React from 'react';
 import { View, Text, Button } from 'react-native';
-import { useSecureAddressNative } from '@secureaddress/bridge-sdk-react-native';
+import { useSecureAddressNative } from 'secureaddress-bridge-sdk-react-native';
 
 export default function AddressScreen() {
   const {

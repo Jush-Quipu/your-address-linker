@@ -11,12 +11,12 @@ const path = require('path');
 const NPM_TOKEN = process.env.NPM_TOKEN;
 const PACKAGES = [
   {
-    name: '@secureaddress/bridge-sdk',
+    name: 'secureaddress-bridge-sdk', // Removed scope
     path: path.resolve(__dirname, '..'),
     files: ['secureaddress-bridge-sdk.js', 'secureaddress-bridge-sdk.d.ts', 'index.ts', 'package.json', 'README.md']
   },
   {
-    name: '@secureaddress/bridge-sdk-react-native',
+    name: 'secureaddress-bridge-sdk-react-native', // Removed scope
     path: path.resolve(__dirname, '../react-native'),
     files: ['secureaddress-bridge-react-native.js', 'package.json', 'README.md']
   }
@@ -67,6 +67,29 @@ for (const pkg of PACKAGES) {
   console.log(`  Name: ${packageJson.name}`);
   console.log(`  Version: ${packageJson.version}`);
   console.log(`  ✅ All files present`);
+}
+
+// Update package.json to use unscoped names
+console.log('\n📝 Updating package.json for publishing...');
+for (const pkg of PACKAGES) {
+  try {
+    const packageJsonPath = path.join(pkg.path, 'package.json');
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+    
+    // Store original name to restore later
+    const originalName = packageJson.name;
+    
+    // Update package name (remove scope)
+    packageJson.name = pkg.name;
+    
+    // Write updated package.json
+    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
+    
+    console.log(`  Updated ${path.basename(pkg.path)}/package.json: ${originalName} → ${packageJson.name}`);
+  } catch (err) {
+    console.error(`❌ Failed to update package.json in ${pkg.path}:`, err.message);
+    process.exit(1);
+  }
 }
 
 // Publish packages

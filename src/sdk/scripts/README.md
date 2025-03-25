@@ -47,6 +47,10 @@ publish-windows.bat minor
 publish-windows.bat major
 ```
 
+### Important Notes About Package Names
+
+The packages are published without a scope (e.g., `secureaddress-bridge-sdk` instead of `@secureaddress/bridge-sdk`). This allows you to publish the packages without needing access to a specific npm scope.
+
 ### Publishing Python SDK to PyPI
 
 To publish the Python SDK, you'll need to set your PyPI token:
@@ -72,6 +76,5 @@ node publish-python.js
 
 - The npm token is built into the `publish-with-token.sh` script
 - For security, do not commit or share this token with others
-- Make sure you have the appropriate permissions to publish to the @secureaddress organization on npm
+- Make sure you have the appropriate permissions to publish to npm
 - For PyPI publishing, you must set the PYPI_TOKEN environment variable before running the scripts
-
