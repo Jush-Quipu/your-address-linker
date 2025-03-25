@@ -190,25 +190,25 @@ serve(async (req) => {
     }
     
     // Generate webhook ID and signature secret if not provided
-    const webhookId = `wh_${Date.now()}`;
+    const webhookId = crypto.randomUUID();
     const webhookSecret = secret || Array.from(crypto.getRandomValues(new Uint8Array(32)))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
     
-    // Register the webhook
+    // Register the webhook in our new webhooks table
     const { data: webhookData, error: webhookError } = await supabase
-      .from('app_webhooks')
+      .from('webhooks')
       .insert({
         id: webhookId,
+        user_id: user.id,
         app_id,
         url,
         events,
-        description: description || '',
-        secret: webhookSecret,
-        status: 'active',
-        created_by: user.id
+        secret_key: webhookSecret,
+        is_active: true,
+        metadata: { description: description || '' }
       })
-      .select('id, url, events, description, status, created_at')
+      .select('id, url, events, created_at, is_active')
       .single();
       
     if (webhookError) {
@@ -224,6 +224,25 @@ serve(async (req) => {
         }
       );
     }
+    
+    // Log this API usage
+    const apiUsagePromise = supabase
+      .from('developer_api_usage')
+      .insert({
+        app_id,
+        endpoint: 'register-webhook',
+        method: 'POST',
+        response_status: 201,
+        user_id: user.id,
+        ip_address: clientIp
+      });
+    
+    // Don't await this to avoid slowing down the response
+    apiUsagePromise.then(result => {
+      if (result.error) {
+        console.error('Error logging API usage:', result.error);
+      }
+    });
     
     // Return success response with the webhook details and secret
     return new Response(

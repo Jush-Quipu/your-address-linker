@@ -182,6 +182,47 @@ export type Database = {
         }
         Relationships: []
       }
+      address_verification_logs: {
+        Row: {
+          document_type: string | null
+          id: string
+          metadata: Json | null
+          physical_address_id: string
+          status: string
+          user_id: string
+          verification_date: string
+          verification_type: string
+        }
+        Insert: {
+          document_type?: string | null
+          id?: string
+          metadata?: Json | null
+          physical_address_id: string
+          status: string
+          user_id: string
+          verification_date?: string
+          verification_type: string
+        }
+        Update: {
+          document_type?: string | null
+          id?: string
+          metadata?: Json | null
+          physical_address_id?: string
+          status?: string
+          user_id?: string
+          verification_date?: string
+          verification_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "address_verification_logs_physical_address_id_fkey"
+            columns: ["physical_address_id"]
+            isOneToOne: false
+            referencedRelation: "physical_addresses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           created_at: string
@@ -322,6 +363,85 @@ export type Database = {
         }
         Relationships: []
       }
+      developer_api_usage: {
+        Row: {
+          app_id: string
+          created_at: string
+          endpoint: string
+          execution_time_ms: number | null
+          id: string
+          ip_address: string | null
+          method: string
+          response_status: number
+          user_id: string | null
+        }
+        Insert: {
+          app_id: string
+          created_at?: string
+          endpoint: string
+          execution_time_ms?: number | null
+          id?: string
+          ip_address?: string | null
+          method: string
+          response_status: number
+          user_id?: string | null
+        }
+        Update: {
+          app_id?: string
+          created_at?: string
+          endpoint?: string
+          execution_time_ms?: number | null
+          id?: string
+          ip_address?: string | null
+          method?: string
+          response_status?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "developer_api_usage_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "developer_apps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      developer_app_secrets: {
+        Row: {
+          app_id: string
+          app_secret: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          app_id: string
+          app_secret: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+        }
+        Update: {
+          app_id?: string
+          app_secret?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "developer_app_secrets_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "developer_apps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       developer_apps: {
         Row: {
           app_name: string
@@ -382,6 +502,42 @@ export type Database = {
           public_key?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          address_access_notifications: boolean
+          created_at: string
+          email_notifications: boolean
+          id: string
+          marketing_notifications: boolean
+          updated_at: string
+          user_id: string
+          verification_notifications: boolean
+          webhook_notifications: boolean
+        }
+        Insert: {
+          address_access_notifications?: boolean
+          created_at?: string
+          email_notifications?: boolean
+          id?: string
+          marketing_notifications?: boolean
+          updated_at?: string
+          user_id: string
+          verification_notifications?: boolean
+          webhook_notifications?: boolean
+        }
+        Update: {
+          address_access_notifications?: boolean
+          created_at?: string
+          email_notifications?: boolean
+          id?: string
+          marketing_notifications?: boolean
+          updated_at?: string
+          user_id?: string
+          verification_notifications?: boolean
+          webhook_notifications?: boolean
         }
         Relationships: []
       }
@@ -640,6 +796,100 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          attempt_count: number
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          response_body: string | null
+          status: string
+          status_code: number | null
+          webhook_id: string
+        }
+        Insert: {
+          attempt_count?: number
+          created_at?: string
+          event_type: string
+          id?: string
+          payload: Json
+          response_body?: string | null
+          status: string
+          status_code?: number | null
+          webhook_id: string
+        }
+        Update: {
+          attempt_count?: number
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          response_body?: string | null
+          status?: string
+          status_code?: number | null
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_logs_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhooks: {
+        Row: {
+          app_id: string
+          created_at: string
+          events: string[]
+          failure_count: number
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          secret_key: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          app_id: string
+          created_at?: string
+          events: string[]
+          failure_count?: number
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          secret_key: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          app_id?: string
+          created_at?: string
+          events?: string[]
+          failure_count?: number
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          secret_key?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhooks_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "developer_apps"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       zkp_verifications: {
         Row: {

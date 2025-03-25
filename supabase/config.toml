@@ -17,4 +17,4 @@ port = 54322
 port = 54323
 
 [functions]
-# Remove the port key from the serve section as it's not supported
+# Function configuration is now in functions/config.toml
