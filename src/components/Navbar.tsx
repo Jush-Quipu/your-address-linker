@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import {
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Menu, X, LogOut, User, Shield, Truck } from 'lucide-react';
+import { Menu, X, LogOut, User, Shield, Truck, Code } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
@@ -38,6 +37,7 @@ const Navbar: React.FC = () => {
     { to: '/permissions', label: 'Permissions', authRequired: true },
     { to: '/blind-shipping', label: 'Blind Shipping', authRequired: true, icon: <Truck className="h-4 w-4 mr-2" /> },
     { to: '/connect', label: 'Connect Wallet', authRequired: true },
+    { to: '/developer', label: 'Developer Portal', authRequired: true, icon: <Code className="h-4 w-4 mr-2" /> },
     { to: '/docs', label: 'Developer Docs', authRequired: false },
   ];
 

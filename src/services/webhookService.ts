@@ -206,3 +206,98 @@ export const deleteWebhook = async (webhookId: string): Promise<void> => {
     throw error;
   }
 };
+
+// Function to test a webhook
+export const testWebhook = async (webhookId: string): Promise<void> => {
+  try {
+    const { data: token } = await supabase.auth.getSession();
+    if (!token.session) {
+      throw new Error('Authentication required');
+    }
+
+    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/manage-webhooks/${webhookId}/test`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token.session.access_token}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to test webhook');
+    }
+    
+    toast.success('Webhook test sent successfully', {
+      description: 'A test event has been sent to your webhook endpoint.'
+    });
+  } catch (error) {
+    console.error('Error testing webhook:', error);
+    toast.error('Failed to test webhook', {
+      description: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
+    throw error;
+  }
+};
+
+// Function to get webhook delivery history
+export const getWebhookDeliveries = async (webhookId: string): Promise<any[]> => {
+  try {
+    const { data: token } = await supabase.auth.getSession();
+    if (!token.session) {
+      throw new Error('Authentication required');
+    }
+
+    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/manage-webhooks/${webhookId}/deliveries`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token.session.access_token}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to fetch webhook deliveries');
+    }
+
+    const result = await response.json();
+    return result.data.deliveries;
+  } catch (error) {
+    console.error('Error fetching webhook deliveries:', error);
+    toast.error('Failed to fetch webhook deliveries', {
+      description: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
+    throw error;
+  }
+};
+
+// Function to retry a failed webhook delivery
+export const retryWebhookDelivery = async (webhookId: string, deliveryId: string): Promise<void> => {
+  try {
+    const { data: token } = await supabase.auth.getSession();
+    if (!token.session) {
+      throw new Error('Authentication required');
+    }
+
+    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/manage-webhooks/${webhookId}/deliveries/${deliveryId}/retry`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token.session.access_token}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to retry webhook delivery');
+    }
+    
+    toast.success('Webhook delivery retry initiated', {
+      description: 'The webhook delivery is being retried.'
+    });
+  } catch (error) {
+    console.error('Error retrying webhook delivery:', error);
+    toast.error('Failed to retry webhook delivery', {
+      description: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
+    throw error;
+  }
+};

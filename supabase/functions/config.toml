@@ -79,3 +79,12 @@ verify_jwt = false
 [[functions]]
 name = "manage-webhooks"
 verify_jwt = false
+
+[[functions]]
+name = "test-webhook"
+verify_jwt = false
+
+[[functions]]
+name = "webhook-deliveries"
+verify_jwt = false
+

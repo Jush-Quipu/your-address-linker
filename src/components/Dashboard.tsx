@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Shield, Truck, Key, Wallet, Home, Settings, History } from 'lucide-react';
+import { Shield, Truck, Key, Wallet, Home, Settings, History, Code } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
@@ -23,8 +22,6 @@ const Dashboard: React.FC<DashboardProps> = ({
   const { isAuthenticated } = useAuth();
 
   const handleManageAddresses = () => {
-    // This would typically navigate to an address management page
-    // For now, we'll create a toast and navigate to a future page
     toast.info('Navigating to address management');
     navigate('/dashboard/addresses');
   };
@@ -38,14 +35,14 @@ const Dashboard: React.FC<DashboardProps> = ({
   };
 
   const handleManageApiKeys = () => {
-    // This would typically navigate to an API keys management page
-    // For now, we'll create a toast and navigate to a future page
-    toast.info('Navigating to API key management');
     navigate('/dashboard/api-keys');
   };
 
+  const handleDeveloperPortal = () => {
+    navigate('/developer');
+  };
+
   const handleAccountSettings = () => {
-    // This would typically navigate to account settings page
     toast.info('Navigating to account settings');
     navigate('/dashboard/settings');
   };
@@ -53,18 +50,18 @@ const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="space-y-8">
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full md:w-auto grid-cols-3 md:grid-cols-6">
+        <TabsList className="grid w-full md:w-auto grid-cols-3 md:grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="addresses">Addresses</TabsTrigger>
           <TabsTrigger value="wallets">Wallets</TabsTrigger>
           <TabsTrigger value="permissions">Permissions</TabsTrigger>
+          <TabsTrigger value="developer">Developer</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Address Management Card */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
@@ -85,7 +82,6 @@ const Dashboard: React.FC<DashboardProps> = ({
               </CardFooter>
             </Card>
             
-            {/* Wallet Connection Card */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
@@ -106,7 +102,6 @@ const Dashboard: React.FC<DashboardProps> = ({
               </CardFooter>
             </Card>
             
-            {/* Permission Management Card */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
@@ -129,7 +124,6 @@ const Dashboard: React.FC<DashboardProps> = ({
               </CardFooter>
             </Card>
             
-            {/* Blind Shipping Card */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
@@ -148,18 +142,35 @@ const Dashboard: React.FC<DashboardProps> = ({
               </CardFooter>
             </Card>
             
-            {/* API Keys Card */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2">
+                  <Code className="h-5 w-5 text-primary" />
+                  Developer Portal
+                </CardTitle>
+                <CardDescription>Build applications with our API</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-2">
+                <p className="text-sm text-muted-foreground">
+                  Register apps, manage API keys, and access developer tools
+                </p>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" className="w-full" onClick={handleDeveloperPortal}>Open Developer Portal</Button>
+              </CardFooter>
+            </Card>
+            
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Key className="h-5 w-5 text-primary" />
-                  Developer API
+                  API Keys
                 </CardTitle>
-                <CardDescription>Integrate with your applications</CardDescription>
+                <CardDescription>Manage your API credentials</CardDescription>
               </CardHeader>
               <CardContent className="pb-2">
                 <p className="text-sm text-muted-foreground">
-                  API keys and SDKs to integrate with your applications
+                  Create and manage API keys for your applications
                 </p>
               </CardContent>
               <CardFooter>
@@ -167,7 +178,6 @@ const Dashboard: React.FC<DashboardProps> = ({
               </CardFooter>
             </Card>
             
-            {/* Settings Card */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
@@ -197,7 +207,6 @@ const Dashboard: React.FC<DashboardProps> = ({
             <CardContent>
               {physicalAddresses.length > 0 ? (
                 <div className="space-y-4">
-                  {/* Address list would go here */}
                   <p>Your addresses will be displayed here</p>
                 </div>
               ) : (
@@ -219,7 +228,6 @@ const Dashboard: React.FC<DashboardProps> = ({
             <CardContent>
               {walletAddresses.length > 0 ? (
                 <div className="space-y-4">
-                  {/* Wallet list would go here */}
                   <p>Your connected wallets will be displayed here</p>
                 </div>
               ) : (
@@ -241,7 +249,6 @@ const Dashboard: React.FC<DashboardProps> = ({
             <CardContent className="pb-2">
               {permissions.length > 0 ? (
                 <div className="space-y-4">
-                  {/* Permissions list would go here */}
                   <p>Your granted permissions will be displayed here</p>
                 </div>
               ) : (
@@ -263,6 +270,131 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </Link>
               </div>
             </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="developer">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Code className="h-5 w-5" />
+                Developer Resources
+              </CardTitle>
+              <CardDescription>Build applications with the SecureAddress Bridge API</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Register Applications</CardTitle>
+                    <CardDescription>Create OAuth applications</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pb-2">
+                    <p className="text-sm text-muted-foreground">
+                      Register your application to get a client ID and secret
+                    </p>
+                  </CardContent>
+                  <CardFooter>
+                    <Button className="w-full" onClick={handleDeveloperPortal}>
+                      Developer Portal
+                    </Button>
+                  </CardFooter>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">API Keys</CardTitle>
+                    <CardDescription>Manage authentication credentials</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pb-2">
+                    <p className="text-sm text-muted-foreground">
+                      Create and manage API keys for your applications
+                    </p>
+                  </CardContent>
+                  <CardFooter>
+                    <Button className="w-full" onClick={handleManageApiKeys}>
+                      Manage API Keys
+                    </Button>
+                  </CardFooter>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Webhooks</CardTitle>
+                    <CardDescription>Receive event notifications</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pb-2">
+                    <p className="text-sm text-muted-foreground">
+                      Configure webhooks to be notified of events
+                    </p>
+                  </CardContent>
+                  <CardFooter>
+                    <Link to="/developer" className="w-full">
+                      <Button className="w-full">
+                        Manage Webhooks
+                      </Button>
+                    </Link>
+                  </CardFooter>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">API Documentation</CardTitle>
+                    <CardDescription>Reference guides and examples</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pb-2">
+                    <p className="text-sm text-muted-foreground">
+                      Detailed documentation for our REST API endpoints
+                    </p>
+                  </CardContent>
+                  <CardFooter>
+                    <Link to="/docs" className="w-full">
+                      <Button className="w-full">
+                        View Documentation
+                      </Button>
+                    </Link>
+                  </CardFooter>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">SDK Libraries</CardTitle>
+                    <CardDescription>Client libraries for integration</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pb-2">
+                    <p className="text-sm text-muted-foreground">
+                      Libraries for JavaScript, Python, and other languages
+                    </p>
+                  </CardContent>
+                  <CardFooter>
+                    <Link to="/docs?tab=sdk" className="w-full">
+                      <Button className="w-full">
+                        View SDKs
+                      </Button>
+                    </Link>
+                  </CardFooter>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">API Testing</CardTitle>
+                    <CardDescription>Test API endpoints</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pb-2">
+                    <p className="text-sm text-muted-foreground">
+                      Interactive environment to test API calls
+                    </p>
+                  </CardContent>
+                  <CardFooter>
+                    <Link to="/api-testing" className="w-full">
+                      <Button className="w-full">
+                        Open API Tester
+                      </Button>
+                    </Link>
+                  </CardFooter>
+                </Card>
+              </div>
+            </CardContent>
           </Card>
         </TabsContent>
         

@@ -26,6 +26,7 @@ import AuthorizePage from '@/pages/AuthorizePage'; // Import Authorization page
 import DashboardAddresses from '@/pages/DashboardAddresses'; // Import Address management page
 import DashboardApiKeys from '@/pages/DashboardApiKeys'; // Import API Keys page
 import DashboardSettings from '@/pages/DashboardSettings'; // Import Settings page
+import DeveloperPortal from '@/pages/DeveloperPortal'; // Import Developer Portal page
 
 function App() {
   return (
@@ -56,6 +57,7 @@ function App() {
           <Route path="/permissions" element={<PermissionsPage />} />
           <Route path="/blind-shipping" element={<BlindShippingPage />} />
           <Route path="/authorize" element={<AuthorizePage />} />
+          <Route path="/developer" element={<DeveloperPortal />} />
         </Routes>
       </AuthProvider>
     </Router>
