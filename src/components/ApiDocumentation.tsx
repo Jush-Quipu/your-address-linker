@@ -1,935 +1,492 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import CodeBlock from '@/components/CodeBlock';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { InfoIcon, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Copy, CheckCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import CodeBlock from '@/components/CodeBlock';
 
 const ApiDocumentation: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('api-reference');
-
-  // Authentication code example
-  const authCodeExample = `// Using our JavaScript SDK
-import { SecureAddressBridge } from 'secureaddress-bridge-sdk';
-
-// Initialize with your app credentials
-const client = new SecureAddressBridge({
-  appId: 'YOUR_APP_ID',
-  redirectUri: 'https://your-app.com/callback',
-  apiVersion: 'v1', // Optional - defaults to latest version
-  debug: true, // Optional - enables detailed logging
-});
-
-// Generate authorization URL with CSRF protection
-const state = generateRandomString(); // Create a random string
-localStorage.setItem('secureaddress_state', state); // Store for validation
-
-// Redirect user to the authorization page
-await client.authorize({
-  scope: ['street', 'city', 'state', 'postal_code', 'country'],
-  expiryDays: 30,
-  state: state, // CSRF protection
-  maxAccessCount: 10, // Optional - limit number of accesses
-  accessNotification: true // Optional - notify user on access
-});`;
-
-  // Request address code example
-  const requestAddressExample = `// Handle the callback from authorization
-const handleCallback = async () => {
-  try {
-    const result = await client.handleCallback();
-    
-    if (result.success) {
-      // Authorization successful, now get the address
-      const { address, verification, permission } = await client.getAddress({
-        includeVerification: true
-      });
-      
-      console.log('Address:', address);
-      console.log('Verification:', verification);
-      console.log('Permission details:', permission);
-      
-      // Address will look like:
-      // {
-      //   streetAddress: '123 Main St',
-      //   city: 'San Francisco',
-      //   state: 'CA',
-      //   postalCode: '94105',
-      //   country: 'US',
-      //   verified: true,
-      //   verificationLevel: 'advanced',
-      //   verificationMethod: 'document',
-      //   verificationDate: '2023-07-15T10:30:00Z'
-      // }
-    } else {
-      console.error('Authorization failed:', result.errorDescription);
-    }
-  } catch (error) {
-    console.error('Error handling callback:', error);
-  }
-};`;
-
-  // Standard API response example
-  const standardResponseExample = `// All API responses follow this standard structure
-{
-  "success": true,  // Boolean indicating success or failure
-  "data": {         // Present only on success
-    // Response data varies by endpoint
-  },
-  "error": {        // Present only on failure
-    "code": "error_code",
-    "message": "Human-readable error message",
-    "details": {
-      // Additional error details (optional)
-    }
-  },
-  "meta": {         // Metadata for all responses
-    "version": "v1",
-    "timestamp": "2023-08-01T12:34:56Z",
-    "requestId": "req_1234567890abcdef"  // For tracking and debugging
-  }
-}`;
-
-  // Versioning example
-  const versioningExample = `// Specify API version in the SDK
-const client = new SecureAddressBridge({
-  appId: 'YOUR_APP_ID',
-  redirectUri: 'YOUR_REDIRECT_URI',
-  apiVersion: 'v1'  // Explicitly request v1 API
-});
-
-// Or specify in direct API calls
-fetch('https://akfieehzgpcapuhdujvf.supabase.co/functions/v1/validate-token', {
-  headers: {
-    'Authorization': 'Bearer YOUR_TOKEN',
-    'Content-Type': 'application/json',
-    'X-App-ID': 'YOUR_APP_ID'
-  }
-});`;
-
-  // Verification status endpoint example
-  const verificationStatusExample = `// Get verification status using the SDK
-const status = await client.getVerificationStatus({
-  userId: 'user-123'
-  // OR addressId: 'address-456'
-  // OR walletAddress: '0x123...', chainId: 1
-});
-
-console.log(status);
-// {
-//   status: 'verified',
-//   method: 'document',
-//   date: '2023-07-15T10:30:00Z',
-//   postalVerified: true,
-//   location: {
-//     country: 'US',
-//     state: 'CA',
-//     city: 'San Francisco',
-//     postalCode: '94105'
-//   },
-//   wallets: [
-//     { address: '0x123...', chainId: 1, isPrimary: true }
-//   ],
-//   zkpVerifications: [...]
-// }`;
-
-  // Error codes example
-  const errorCodesExample = `// Example error response for an expired token
-{
-  "success": false,
-  "error": {
-    "code": "token_expired",
-    "message": "Token has expired",
-    "details": {
-      "expiredAt": "2023-07-01T00:00:00Z"
-    }
-  },
-  "meta": {
-    "version": "v1",
-    "timestamp": "2023-08-01T12:34:56Z",
-    "requestId": "req_1234567890abcdef"
-  }
-}
-
-// Common error codes:
-// - invalid_request: Missing or invalid parameters
-// - unauthorized: Invalid or missing credentials
-// - forbidden: Valid credentials but insufficient permissions
-// - not_found: Requested resource not found
-// - token_expired: Access token has expired
-// - permission_revoked: Access has been revoked
-// - max_access_exceeded: Maximum access count reached
-// - rate_limit_exceeded: Too many requests
-// - internal_server_error: Server-side error`;
-
-  // Rate limiting example
-  const rateLimitExample = `// Rate limit headers in API responses
-X-RateLimit-Limit: 120
-X-RateLimit-Remaining: 119
-X-RateLimit-Reset: 58
-
-// Rate limit exceeded response
-{
-  "success": false,
-  "error": {
-    "code": "rate_limit_exceeded",
-    "message": "Rate limit exceeded. Please try again later.",
-    "details": {
-      "limit": 120,
-      "remaining": 0,
-      "resetAt": "2023-08-01T12:35:00Z"
-    }
-  },
-  "meta": {
-    "version": "v1",
-    "timestamp": "2023-08-01T12:34:02Z",
-    "requestId": "req_1234567890abcdef"
-  }
-}`;
-
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    toast.success('Copied to clipboard!');
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+  
+  const baseUrl = 'https://akfieehzgpcapuhdujvf.supabase.co/functions/v1';
+  
   return (
     <div className="space-y-8">
-      <Alert variant="warning" className="mb-8">
-        <InfoIcon className="h-4 w-4" />
-        <AlertTitle>API Implementation Updates</AlertTitle>
-        <AlertDescription>
-          Our API is now implemented using Supabase Edge Functions for enhanced performance and reliability.
-          Updated endpoints and comprehensive testing tools are now available.
-        </AlertDescription>
-      </Alert>
+      <div className="border rounded-lg p-4 bg-muted/20">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-medium">Base URL</h3>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 gap-1" 
+            onClick={() => handleCopy(baseUrl, 'base-url')}
+          >
+            {copiedId === 'base-url' ? (
+              <><CheckCircle className="h-4 w-4" /> Copied</>
+            ) : (
+              <><Copy className="h-4 w-4" /> Copy</>
+            )}
+          </Button>
+        </div>
+        <p className="mt-1 font-mono text-sm">{baseUrl}</p>
+      </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-6 mb-8">
-          <TabsTrigger value="api-reference">API Reference</TabsTrigger>
-          <TabsTrigger value="responses">Responses</TabsTrigger>
-          <TabsTrigger value="errors">Errors</TabsTrigger>
-          <TabsTrigger value="versioning">Versioning</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="examples">Examples</TabsTrigger>
+      <Tabs defaultValue="overview">
+        <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 h-auto">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="authentication">Authentication</TabsTrigger>
+          <TabsTrigger value="address">Address API</TabsTrigger>
+          <TabsTrigger value="wallet">Wallet API</TabsTrigger>
+          <TabsTrigger value="webhook">Webhooks</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="api-reference" className="space-y-8">
+        <TabsContent value="overview" className="space-y-4 pt-4">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                RESTful API Endpoints
-                <Badge variant="secondary" className="ml-2">v1</Badge>
-              </CardTitle>
+              <CardTitle>SecureAddress Bridge API</CardTitle>
               <CardDescription>
-                SecureAddress Bridge provides a RESTful API for accessing user address data with consent.
+                Connect your applications to our secure address verification and wallet-linking services
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium">Base URL</h3>
-                <CodeBlock
-                  code="https://akfieehzgpcapuhdujvf.supabase.co/functions/v1"
-                  language="bash"
-                  showLineNumbers={false}
-                />
-                
-                <h3 className="text-lg font-medium mt-6">Authentication</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  All API requests must include your app's access token in the Authorization header.
+              <div className="space-y-4">
+                <p>
+                  The SecureAddress Bridge API provides a secure way to verify and access user addresses 
+                  while preserving privacy and security. Our API follows OAuth 2.0 standards for authorization, 
+                  making it easy to integrate with existing applications.
                 </p>
-                <CodeBlock
-                  code="Authorization: Bearer YOUR_ACCESS_TOKEN
-X-App-ID: YOUR_APP_ID
-X-SDK-Version: 2.3.0 (Optional)"
-                  language="bash"
-                  showLineNumbers={false}
-                />
                 
-                <h3 className="text-lg font-medium mt-6">Endpoints</h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Endpoint</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Description</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-mono">/authorize</TableCell>
-                      <TableCell>GET</TableCell>
-                      <TableCell>Start the authorization flow for address access</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">/token</TableCell>
-                      <TableCell>POST</TableCell>
-                      <TableCell>Exchange authorization code for access token</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">/address</TableCell>
-                      <TableCell>GET</TableCell>
-                      <TableCell>Retrieve user's address data</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">/validation-status</TableCell>
-                      <TableCell>GET</TableCell>
-                      <TableCell>Get address verification status</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">/validate-token</TableCell>
-                      <TableCell>GET</TableCell>
-                      <TableCell>Validate an access token</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">/zkp/authorize</TableCell>
-                      <TableCell>GET</TableCell>
-                      <TableCell>Start the authorization flow for ZK proofs</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">/zkp/token</TableCell>
-                      <TableCell>POST</TableCell>
-                      <TableCell>Exchange proof code for proof token</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">/zkp/proof/{'{id}'}</TableCell>
-                      <TableCell>GET</TableCell>
-                      <TableCell>Get a specific ZK proof</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">/token/refresh</TableCell>
-                      <TableCell>POST</TableCell>
-                      <TableCell>Refresh an expired access token</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">/token/revoke</TableCell>
-                      <TableCell>POST</TableCell>
-                      <TableCell>Revoke an access token</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">/webhooks</TableCell>
-                      <TableCell>POST</TableCell>
-                      <TableCell>Register a webhook URL</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">/link-wallet</TableCell>
-                      <TableCell>POST</TableCell>
-                      <TableCell>Link a verified address to a blockchain wallet</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">/usage-stats</TableCell>
-                      <TableCell>GET</TableCell>
-                      <TableCell>Get usage statistics for your application</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
+                <h3 className="text-lg font-medium mt-4">Getting Started</h3>
+                <ol className="list-decimal list-inside space-y-2 pl-4">
+                  <li>Register your application in the developer dashboard</li>
+                  <li>Implement the OAuth 2.0 authorization flow</li>
+                  <li>Request user permissions for address access</li>
+                  <li>Use the granted tokens to access address information</li>
+                </ol>
                 
-                <h3 className="text-lg font-medium mt-6">Rate Limits</h3>
+                <h3 className="text-lg font-medium mt-4">API Categories</h3>
+                <ul className="list-disc list-inside space-y-1 pl-4">
+                  <li><strong>Authentication API</strong> - OAuth 2.0 endpoints for secure access</li>
+                  <li><strong>Address API</strong> - Verify and access user address information</li>
+                  <li><strong>Wallet API</strong> - Link blockchain wallets to verified addresses</li>
+                  <li><strong>Webhook API</strong> - Receive real-time notifications</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="authentication" className="space-y-4 pt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>OAuth 2.0 Authentication</CardTitle>
+              <CardDescription>
+                Secure access to user address information through standard OAuth flows
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Authorization Endpoint</h3>
                 <p className="text-sm text-muted-foreground">
-                  The API is rate-limited to 120 requests per minute per app. Enterprise customers
-                  can request higher limits. If you exceed this limit, you'll receive a 429 Too Many
-                  Requests response and the corresponding rate limit exceeded error.
+                  Initiate the authorization flow to request user consent.
                 </p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>GET /address</CardTitle>
-              <CardDescription>
-                Retrieve a user's address data based on their permissions with enhanced options.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Request</h3>
-                <CodeBlock
-                  code={`GET /v1/address?fields=street,city,state,postal_code&include_verification=true HTTP/1.1
-Host: akfieehzgpcapuhdujvf.supabase.co/functions
-Authorization: Bearer USER_ACCESS_TOKEN
-X-App-ID: YOUR_APP_ID
-X-SDK-Version: 2.3.0`}
-                  language="http"
-                  showLineNumbers={true}
-                />
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <span className="px-2 py-1 rounded bg-primary-foreground">GET</span>
+                  <span className="font-mono">/authorize</span>
+                </div>
                 
-                <h3 className="text-lg font-medium mt-4">Response</h3>
-                <CodeBlock
-                  code={`HTTP/1.1 200 OK
-Content-Type: application/json
-X-RateLimit-Limit: 120
-X-RateLimit-Remaining: 119
-X-RateLimit-Reset: 59
-X-Request-Id: req_1234567890abcdef
-
-{
-  "success": true,
-  "data": {
-    "address": {
-      "street": "123 Main St",     // Only included if user approved this field
-      "city": "San Francisco",     // Only included if user approved this field
-      "state": "CA",               // Only included if user approved this field
-      "postal_code": "94105",      // Only included if user approved this field
-      "country": "US"              // Only included if user approved this field
-    },
-    "verification": {
-      "status": "verified",
-      "method": "document_upload",
-      "date": "2023-07-15T10:30:00Z"
-    },
-    "permission": {
-      "app_id": "app_123456",
-      "app_name": "Example Shop",
-      "access_count": 3,
-      "max_access_count": 10,
-      "access_expiry": "2023-08-15T00:00:00Z"
-    }
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Required Parameters:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>app_id</code> - Your application ID</li>
+                    <li><code>redirect_uri</code> - URI to redirect after authorization</li>
+                    <li><code>response_type</code> - Must be "code"</li>
+                    <li><code>state</code> - A random string for security</li>
+                  </ul>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Optional Parameters:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>scope</code> - Space-separated list of requested permissions (default: all)</li>
+                    <li><code>expiry_days</code> - Number of days the permission lasts (default: 30)</li>
+                    <li><code>max_access_count</code> - Maximum number of access attempts</li>
+                    <li><code>access_notification</code> - Send notifications on access (true/false)</li>
+                  </ul>
+                </div>
+                
+                <CodeBlock 
+                  language="javascript" 
+                  code={`// Example authorization request
+const authUrl = '${baseUrl}/authorize?app_id=app_123456&redirect_uri=https://yourapp.com/callback&response_type=code&state=random_state&scope=street city state postal_code country&expiry_days=30';
+window.location.href = authUrl;`}
+                  onCopy={(text) => handleCopy(text, 'auth-example')}
+                  copied={copiedId === 'auth-example'}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Token Endpoint</h3>
+                <p className="text-sm text-muted-foreground">
+                  Exchange authorization code for access token.
+                </p>
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <span className="px-2 py-1 rounded bg-primary-foreground">POST</span>
+                  <span className="font-mono">/token</span>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Request Body:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>grant_type</code> - "authorization_code" or "refresh_token"</li>
+                    <li><code>code</code> - The authorization code (for grant_type="authorization_code")</li>
+                    <li><code>refresh_token</code> - The refresh token (for grant_type="refresh_token")</li>
+                    <li><code>redirect_uri</code> - Must match the one used in the authorization request</li>
+                    <li><code>app_id</code> - Your application ID</li>
+                  </ul>
+                </div>
+                
+                <CodeBlock 
+                  language="javascript" 
+                  code={`// Example token request
+const response = await fetch('${baseUrl}/token', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
   },
-  "meta": {
-    "version": "v1",
-    "timestamp": "2023-08-01T12:34:56Z",
-    "requestId": "req_1234567890abcdef"
-  }
-}`}
-                  language="json"
-                  showLineNumbers={true}
-                />
-                
-                <h3 className="text-lg font-medium mt-4">Query Parameters</h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Parameter</TableHead>
-                      <TableHead>Description</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>fields</TableCell>
-                      <TableCell>Comma-separated list of specific fields to request</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>include_verification</TableCell>
-                      <TableCell>Set to 'true' to include verification details</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>GET /verification-status</CardTitle>
-              <CardDescription>
-                New endpoint to check address verification status for a user, address, or wallet.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Request</h3>
-                <CodeBlock
-                  code={`GET /v1/verification-status?user_id=user-123 HTTP/1.1
-Host: akfieehzgpcapuhdujvf.supabase.co/functions
-Authorization: Bearer YOUR_ACCESS_TOKEN
-X-App-ID: YOUR_APP_ID
-X-SDK-Version: 2.3.0`}
-                  language="http"
-                  showLineNumbers={true}
-                />
-                
-                <h3 className="text-lg font-medium mt-4">Alternative Parameters</h3>
-                <CodeBlock
-                  code={`// By address ID
-GET /v1/verification-status?address_id=address-456
-
-// By wallet address
-GET /v1/verification-status?wallet_address=0x1234...&chain_id=1`}
-                  language="http"
-                  showLineNumbers={false}
-                />
-                
-                <h3 className="text-lg font-medium mt-4">Response</h3>
-                <CodeBlock
-                  code={`HTTP/1.1 200 OK
-Content-Type: application/json
-X-Request-Id: req_1234567890abcdef
-
-{
-  "success": true,
-  "data": {
-    "id": "addr_12345",
-    "user_id": "user-123",
-    "verification": {
-      "status": "verified",
-      "method": "document_upload",
-      "date": "2023-07-15T10:30:00Z",
-      "postal_verified": true,
-      "postal_verification_date": "2023-07-16T14:25:10Z"
-    },
-    "location": {
-      "country": "US",
-      "state": "CA",
-      "city": "San Francisco",
-      "postal_code": "94105"
-    },
-    "timestamps": {
-      "created_at": "2023-07-10T09:15:00Z",
-      "updated_at": "2023-07-15T10:30:00Z"
-    },
-    "linked_wallets": [
-      {
-        "address": "0x1234...",
-        "chain_id": 1,
-        "is_primary": true
-      }
-    ],
-    "zkp_verifications": [
-      {
-        "id": "zkp_12345",
-        "verification_type": "country_proof",
-        "verifier_app_id": "app_123456",
-        "verified_at": "2023-07-20T11:45:00Z",
-        "is_valid": true
-      }
-    ]
-  },
-  "meta": {
-    "version": "v1",
-    "timestamp": "2023-08-01T12:34:56Z",
-    "requestId": "req_1234567890abcdef"
-  }
-}`}
-                  language="json"
-                  showLineNumbers={true}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="responses" className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Standardized API Responses</CardTitle>
-              <CardDescription>
-                All API endpoints now return responses in a standardized format for consistency.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium">Response Structure</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  All API responses follow the same structure, with clear separation between success and error cases.
-                </p>
-                <CodeBlock
-                  code={standardResponseExample}
-                  language="json"
-                  showLineNumbers={true}
-                />
-                
-                <h3 className="text-lg font-medium mt-6">Success Response</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Success responses have a `success: true` field and include the requested data in the `data` field.
-                </p>
-                
-                <h3 className="text-lg font-medium mt-6">Error Response</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Error responses have a `success: false` field and include error details in the `error` field.
-                </p>
-                
-                <h3 className="text-lg font-medium mt-6">Metadata</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  All responses include metadata with the API version, timestamp, and a unique request ID for tracking.
-                </p>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Metadata Field</TableHead>
-                      <TableHead>Description</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>version</TableCell>
-                      <TableCell>API version (e.g., "v1")</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>timestamp</TableCell>
-                      <TableCell>Request time in ISO 8601 format</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>requestId</TableCell>
-                      <TableCell>Unique ID for tracking the request</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>HTTP Status Codes</CardTitle>
-              <CardDescription>
-                Our API uses standard HTTP status codes along with detailed error information.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Status Code</TableHead>
-                      <TableHead>Description</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>200 OK</TableCell>
-                      <TableCell>Request successful</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>400 Bad Request</TableCell>
-                      <TableCell>Invalid parameters or request format</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>401 Unauthorized</TableCell>
-                      <TableCell>Missing or invalid authentication credentials</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>403 Forbidden</TableCell>
-                      <TableCell>Valid credentials but insufficient permissions</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>404 Not Found</TableCell>
-                      <TableCell>Requested resource not found</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>429 Too Many Requests</TableCell>
-                      <TableCell>Rate limit exceeded</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>500 Internal Server Error</TableCell>
-                      <TableCell>Server-side error</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="errors" className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Error Handling</CardTitle>
-              <CardDescription>
-                Our API provides detailed error information to help with debugging and issue resolution.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium">Error Structure</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  All errors follow a consistent structure with error codes, messages, and optional details.
-                </p>
-                <CodeBlock
-                  code={errorCodesExample}
-                  language="json"
-                  showLineNumbers={true}
-                />
-                
-                <h3 className="text-lg font-medium mt-6">Common Error Codes</h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Error Code</TableHead>
-                      <TableHead>Description</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>invalid_request</TableCell>
-                      <TableCell>Missing or invalid parameters</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>unauthorized</TableCell>
-                      <TableCell>Invalid or missing credentials</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>forbidden</TableCell>
-                      <TableCell>Valid credentials but insufficient permissions</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>not_found</TableCell>
-                      <TableCell>Requested resource not found</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>token_expired</TableCell>
-                      <TableCell>Access token has expired</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>permission_revoked</TableCell>
-                      <TableCell>Access has been revoked</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>max_access_exceeded</TableCell>
-                      <TableCell>Maximum access count reached</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>rate_limit_exceeded</TableCell>
-                      <TableCell>Too many requests</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>internal_server_error</TableCell>
-                      <TableCell>Server-side error</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Rate Limiting</CardTitle>
-              <CardDescription>
-                Our API includes rate limiting to ensure stable service for all users.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Rate Limit Headers</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  All API responses include rate limit headers to help you track your usage.
-                </p>
-                <CodeBlock
-                  code={rateLimitExample}
-                  language="http"
-                  showLineNumbers={true}
-                />
-                
-                <h3 className="text-lg font-medium mt-4">Header Descriptions</h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Header</TableHead>
-                      <TableHead>Description</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>X-RateLimit-Limit</TableCell>
-                      <TableCell>Maximum requests allowed in the current time window</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>X-RateLimit-Remaining</TableCell>
-                      <TableCell>Remaining requests in the current time window</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>X-RateLimit-Reset</TableCell>
-                      <TableCell>Time in seconds until the rate limit resets</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="versioning" className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>API Versioning</CardTitle>
-              <CardDescription>
-                Our API uses versioning to ensure compatibility as we evolve our services.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium">Version Format</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  API versions are specified in the URL path (e.g., <code>/v1/address</code>).
-                </p>
-                <CodeBlock
-                  code={versioningExample}
-                  language="javascript"
-                  showLineNumbers={true}
-                />
-                
-                <h3 className="text-lg font-medium mt-6">Version Guarantee</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  We guarantee that each API version will be supported for at least 12 months after a new version is released.
-                  When a version is deprecated, we will provide at least 6 months of notice before it is discontinued.
-                </p>
-                
-                <h3 className="text-lg font-medium mt-6">Available Versions</h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Version</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Released</TableHead>
-                      <TableHead>End of Support</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>v1</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">Current</Badge>
-                      </TableCell>
-                      <TableCell>August 2023</TableCell>
-                      <TableCell>TBD</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="security" className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Security Features</CardTitle>
-              <CardDescription>
-                Our API includes several security features to protect your data and prevent abuse.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium">HTTPS Encryption</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  All API requests must use HTTPS to ensure data is encrypted in transit.
-                </p>
-                
-                <h3 className="text-lg font-medium mt-6">CSRF Protection</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Our authorization flow includes state parameters to prevent cross-site request forgery attacks.
-                </p>
-                <CodeBlock
-                  code={`// Generate a random state parameter
-const state = Math.random().toString(36).substring(2, 15);
-localStorage.setItem('secureaddress_state', state);
-
-// Include in authorization request
-await client.authorize({
-  // Other parameters...
-  state: state
+  body: JSON.stringify({
+    grant_type: 'authorization_code',
+    code: 'authorization_code_from_callback',
+    app_id: 'app_123456',
+    redirect_uri: 'https://yourapp.com/callback'
+  })
 });
 
-// Validate state in callback
-const urlParams = new URLSearchParams(window.location.search);
-const state = urlParams.get('state');
-const storedState = localStorage.getItem('secureaddress_state');
-
-if (state !== storedState) {
-  // Invalid state, potential CSRF attack
-  throw new Error('Invalid state parameter');
-}`}
-                  language="javascript"
-                  showLineNumbers={true}
+const { data } = await response.json();
+// Store tokens
+const { access_token, refresh_token, expires_in } = data;`}
+                  onCopy={(text) => handleCopy(text, 'token-example')}
+                  copied={copiedId === 'token-example'}
                 />
-                
-                <h3 className="text-lg font-medium mt-6">Request Tracking</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Each API request gets a unique request ID for tracking and auditing.
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">User Info Endpoint</h3>
+                <p className="text-sm text-muted-foreground">
+                  Retrieve user information and address data.
                 </p>
-                <CodeBlock
-                  code={`// Request ID in response header
-X-Request-Id: req_1234567890abcdef
-
-// Request ID in response body
-{
-  "meta": {
-    "requestId": "req_1234567890abcdef",
-    // Other metadata...
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <span className="px-2 py-1 rounded bg-primary-foreground">GET</span>
+                  <span className="font-mono">/userinfo</span>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Request Headers:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>Authorization</code> - Bearer token (access token)</li>
+                  </ul>
+                </div>
+                
+                <CodeBlock 
+                  language="javascript" 
+                  code={`// Example userinfo request
+const response = await fetch('${baseUrl}/userinfo', {
+  method: 'GET',
+  headers: {
+    'Authorization': \`Bearer \${accessToken}\`
   }
-}`}
-                  language="http"
-                  showLineNumbers={true}
+});
+
+const { data } = await response.json();
+// User information, including address data
+console.log(data);`}
+                  onCopy={(text) => handleCopy(text, 'userinfo-example')}
+                  copied={copiedId === 'userinfo-example'}
                 />
-                
-                <h3 className="text-lg font-medium mt-6">Access Token Rotation</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  When you refresh an access token, both the access token and refresh token are rotated for security.
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Token Revocation</h3>
+                <p className="text-sm text-muted-foreground">
+                  Revoke an access or refresh token.
                 </p>
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <span className="px-2 py-1 rounded bg-primary-foreground">POST</span>
+                  <span className="font-mono">/revoke</span>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Request Body:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>token</code> - The token to revoke</li>
+                    <li><code>token_type_hint</code> - "access_token" or "refresh_token"</li>
+                    <li><code>app_id</code> - Your application ID</li>
+                  </ul>
+                </div>
+                
+                <CodeBlock 
+                  language="javascript" 
+                  code={`// Example token revocation
+const response = await fetch('${baseUrl}/revoke', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    token: 'token_to_revoke',
+    token_type_hint: 'access_token',
+    app_id: 'app_123456'
+  })
+});
+
+const result = await response.json();
+console.log(result); // { success: true, data: { revoked: true } }`}
+                  onCopy={(text) => handleCopy(text, 'revoke-example')}
+                  copied={copiedId === 'revoke-example'}
+                />
               </div>
             </CardContent>
           </Card>
         </TabsContent>
         
-        <TabsContent value="examples" className="space-y-8">
+        <TabsContent value="address" className="space-y-4 pt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Example: Authorization Flow</CardTitle>
+              <CardTitle>Address API</CardTitle>
               <CardDescription>
-                Example of implementing the OAuth authorization flow.
+                Verify and access physical address information securely
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Step 1: Redirect to Authorization</h3>
-                <CodeBlock
-                  code={authCodeExample}
-                  language="javascript"
-                  showLineNumbers={true}
-                />
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Get Address</h3>
+                <p className="text-sm text-muted-foreground">
+                  Retrieve a user's address using a permission token.
+                </p>
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <span className="px-2 py-1 rounded bg-primary-foreground">GET</span>
+                  <span className="font-mono">/address</span>
+                </div>
                 
-                <h3 className="text-lg font-medium mt-4">Step 2: Handle Callback & Get Address</h3>
-                <CodeBlock
-                  code={requestAddressExample}
-                  language="javascript"
-                  showLineNumbers={true}
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Request Headers:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>Authorization</code> - Bearer token (permission token or access token)</li>
+                  </ul>
+                </div>
+                
+                <CodeBlock 
+                  language="javascript" 
+                  code={`// Example get address request
+const response = await fetch('${baseUrl}/address', {
+  method: 'GET',
+  headers: {
+    'Authorization': \`Bearer \${accessToken}\`
+  }
+});
+
+const { data } = await response.json();
+// Address information
+const { street_address, city, state, postal_code, country } = data;`}
+                  onCopy={(text) => handleCopy(text, 'get-address-example')}
+                  copied={copiedId === 'get-address-example'}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Verify Address Status</h3>
+                <p className="text-sm text-muted-foreground">
+                  Check verification status of an address.
+                </p>
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <span className="px-2 py-1 rounded bg-primary-foreground">GET</span>
+                  <span className="font-mono">/get-verification-status</span>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Request Headers:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>Authorization</code> - Bearer token (user session token)</li>
+                  </ul>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Optional Query Parameters:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>address_id</code> - Specific address ID to check (default: all user addresses)</li>
+                  </ul>
+                </div>
+                
+                <CodeBlock 
+                  language="javascript" 
+                  code={`// Example verification status check
+const response = await fetch('${baseUrl}/get-verification-status', {
+  method: 'GET',
+  headers: {
+    'Authorization': \`Bearer \${userSessionToken}\`
+  }
+});
+
+const { data } = await response.json();
+// Verification status information
+console.log(data); // { verified: true, method: 'document_upload', ... }`}
+                  onCopy={(text) => handleCopy(text, 'verification-status-example')}
+                  copied={copiedId === 'verification-status-example'}
                 />
               </div>
             </CardContent>
           </Card>
-          
+        </TabsContent>
+        
+        <TabsContent value="wallet" className="space-y-4 pt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Example: Verification Status</CardTitle>
+              <CardTitle>Wallet API</CardTitle>
               <CardDescription>
-                Example of checking address verification status.
+                Connect blockchain wallets to verified physical addresses
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Verify Wallet Ownership</h3>
+                <p className="text-sm text-muted-foreground">
+                  Verify ownership of a blockchain wallet through signature verification.
+                </p>
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <span className="px-2 py-1 rounded bg-primary-foreground">POST</span>
+                  <span className="font-mono">/wallet-verify</span>
+                </div>
+                
+                <div className="mt-2">
+                  <h4 className="text-sm font-medium">Request Body:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>wallet_address</code> - The blockchain wallet address</li>
+                    <li><code>signature</code> - Signature of the message</li>
+                    <li><code>message</code> - Message that was signed</li>
+                    <li><code>user_id</code> - User ID that owns the wallet</li>
+                    <li><code>chain_id</code> - (Optional) Blockchain chain ID (default: 1 for Ethereum mainnet)</li>
+                  </ul>
+                </div>
+                
+                <CodeBlock 
+                  language="javascript" 
+                  code={`// Example wallet verification
+// First, create the message to sign
+const message = \`Verify wallet ownership for SecureAddress Bridge\nTimestamp: \${Date.now()}\`;
+
+// Have the user sign the message with their wallet (e.g., using ethers.js)
+const signature = await signer.signMessage(message);
+
+// Verify the signature
+const response = await fetch('${baseUrl}/wallet-verify', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    wallet_address: '0x123...abc',
+    signature: signature,
+    message: message,
+    user_id: 'user_123',
+    chain_id: 1 // Ethereum mainnet
+  })
+});
+
+const { data } = await response.json();
+// Verification result
+console.log(data); // { verified: true, wallet_id: '...', is_primary: true, ... }`}
+                  onCopy={(text) => handleCopy(text, 'wallet-verify-example')}
+                  copied={copiedId === 'wallet-verify-example'}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="webhook" className="space-y-4 pt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Webhook API</CardTitle>
+              <CardDescription>
+                Receive real-time notifications about address and permission changes
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <CodeBlock
-                code={verificationStatusExample}
-                language="javascript"
-                showLineNumbers={true}
-              />
+              <p className="text-muted-foreground mb-4">
+                Webhooks allow your application to be notified in real-time when events happen in a
+                user's account, such as address verification, permission changes, or address access.
+              </p>
+              
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Setting Up Webhooks</h3>
+                <p className="text-sm text-muted-foreground">
+                  Register webhook endpoints in your developer dashboard.
+                </p>
+                
+                <div className="mt-4 mb-6">
+                  <h4 className="text-sm font-medium">Available Events:</h4>
+                  <ul className="list-disc list-inside space-y-1 pl-4 text-sm">
+                    <li><code>address.verified</code> - An address was verified</li>
+                    <li><code>address.updated</code> - An address was updated</li>
+                    <li><code>permission.created</code> - A new permission was granted</li>
+                    <li><code>permission.revoked</code> - A permission was revoked</li>
+                    <li><code>address.accessed</code> - An address was accessed</li>
+                  </ul>
+                </div>
+                
+                <h3 className="text-lg font-medium mt-4">Webhook Payload Format</h3>
+                <CodeBlock 
+                  language="json" 
+                  code={`{
+  "event": "address.verified",
+  "created_at": "2023-08-15T12:34:56Z",
+  "data": {
+    "user_id": "user_123",
+    "address_id": "addr_456",
+    "verification_method": "document_upload",
+    // Additional event-specific data
+  }
+}`}
+                  onCopy={(text) => handleCopy(text, 'webhook-payload-example')}
+                  copied={copiedId === 'webhook-payload-example'}
+                />
+                
+                <div className="mt-4">
+                  <h3 className="text-lg font-medium">Security</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    All webhook requests include a signature header that you should verify to ensure the
+                    request is authentic. The signature is created using HMAC SHA-256 with your webhook secret.
+                  </p>
+                  
+                  <CodeBlock 
+                    language="javascript" 
+                    code={`// Example webhook signature verification
+function verifyWebhookSignature(payload, signature, secret) {
+  const hmac = crypto.createHmac('sha256', secret);
+  const calculatedSignature = hmac.update(payload).digest('hex');
+  return crypto.timingSafeEqual(
+    Buffer.from(signature),
+    Buffer.from(calculatedSignature)
+  );
+}`}
+                    onCopy={(text) => handleCopy(text, 'webhook-verify-example')}
+                    copied={copiedId === 'webhook-verify-example'}
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-      
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle>API Testing Tools</CardTitle>
-          <CardDescription>
-            Use our built-in testing tools to verify your integration with the SecureAddress Bridge API.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-4">
-            Our new API testing tools allow you to easily test your integration with various endpoints, 
-            view responses, and troubleshoot issues.
-          </p>
-          <div className="flex justify-center">
-            <Button
-              asChild
-              className="flex items-center gap-2"
-            >
-              <a href="/api-testing">
-                <Play className="h-4 w-4" />
-                Go to API Testing
-              </a>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

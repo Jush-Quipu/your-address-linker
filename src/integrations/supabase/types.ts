@@ -44,6 +44,69 @@ export type Database = {
           },
         ]
       }
+      access_tokens: {
+        Row: {
+          app_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          last_used_at: string | null
+          previous_token_id: string | null
+          refresh_token: string
+          refresh_token_expires_at: string
+          revoked: boolean
+          revoked_at: string | null
+          scope: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          app_id: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          last_used_at?: string | null
+          previous_token_id?: string | null
+          refresh_token: string
+          refresh_token_expires_at?: string
+          revoked?: boolean
+          revoked_at?: string | null
+          scope: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          app_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          last_used_at?: string | null
+          previous_token_id?: string | null
+          refresh_token?: string
+          refresh_token_expires_at?: string
+          revoked?: boolean
+          revoked_at?: string | null
+          scope?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_tokens_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "developer_apps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_tokens_previous_token_id_fkey"
+            columns: ["previous_token_id"]
+            isOneToOne: false
+            referencedRelation: "access_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       address_permissions: {
         Row: {
           access_count: number | null
@@ -148,6 +211,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      authorization_codes: {
+        Row: {
+          app_id: string
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          redirect_uri: string
+          scope: string
+          state: string | null
+          used: boolean
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          app_id: string
+          code: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          redirect_uri: string
+          scope: string
+          state?: string | null
+          used?: boolean
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          app_id?: string
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          redirect_uri?: string
+          scope?: string
+          state?: string | null
+          used?: boolean
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "authorization_codes_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "developer_apps"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       carrier_credentials: {
         Row: {
