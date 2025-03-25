@@ -12,6 +12,14 @@ import Dashboard from '@/pages/Dashboard'; // Import Dashboard page
 import Features from '@/pages/Features'; // Import Features page
 import Contact from '@/pages/Contact'; // Import Contact page
 import Careers from '@/pages/Careers'; // Import Careers page
+import Security from '@/pages/Security'; // Import Security page
+import Pricing from '@/pages/Pricing'; // Import Pricing page
+import Integrations from '@/pages/Integrations'; // Import Integrations page
+import Privacy from '@/pages/Privacy'; // Import Privacy page
+import Terms from '@/pages/Terms'; // Import Terms page
+import Compliance from '@/pages/Compliance'; // Import Compliance page
+import Cookies from '@/pages/Cookies'; // Import Cookies page
+import Tutorials from '@/pages/Tutorials'; // Import Tutorials page
 
 function App() {
   return (
@@ -28,6 +36,14 @@ function App() {
           <Route path="/features" element={<Features />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/careers" element={<Careers />} />
+          <Route path="/security" element={<Security />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/integrations" element={<Integrations />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/compliance" element={<Compliance />} />
+          <Route path="/cookies" element={<Cookies />} />
+          <Route path="/tutorials" element={<Tutorials />} />
         </Routes>
       </AuthProvider>
     </Router>
