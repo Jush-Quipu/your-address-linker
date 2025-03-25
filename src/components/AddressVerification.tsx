@@ -176,7 +176,9 @@ const AddressVerification: React.FC = () => {
         encryption_version: 1,
         zkp_proof: null,
         zkp_public_inputs: null,
-        zkp_created_at: null
+        zkp_created_at: null,
+        postal_verified: false,
+        postal_verification_date: null
       };
       
       const savedAddress = await createPhysicalAddress(addressData);

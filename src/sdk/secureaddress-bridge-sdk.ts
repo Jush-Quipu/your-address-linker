@@ -1,4 +1,5 @@
 
+import React from 'react';
 import type { ZkpCircuitType, ZkpPublicInputs } from '@/services/zkpService';
 
 export type SecureAddressBridgeConfig = {
