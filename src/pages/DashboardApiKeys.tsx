@@ -20,6 +20,7 @@ interface ApiKey {
   key: string;
   created_at: string;
   last_used: string | null;
+  revoked: boolean;
 }
 
 const DashboardApiKeys: React.FC = () => {
@@ -45,7 +46,6 @@ const DashboardApiKeys: React.FC = () => {
     const fetchApiKeys = async () => {
       if (!isAuthenticated || !user) return;
       
-      // Here you would fetch API keys from your backend
       setLoading(true);
       try {
         const { data, error } = await supabase
@@ -97,27 +97,30 @@ const DashboardApiKeys: React.FC = () => {
       
       const { data, error } = await supabase
         .from('api_keys')
-        .insert([{
+        .insert({
           user_id: user.id,
           name: newKeyName.trim(),
           key: apiKey,
-        }])
-        .select();
+        })
+        .select()
+        .single();
       
       if (error) throw error;
       
-      setApiKeys(prev => [...(data || []), ...prev]);
-      
-      toast.success('API key generated successfully', {
-        description: 'Make sure to copy your key now. You won\'t be able to see it again.'
-      });
-      
-      // Copy to clipboard automatically
-      navigator.clipboard.writeText(apiKey);
-      
-      // Reset and close dialog
-      setNewKeyName('');
-      setShowNewKeyDialog(false);
+      if (data) {
+        setApiKeys(prev => [data, ...prev]);
+        
+        toast.success('API key generated successfully', {
+          description: 'Make sure to copy your key now. You won\'t be able to see it again.'
+        });
+        
+        // Copy to clipboard automatically
+        navigator.clipboard.writeText(apiKey);
+        
+        // Reset and close dialog
+        setNewKeyName('');
+        setShowNewKeyDialog(false);
+      }
     } catch (error) {
       console.error('Error generating API key:', error);
       toast.error('Failed to generate API key', {
@@ -139,25 +142,29 @@ const DashboardApiKeys: React.FC = () => {
     try {
       const apiKey = generateApiKey();
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('api_keys')
         .update({ key: apiKey })
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .select()
+        .single();
       
       if (error) throw error;
       
-      // Update the key in state
-      setApiKeys(prev => 
-        prev.map(key => key.id === id ? { ...key, key: apiKey } : key)
-      );
-      
-      // Copy to clipboard
-      navigator.clipboard.writeText(apiKey);
-      
-      toast.success('API key regenerated', {
-        description: 'New key copied to clipboard'
-      });
+      if (data) {
+        // Update the key in state
+        setApiKeys(prev => 
+          prev.map(key => key.id === id ? data : key)
+        );
+        
+        // Copy to clipboard
+        navigator.clipboard.writeText(apiKey);
+        
+        toast.success('API key regenerated', {
+          description: 'New key copied to clipboard'
+        });
+      }
     } catch (error) {
       console.error('Error regenerating API key:', error);
       toast.error('Failed to regenerate API key');
@@ -170,14 +177,16 @@ const DashboardApiKeys: React.FC = () => {
     try {
       const { error } = await supabase
         .from('api_keys')
-        .delete()
+        .update({ revoked: true })
         .eq('id', id)
         .eq('user_id', user.id);
       
       if (error) throw error;
       
-      // Remove the key from state
-      setApiKeys(prev => prev.filter(key => key.id !== id));
+      // Remove the key from state or update its status
+      setApiKeys(prev => prev.map(key => 
+        key.id === id ? { ...key, revoked: true } : key
+      ));
       
       toast.success('API key revoked');
     } catch (error) {
@@ -224,10 +233,12 @@ const DashboardApiKeys: React.FC = () => {
                       <TableRow key={key.id}>
                         <TableCell>{key.name}</TableCell>
                         <TableCell className="font-mono">
-                          {key.key.substring(0, 8)}...
-                          <Button variant="ghost" size="sm" onClick={() => handleCopyApiKey(key.key)}>
-                            <Copy className="h-3 w-3" />
-                          </Button>
+                          {key.revoked ? 'Revoked' : `${key.key.substring(0, 8)}...`}
+                          {!key.revoked && (
+                            <Button variant="ghost" size="sm" onClick={() => handleCopyApiKey(key.key)}>
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          )}
                         </TableCell>
                         <TableCell>{new Date(key.created_at).toLocaleDateString()}</TableCell>
                         <TableCell>
@@ -236,12 +247,16 @@ const DashboardApiKeys: React.FC = () => {
                             : 'Never used'}
                         </TableCell>
                         <TableCell className="text-right space-x-2">
-                          <Button variant="outline" size="sm" onClick={() => handleRegenerateApiKey(key.id)}>
-                            <RefreshCw className="h-3 w-3 mr-1" /> Regenerate
-                          </Button>
-                          <Button variant="destructive" size="sm" onClick={() => handleRevokeApiKey(key.id)}>
-                            Revoke
-                          </Button>
+                          {!key.revoked && (
+                            <>
+                              <Button variant="outline" size="sm" onClick={() => handleRegenerateApiKey(key.id)}>
+                                <RefreshCw className="h-3 w-3 mr-1" /> Regenerate
+                              </Button>
+                              <Button variant="destructive" size="sm" onClick={() => handleRevokeApiKey(key.id)}>
+                                Revoke
+                              </Button>
+                            </>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
