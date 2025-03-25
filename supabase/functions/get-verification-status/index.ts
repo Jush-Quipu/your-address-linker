@@ -51,10 +51,8 @@ serve(async (req) => {
     return new Response("ok", { headers: responseHeaders });
   }
   
-  // Get client IP for rate limiting
-  const clientIp = req.headers.get("x-forwarded-for") || "unknown";
-  
   // Apply rate limiting
+  const clientIp = req.headers.get("x-forwarded-for") || "unknown";
   const now = Date.now();
   if (!ipRequestCounts[clientIp] || ipRequestCounts[clientIp].resetTime < now) {
     ipRequestCounts[clientIp] = { count: 0, resetTime: now + RATE_LIMIT_WINDOW };
@@ -96,21 +94,20 @@ serve(async (req) => {
   }
 
   try {
-    // Extract the access token from the request
-    const authHeader = req.headers.get('authorization') || '';
-    const accessToken = authHeader.replace('Bearer ', '');
-    const appId = req.headers.get('x-app-id');
-    const sdkVersion = req.headers.get('x-sdk-version');
+    // Extract the user ID or address ID from the request
+    const url = new URL(req.url);
+    const userId = url.searchParams.get("user_id");
+    const addressId = url.searchParams.get("address_id");
+    const walletAddress = url.searchParams.get("wallet_address");
+    const chainId = url.searchParams.get("chain_id");
     
-    // Log the request for monitoring
-    console.log(`Token validation request: App ID: ${appId || 'not provided'}, SDK Version: ${sdkVersion || 'not provided'}, Request ID: ${requestId}`);
-    
-    if (!accessToken) {
+    // We need at least one identifier
+    if (!userId && !addressId && !walletAddress) {
       const response: ApiResponse = {
         success: false,
         error: {
           code: "invalid_request",
-          message: "Missing access token",
+          message: "Missing required parameter. Provide either user_id, address_id, or wallet_address.",
         },
         meta: {
           version: "v1",
@@ -127,50 +124,102 @@ serve(async (req) => {
         }
       );
     }
-
-    // Validate the token
-    const { data: permission, error: permissionError } = await supabase
-      .from("address_permissions")
-      .select(`
-        *,
-        physical_addresses:physical_addresses!inner(verification_status)
-      `)
-      .eq("access_token", accessToken)
-      .maybeSingle();
-
-    if (permissionError || !permission) {
-      const response: ApiResponse = {
-        success: false,
-        error: {
-          code: "unauthorized",
-          message: "Invalid access token",
-        },
-        meta: {
-          version: "v1",
-          timestamp: new Date().toISOString(),
-          requestId
-        }
-      };
+    
+    // Handle wallet address lookup
+    let targetUserId = userId;
+    if (walletAddress && !userId) {
+      const query = supabase
+        .from("wallet_addresses")
+        .select("user_id")
+        .eq("address", walletAddress.toLowerCase());
+        
+      if (chainId) {
+        query.eq("chain_id", parseInt(chainId));
+      }
       
-      return new Response(
-        JSON.stringify(response),
-        {
-          status: 401,
-          headers: responseHeaders
-        }
-      );
+      const { data: walletData, error: walletError } = await query.maybeSingle();
+      
+      if (walletError || !walletData) {
+        const response: ApiResponse = {
+          success: false,
+          error: {
+            code: "not_found",
+            message: "Wallet address not found",
+          },
+          meta: {
+            version: "v1",
+            timestamp: new Date().toISOString(),
+            requestId
+          }
+        };
+        
+        return new Response(
+          JSON.stringify(response),
+          {
+            status: 404,
+            headers: responseHeaders
+          }
+        );
+      }
+      
+      targetUserId = walletData.user_id;
     }
 
-    // Check enhanced permission validity
-    // 1. Check if revoked
-    if (permission.revoked) {
+    // Query the database for verification status
+    let query;
+    if (addressId) {
+      query = supabase
+        .from("physical_addresses")
+        .select(`
+          id,
+          verification_status,
+          verification_method,
+          verification_date,
+          user_id,
+          country,
+          state,
+          city,
+          postal_code,
+          postal_verified,
+          postal_verification_date,
+          created_at,
+          updated_at
+        `)
+        .eq("id", addressId);
+    } else if (targetUserId) {
+      query = supabase
+        .from("physical_addresses")
+        .select(`
+          id,
+          verification_status,
+          verification_method,
+          verification_date,
+          user_id,
+          country,
+          state,
+          city,
+          postal_code,
+          postal_verified,
+          postal_verification_date,
+          created_at,
+          updated_at
+        `)
+        .eq("user_id", targetUserId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+    }
+
+    const { data: addressData, error: addressError } = await query.maybeSingle();
+
+    if (addressError) {
+      console.error("Database error:", addressError);
       const response: ApiResponse = {
         success: false,
         error: {
-          code: "permission_revoked",
-          message: "Token has been revoked",
+          code: "internal_server_error",
+          message: "Error retrieving verification status",
           details: {
-            reason: permission.revocation_reason || "Unknown reason"
+            message: addressError.message
           }
         },
         meta: {
@@ -183,22 +232,18 @@ serve(async (req) => {
       return new Response(
         JSON.stringify(response),
         {
-          status: 401,
+          status: 500,
           headers: responseHeaders
         }
       );
     }
 
-    // 2. Check if permission has expired
-    if (permission.access_expiry && new Date(permission.access_expiry) < new Date()) {
+    if (!addressData) {
       const response: ApiResponse = {
         success: false,
         error: {
-          code: "token_expired",
-          message: "Token has expired",
-          details: {
-            expiredAt: permission.access_expiry
-          }
+          code: "not_found",
+          message: "No address found for the provided identifier",
         },
         meta: {
           version: "v1",
@@ -210,87 +255,58 @@ serve(async (req) => {
       return new Response(
         JSON.stringify(response),
         {
-          status: 401,
+          status: 404,
           headers: responseHeaders
         }
       );
     }
 
-    // 3. Check if max access count reached
-    if (
-      permission.max_access_count !== null && 
-      permission.access_count >= permission.max_access_count
-    ) {
-      const response: ApiResponse = {
-        success: false,
-        error: {
-          code: "max_access_exceeded",
-          message: "Maximum access count reached",
-          details: {
-            maxCount: permission.max_access_count,
-            currentCount: permission.access_count
-          }
-        },
-        meta: {
-          version: "v1",
-          timestamp: new Date().toISOString(),
-          requestId
-        }
-      };
+    // Get any linked wallets
+    const { data: linkedWallets, error: walletsError } = await supabase
+      .from("wallet_addresses")
+      .select("address, chain_id, is_primary")
+      .eq("user_id", addressData.user_id);
       
-      return new Response(
-        JSON.stringify(response),
-        {
-          status: 403,
-          headers: responseHeaders
-        }
-      );
+    if (walletsError) {
+      console.error("Error fetching linked wallets:", walletsError);
+    }
+    
+    // Get any ZKP verifications
+    const { data: zkpVerifications, error: zkpError } = await supabase
+      .from("zkp_verifications")
+      .select("*")
+      .eq("physical_address_id", addressData.id)
+      .order("verified_at", { ascending: false });
+      
+    if (zkpError) {
+      console.error("Error fetching ZKP verifications:", zkpError);
     }
 
-    // Token is valid, increment access counter for analytics
-    const { error: incrementError } = await supabase.rpc(
-      "increment_counter",
-      { row_id: permission.id }
-    );
-
-    if (incrementError) {
-      console.error("Error incrementing counter:", incrementError);
-    }
-
-    // Update last accessed timestamp
-    const { error: updateError } = await supabase
-      .from("address_permissions")
-      .update({ last_accessed: new Date().toISOString() })
-      .eq("id", permission.id);
-
-    if (updateError) {
-      console.error("Error updating last accessed timestamp:", updateError);
-    }
-
-    // Get verification information for enhanced response
-    const verificationStatus = permission.physical_addresses?.verification_status || 'unknown';
-
-    // Token is valid
+    // Prepare the response
     const response: ApiResponse = {
       success: true,
       data: {
-        app_id: permission.app_id,
-        app_name: permission.app_name,
-        access_count: permission.access_count + 1,
-        max_access_count: permission.max_access_count,
-        access_expiry: permission.access_expiry,
+        id: addressData.id,
+        user_id: addressData.user_id,
         verification: {
-          status: verificationStatus
+          status: addressData.verification_status,
+          method: addressData.verification_method || null,
+          date: addressData.verification_date || null,
+          postal_verified: addressData.postal_verified || false,
+          postal_verification_date: addressData.postal_verification_date || null,
         },
-        permissions: {
-          share_street: permission.share_street,
-          share_city: permission.share_city,
-          share_state: permission.share_state,
-          share_postal_code: permission.share_postal_code,
-          share_country: permission.share_country
+        location: {
+          country: addressData.country,
+          state: addressData.state,
+          city: addressData.city,
+          postal_code: addressData.postal_code,
         },
-        issuedAt: permission.created_at,
-        lastAccessed: new Date().toISOString()
+        timestamps: {
+          created_at: addressData.created_at,
+          updated_at: addressData.updated_at,
+        },
+        linked_wallets: linkedWallets || [],
+        zkp_verifications: zkpVerifications || []
       },
       meta: {
         version: "v1",
@@ -310,7 +326,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error("Error processing request:", error.message, "Request ID:", requestId);
+    console.error("Error processing request:", error, "Request ID:", requestId);
     
     const response: ApiResponse = {
       success: false,

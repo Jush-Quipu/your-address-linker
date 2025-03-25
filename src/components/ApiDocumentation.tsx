@@ -1,10 +1,11 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CodeBlock from '@/components/CodeBlock';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { InfoIcon } from 'lucide-react';
 
 const ApiDocumentation: React.FC = () => {
   const [activeTab, setActiveTab] = useState('api-reference');
@@ -16,383 +17,197 @@ import { SecureAddressBridge } from 'secureaddress-bridge-sdk';
 // Initialize with your app credentials
 const client = new SecureAddressBridge({
   appId: 'YOUR_APP_ID',
-  appSecret: 'YOUR_APP_SECRET',
-  // Optional wallet integration options
-  walletOptions: {
-    supportedChains: ['ethereum', 'polygon', 'optimism']
-  },
-  // Optional webhook configuration
-  webhooks: {
-    url: 'https://your-app.com/webhooks/secureaddress'
-  }
+  redirectUri: 'https://your-app.com/callback',
+  apiVersion: 'v1', // Optional - defaults to latest version
+  debug: true, // Optional - enables detailed logging
 });
 
-// Get an access token for your app
-const token = await client.authenticate();
-console.log(token); // Use this token for subsequent API calls`;
-
-  // Request address code example
-  const requestAddressExample = `// Generate authorization URL with CSRF protection
+// Generate authorization URL with CSRF protection
 const state = generateRandomString(); // Create a random string
 localStorage.setItem('secureaddress_state', state); // Store for validation
 
-const authUrl = client.getAuthorizationUrl({
-  redirectUri: 'https://your-app.com/callback',
-  scope: ['street', 'city', 'state', 'postal_code'],
+// Redirect user to the authorization page
+await client.authorize({
+  scope: ['street', 'city', 'state', 'postal_code', 'country'],
+  expiryDays: 30,
   state: state, // CSRF protection
-  preferredChain: 'ethereum' // Optional blockchain preference
+  maxAccessCount: 10, // Optional - limit number of accesses
+  accessNotification: true // Optional - notify user on access
+});`;
+
+  // Request address code example
+  const requestAddressExample = `// Handle the callback from authorization
+const handleCallback = async () => {
+  try {
+    const result = await client.handleCallback();
+    
+    if (result.success) {
+      // Authorization successful, now get the address
+      const { address, verification, permission } = await client.getAddress({
+        includeVerification: true
+      });
+      
+      console.log('Address:', address);
+      console.log('Verification:', verification);
+      console.log('Permission details:', permission);
+      
+      // Address will look like:
+      // {
+      //   streetAddress: '123 Main St',
+      //   city: 'San Francisco',
+      //   state: 'CA',
+      //   postalCode: '94105',
+      //   country: 'US',
+      //   verified: true,
+      //   verificationLevel: 'advanced',
+      //   verificationMethod: 'document',
+      //   verificationDate: '2023-07-15T10:30:00Z'
+      // }
+    } else {
+      console.error('Authorization failed:', result.errorDescription);
+    }
+  } catch (error) {
+    console.error('Error handling callback:', error);
+  }
+};`;
+
+  // Standard API response example
+  const standardResponseExample = `// All API responses follow this standard structure
+{
+  "success": true,  // Boolean indicating success or failure
+  "data": {         // Present only on success
+    // Response data varies by endpoint
+  },
+  "error": {        // Present only on failure
+    "code": "error_code",
+    "message": "Human-readable error message",
+    "details": {
+      // Additional error details (optional)
+    }
+  },
+  "meta": {         // Metadata for all responses
+    "version": "v1",
+    "timestamp": "2023-08-01T12:34:56Z",
+    "requestId": "req_1234567890abcdef"  // For tracking and debugging
+  }
+}`;
+
+  // Versioning example
+  const versioningExample = `// Specify API version in the SDK
+const client = new SecureAddressBridge({
+  appId: 'YOUR_APP_ID',
+  redirectUri: 'YOUR_REDIRECT_URI',
+  apiVersion: 'v1'  // Explicitly request v1 API
 });
 
-// Redirect user to this URL to approve access
-window.location.href = authUrl;`;
+// Or specify in direct API calls
+fetch('https://api.secureaddress-bridge.com/v1/validate-token', {
+  headers: {
+    'Authorization': 'Bearer YOUR_TOKEN',
+    'Content-Type': 'application/json',
+    'X-App-ID': 'YOUR_APP_ID'
+  }
+});`;
 
-  // Access token code example
-  const accessTokenExample = `// In your callback handler
-const { code, state } = parseQueryParams(window.location.search);
+  // Verification status endpoint example
+  const verificationStatusExample = `// Get verification status using the SDK
+const status = await client.getVerificationStatus({
+  userId: 'user-123'
+  // OR addressId: 'address-456'
+  // OR walletAddress: '0x123...', chainId: 1
+});
 
-// Verify state parameter to prevent CSRF attacks
-const storedState = localStorage.getItem('secureaddress_state');
-if (state !== storedState) {
-  throw new Error('Invalid state parameter');
+console.log(status);
+// {
+//   status: 'verified',
+//   method: 'document',
+//   date: '2023-07-15T10:30:00Z',
+//   postalVerified: true,
+//   location: {
+//     country: 'US',
+//     state: 'CA',
+//     city: 'San Francisco',
+//     postalCode: '94105'
+//   },
+//   wallets: [
+//     { address: '0x123...', chainId: 1, isPrimary: true }
+//   ],
+//   zkpVerifications: [...]
+// }`;
+
+  // Error codes example
+  const errorCodesExample = `// Example error response for an expired token
+{
+  "success": false,
+  "error": {
+    "code": "token_expired",
+    "message": "Token has expired",
+    "details": {
+      "expiredAt": "2023-07-01T00:00:00Z"
+    }
+  },
+  "meta": {
+    "version": "v1",
+    "timestamp": "2023-08-01T12:34:56Z",
+    "requestId": "req_1234567890abcdef"
+  }
 }
 
-// Exchange code for access token
-const result = await client.exchangeCode({
-  code,
-  redirectUri: 'https://your-app.com/callback',
-});
+// Common error codes:
+// - invalid_request: Missing or invalid parameters
+// - unauthorized: Invalid or missing credentials
+// - forbidden: Valid credentials but insufficient permissions
+// - not_found: Requested resource not found
+// - token_expired: Access token has expired
+// - permission_revoked: Access has been revoked
+// - max_access_exceeded: Maximum access count reached
+// - rate_limit_exceeded: Too many requests
+// - internal_server_error: Server-side error`;
 
-const { accessToken, expiresIn, refreshToken } = result;
+  // Rate limiting example
+  const rateLimitExample = `// Rate limit headers in API responses
+X-RateLimit-Limit: 120
+X-RateLimit-Remaining: 119
+X-RateLimit-Reset: 58
 
-// Store tokens securely
-localStorage.setItem('secureaddress_token', accessToken);`;
-
-  // Get address code example
-  const getAddressExample = `// Get user's address with the token
-const data = await client.getAddress({
-  accessToken,
-  includeVerificationInfo: true // Get verification details
-});
-
-console.log(data);
-// {
-//   address: {
-//     street: '123 Main St',  // Only included if user approved this field
-//     city: 'San Francisco',  // Only included if user approved this field
-//     state: 'CA',            // Only included if user approved this field
-//     postal_code: '94105',   // Only included if user approved this field
-//     country: 'US',          // Only included if user approved this field
-//   },
-//   verification: {
-//     status: 'verified',
-//     method: 'document_upload',
-//     date: '2023-07-15T10:30:00Z'
-//   },
-//   permission: {
-//     access_count: 3,
-//     max_access_count: 10,
-//     access_expiry: '2023-08-15T00:00:00Z'
-//   }
-// }`;
-
-  // Webhook code example
-  const webhookExample = `// Set up a webhook to receive updates with signature verification
-const express = require('express');
-const app = express();
-app.use(express.json());
-
-// Your webhook secret (configured when registering the webhook)
-const WEBHOOK_SECRET = 'your-webhook-secret';
-
-app.post('/secureaddress/webhook', (req, res) => {
-  const { event, data } = req.body;
-  const signature = req.headers['x-signature'];
-  
-  // Verify webhook signature
-  if (!client.verifyWebhookSignature(signature, JSON.stringify(req.body), WEBHOOK_SECRET)) {
-    return res.status(401).send('Invalid signature');
+// Rate limit exceeded response
+{
+  "success": false,
+  "error": {
+    "code": "rate_limit_exceeded",
+    "message": "Rate limit exceeded. Please try again later.",
+    "details": {
+      "limit": 120,
+      "remaining": 0,
+      "resetAt": "2023-08-01T12:35:00Z"
+    }
+  },
+  "meta": {
+    "version": "v1",
+    "timestamp": "2023-08-01T12:34:02Z",
+    "requestId": "req_1234567890abcdef"
   }
-  
-  // Handle different event types
-  switch (event) {
-    case 'address.updated':
-      // Address was updated, fetch fresh data
-      break;
-    case 'address.verified':
-      // Address was verified
-      break;
-    case 'permission.granted':
-      // User granted new permissions
-      break;
-    case 'permission.revoked':
-      // User revoked access to their address
-      break;
-    case 'wallet.linked':
-      // Wallet was linked to a verified address
-      break;
-    default:
-      console.log(\`Unhandled event: \${event}\`);
-  }
-  
-  res.status(200).send('Webhook received');
-});
-
-app.listen(3000, () => console.log('Webhook server running on port 3000'));`;
-
-  // SDK usage example with React
-  const sdkExample = `// Complete example of using the SDK with React hooks
-import React, { useState } from 'react';
-import { useSecureAddress } from 'secureaddress-bridge-sdk';
-
-function CheckoutForm() {
-  const [orderData, setOrderData] = useState({});
-  
-  // Initialize the SDK with your app credentials
-  const { 
-    address, 
-    isLoading, 
-    error, 
-    requestAccess, 
-    hasValidPermission,
-    walletInfo,
-    connectWallet
-  } = useSecureAddress({
-    appId: 'YOUR_APP_ID',
-    // Advanced configuration options
-    includeVerificationInfo: true,
-    clearUrlAfterAuth: true,
-    validateState: true
-  });
-  
-  const handleGetAddress = () => {
-    if (!hasValidPermission) {
-      // Request address with enhanced options
-      requestAccess({
-        scope: ['street', 'city', 'state', 'postal_code', 'country'],
-        expiryDays: 30,
-        maxAccesses: 5,
-        useWalletConnect: false
-      });
-    }
-  };
-  
-  const handleConnectWallet = async () => {
-    try {
-      // Connect to user's blockchain wallet
-      const wallet = await connectWallet({
-        providerType: 'injected' // or 'walletconnect'
-      });
-      console.log('Connected wallet:', wallet);
-    } catch (error) {
-      console.error('Wallet connection error:', error);
-    }
-  };
-  
-  const handleCheckout = () => {
-    if (address) {
-      // Process order with the shipping address
-      submitOrder({
-        ...orderData,
-        shippingAddress: address
-      });
-    }
-  };
-  
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
-  
-  return (
-    <div>
-      <h2>Checkout</h2>
-      
-      {!hasValidPermission ? (
-        <button onClick={handleGetAddress}>
-          Get Shipping Address
-        </button>
-      ) : (
-        <div>
-          <h3>Shipping Address</h3>
-          <p>{address.street}</p>
-          <p>{address.city}, {address.state} {address.postal_code}</p>
-          <p>{address.country}</p>
-          
-          {!walletInfo && (
-            <button onClick={handleConnectWallet}>
-              Connect Wallet for Payment
-            </button>
-          )}
-          
-          {walletInfo && (
-            <div>
-              <p>Connected wallet: {walletInfo.address}</p>
-              <button onClick={handleCheckout}>Complete Order</button>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
 }`;
-
-  // Example for marketplace verification
-  const marketplaceVerificationExample = `// Check if seller has a verified address
-const sellerStatus = await client.getAddressVerification({
-  userId: sellerId,
-  includeVerificationInfo: true
-});
-
-if (sellerStatus.verification?.status === 'verified') {
-  // Show "Verified Seller" badge
-  displayVerifiedBadge({
-    verificationDate: sellerStatus.verification.date,
-    verificationMethod: sellerStatus.verification.method
-  });
-} else {
-  // Prompt seller to verify their address
-  promptForVerification();
-}
-
-// You can also generate a verifiable credential for on-chain verification
-if (sellerWalletConnected) {
-  const result = await client.linkAddressToWallet({
-    walletAddress: sellerWalletAddress,
-    chainId: sellerChainId,
-    createVerifiableCredential: true
-  });
-  
-  // The verifiable credential can be used for on-chain verification
-  console.log(result.verifiableCredential);
-}`;
-
-  // Example for wallet linking
-  const walletLinkingExample = `// Link a verified address to a blockchain wallet
-import { useSecureAddress } from 'secureaddress-bridge-sdk';
-
-function AddressWalletLinker() {
-  const { 
-    address, 
-    walletInfo, 
-    connectWallet, 
-    linkAddressToWallet, 
-    requestAccess,
-    hasValidPermission
-  } = useSecureAddress({
-    appId: 'YOUR_APP_ID'
-  });
-  
-  const handleConnectWallet = async () => {
-    await connectWallet();
-  };
-  
-  const handleLinkAddress = async () => {
-    if (!address) {
-      requestAccess({
-        scope: ['city', 'country'],  // Minimal address info needed
-        useWalletConnect: true       // Use WalletConnect for mobile users
-      });
-      return;
-    }
-    
-    if (!walletInfo) {
-      await connectWallet();
-      return;
-    }
-    
-    try {
-      const result = await linkAddressToWallet({
-        createVerifiableCredential: true  // Create a VC for on-chain verification
-      });
-      
-      console.log('Address linked to wallet:', result);
-      // Display success message to user
-    } catch (error) {
-      console.error('Failed to link address:', error);
-    }
-  };
-  
-  return (
-    <div>
-      <h2>Link Your Address to Wallet</h2>
-      
-      {!hasValidPermission && (
-        <button onClick={() => requestAccess()}>
-          Provide Address Access
-        </button>
-      )}
-      
-      {hasValidPermission && !walletInfo && (
-        <button onClick={handleConnectWallet}>
-          Connect Wallet
-        </button>
-      )}
-      
-      {hasValidPermission && walletInfo && (
-        <button onClick={handleLinkAddress}>
-          Link Address to Wallet
-        </button>
-      )}
-    </div>
-  );
-}`;
-
-  // Usage statistics example
-  const usageStatsExample = `// Get usage statistics for your application
-const stats = await client.getUsageStats();
-
-console.log(stats);
-// {
-//   active_permissions: 157,
-//   total_address_accesses: 1258,
-//   unique_users: 89,
-//   access_by_country: {
-//     "US": 782,
-//     "CA": 215,
-//     // ...
-//   },
-//   most_accessed_fields: ["city", "country", "postal_code"],
-//   average_permission_duration: 27.3  // in days
-// }`;
-
-  // Complete verifiable credential example that was truncated
-  const verifiableCredentialExample = `// Create a verifiable credential linking an address to a wallet
-const credential = await client.linkAddressToWallet({
-  walletAddress: '0x1234...5678',
-  chainId: '0x1',
-  createVerifiableCredential: true
-});
-
-console.log(credential);
-// {
-//   id: 'vc_1234567890',
-//   issuanceDate: '2023-07-15T10:30:00Z',
-//   expirationDate: '2024-07-15T10:30:00Z',
-//   credential: {
-//     type: ['VerifiableCredential', 'AddressVerification'],
-//     issuer: 'did:web:secureaddress.bridge',
-//     subject: '0x1234...5678',
-//     status: 'verified',
-//     countryVerified: true,
-//     cityVerified: true,
-//     proof: {
-//       type: 'EcdsaSecp256k1Signature2019',
-//       created: '2023-07-15T10:30:00Z',
-//       verificationMethod: 'did:web:secureaddress.bridge#key-1',
-//       proofPurpose: 'assertionMethod',
-//       jws: 'eyJhbGci...'
-//     }
-//   }
-// }`;
 
   return (
     <div className="space-y-8">
+      <Alert variant="info" className="mb-8">
+        <InfoIcon className="h-4 w-4" />
+        <AlertTitle>API Improvements</AlertTitle>
+        <AlertDescription>
+          Our API has been enhanced with standardized responses, versioning, comprehensive error handling, 
+          and new endpoints for better integration with your applications.
+        </AlertDescription>
+      </Alert>
+      
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-6 mb-8">
           <TabsTrigger value="api-reference">API Reference</TabsTrigger>
-          <TabsTrigger value="sdk">SDK</TabsTrigger>
-          <TabsTrigger value="oauth">OAuth Flow</TabsTrigger>
-          <TabsTrigger value="web3">Web3 Features</TabsTrigger>
+          <TabsTrigger value="responses">Responses</TabsTrigger>
+          <TabsTrigger value="errors">Errors</TabsTrigger>
+          <TabsTrigger value="versioning">Versioning</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="examples">Examples</TabsTrigger>
-          <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
         </TabsList>
         
         <TabsContent value="api-reference" className="space-y-8">
@@ -410,7 +225,7 @@ console.log(credential);
               <div className="space-y-6">
                 <h3 className="text-lg font-medium">Base URL</h3>
                 <CodeBlock
-                  code="https://api.secureaddress.bridge/v1"
+                  code="https://api.secureaddress-bridge.com/v1"
                   language="bash"
                   showLineNumbers={false}
                 />
@@ -421,7 +236,8 @@ console.log(credential);
                 </p>
                 <CodeBlock
                   code="Authorization: Bearer YOUR_ACCESS_TOKEN
-X-App-ID: YOUR_APP_ID"
+X-App-ID: YOUR_APP_ID
+X-SDK-Version: 2.3.0 (Optional)"
                   language="bash"
                   showLineNumbers={false}
                 />
@@ -437,6 +253,11 @@ X-App-ID: YOUR_APP_ID"
                   </TableHeader>
                   <TableBody>
                     <TableRow>
+                      <TableCell className="font-mono">/authorize</TableCell>
+                      <TableCell>GET</TableCell>
+                      <TableCell>Start the authorization flow for address access</TableCell>
+                    </TableRow>
+                    <TableRow>
                       <TableCell className="font-mono">/token</TableCell>
                       <TableCell>POST</TableCell>
                       <TableCell>Exchange authorization code for access token</TableCell>
@@ -447,6 +268,31 @@ X-App-ID: YOUR_APP_ID"
                       <TableCell>Retrieve user's address data</TableCell>
                     </TableRow>
                     <TableRow>
+                      <TableCell className="font-mono">/validation-status</TableCell>
+                      <TableCell>GET</TableCell>
+                      <TableCell>Get address verification status</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-mono">/validate-token</TableCell>
+                      <TableCell>GET</TableCell>
+                      <TableCell>Validate an access token</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-mono">/zkp/authorize</TableCell>
+                      <TableCell>GET</TableCell>
+                      <TableCell>Start the authorization flow for ZK proofs</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-mono">/zkp/token</TableCell>
+                      <TableCell>POST</TableCell>
+                      <TableCell>Exchange proof code for proof token</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-mono">/zkp/proof/{'{id}'}</TableCell>
+                      <TableCell>GET</TableCell>
+                      <TableCell>Get a specific ZK proof</TableCell>
+                    </TableRow>
+                    <TableRow>
                       <TableCell className="font-mono">/token/refresh</TableCell>
                       <TableCell>POST</TableCell>
                       <TableCell>Refresh an expired access token</TableCell>
@@ -455,11 +301,6 @@ X-App-ID: YOUR_APP_ID"
                       <TableCell className="font-mono">/token/revoke</TableCell>
                       <TableCell>POST</TableCell>
                       <TableCell>Revoke an access token</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">/validate-token</TableCell>
-                      <TableCell>GET</TableCell>
-                      <TableCell>Validate an access token</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-mono">/webhooks</TableCell>
@@ -481,9 +322,9 @@ X-App-ID: YOUR_APP_ID"
                 
                 <h3 className="text-lg font-medium mt-6">Rate Limits</h3>
                 <p className="text-sm text-muted-foreground">
-                  The API is rate-limited to 100 requests per minute per app. Enterprise customers
+                  The API is rate-limited to 120 requests per minute per app. Enterprise customers
                   can request higher limits. If you exceed this limit, you'll receive a 429 Too Many
-                  Requests response.
+                  Requests response and the corresponding rate limit exceeded error.
                 </p>
               </div>
             </CardContent>
@@ -500,10 +341,11 @@ X-App-ID: YOUR_APP_ID"
               <div className="space-y-4">
                 <h3 className="text-lg font-medium">Request</h3>
                 <CodeBlock
-                  code={`GET /address?fields=street,city,state,postal_code&include_verification=true HTTP/1.1
-Host: api.secureaddress.bridge
+                  code={`GET /v1/address?fields=street,city,state,postal_code&include_verification=true HTTP/1.1
+Host: api.secureaddress-bridge.com
 Authorization: Bearer USER_ACCESS_TOKEN
-X-App-ID: YOUR_APP_ID`}
+X-App-ID: YOUR_APP_ID
+X-SDK-Version: 2.3.0`}
                   language="http"
                   showLineNumbers={true}
                 />
@@ -512,26 +354,38 @@ X-App-ID: YOUR_APP_ID`}
                 <CodeBlock
                   code={`HTTP/1.1 200 OK
 Content-Type: application/json
+X-RateLimit-Limit: 120
+X-RateLimit-Remaining: 119
+X-RateLimit-Reset: 59
+X-Request-Id: req_1234567890abcdef
 
 {
-  "address": {
-    "street": "123 Main St",     // Only included if user approved this field
-    "city": "San Francisco",     // Only included if user approved this field
-    "state": "CA",               // Only included if user approved this field
-    "postal_code": "94105",      // Only included if user approved this field
-    "country": "US"              // Only included if user approved this field
+  "success": true,
+  "data": {
+    "address": {
+      "street": "123 Main St",     // Only included if user approved this field
+      "city": "San Francisco",     // Only included if user approved this field
+      "state": "CA",               // Only included if user approved this field
+      "postal_code": "94105",      // Only included if user approved this field
+      "country": "US"              // Only included if user approved this field
+    },
+    "verification": {
+      "status": "verified",
+      "method": "document_upload",
+      "date": "2023-07-15T10:30:00Z"
+    },
+    "permission": {
+      "app_id": "app_123456",
+      "app_name": "Example Shop",
+      "access_count": 3,
+      "max_access_count": 10,
+      "access_expiry": "2023-08-15T00:00:00Z"
+    }
   },
-  "verification": {
-    "status": "verified",
-    "method": "document_upload",
-    "date": "2023-07-15T10:30:00Z"
-  },
-  "permission": {
-    "app_id": "app_123456",
-    "app_name": "Example Shop",
-    "access_count": 3,
-    "max_access_count": 10,
-    "access_expiry": "2023-08-15T00:00:00Z"
+  "meta": {
+    "version": "v1",
+    "timestamp": "2023-08-01T12:34:56Z",
+    "requestId": "req_1234567890abcdef"
   }
 }`}
                   language="json"
@@ -557,8 +411,169 @@ Content-Type: application/json
                     </TableRow>
                   </TableBody>
                 </Table>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>GET /verification-status</CardTitle>
+              <CardDescription>
+                New endpoint to check address verification status for a user, address, or wallet.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Request</h3>
+                <CodeBlock
+                  code={`GET /v1/verification-status?user_id=user-123 HTTP/1.1
+Host: api.secureaddress-bridge.com
+Authorization: Bearer YOUR_ACCESS_TOKEN
+X-App-ID: YOUR_APP_ID
+X-SDK-Version: 2.3.0`}
+                  language="http"
+                  showLineNumbers={true}
+                />
                 
-                <h3 className="text-lg font-medium mt-4">Error Responses</h3>
+                <h3 className="text-lg font-medium mt-4">Alternative Parameters</h3>
+                <CodeBlock
+                  code={`// By address ID
+GET /v1/verification-status?address_id=address-456
+
+// By wallet address
+GET /v1/verification-status?wallet_address=0x1234...&chain_id=1`}
+                  language="http"
+                  showLineNumbers={false}
+                />
+                
+                <h3 className="text-lg font-medium mt-4">Response</h3>
+                <CodeBlock
+                  code={`HTTP/1.1 200 OK
+Content-Type: application/json
+X-Request-Id: req_1234567890abcdef
+
+{
+  "success": true,
+  "data": {
+    "id": "addr_12345",
+    "user_id": "user-123",
+    "verification": {
+      "status": "verified",
+      "method": "document_upload",
+      "date": "2023-07-15T10:30:00Z",
+      "postal_verified": true,
+      "postal_verification_date": "2023-07-16T14:25:10Z"
+    },
+    "location": {
+      "country": "US",
+      "state": "CA",
+      "city": "San Francisco",
+      "postal_code": "94105"
+    },
+    "timestamps": {
+      "created_at": "2023-07-10T09:15:00Z",
+      "updated_at": "2023-07-15T10:30:00Z"
+    },
+    "linked_wallets": [
+      {
+        "address": "0x1234...",
+        "chain_id": 1,
+        "is_primary": true
+      }
+    ],
+    "zkp_verifications": [
+      {
+        "id": "zkp_12345",
+        "verification_type": "country_proof",
+        "verifier_app_id": "app_123456",
+        "verified_at": "2023-07-20T11:45:00Z",
+        "is_valid": true
+      }
+    ]
+  },
+  "meta": {
+    "version": "v1",
+    "timestamp": "2023-08-01T12:34:56Z",
+    "requestId": "req_1234567890abcdef"
+  }
+}`}
+                  language="json"
+                  showLineNumbers={true}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="responses" className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Standardized API Responses</CardTitle>
+              <CardDescription>
+                All API endpoints now return responses in a standardized format for consistency.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <h3 className="text-lg font-medium">Response Structure</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  All API responses follow the same structure, with clear separation between success and error cases.
+                </p>
+                <CodeBlock
+                  code={standardResponseExample}
+                  language="json"
+                  showLineNumbers={true}
+                />
+                
+                <h3 className="text-lg font-medium mt-6">Success Response</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Success responses have a `success: true` field and include the requested data in the `data` field.
+                </p>
+                
+                <h3 className="text-lg font-medium mt-6">Error Response</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Error responses have a `success: false` field and include error details in the `error` field.
+                </p>
+                
+                <h3 className="text-lg font-medium mt-6">Metadata</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  All responses include metadata with the API version, timestamp, and a unique request ID for tracking.
+                </p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Metadata Field</TableHead>
+                      <TableHead>Description</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>version</TableCell>
+                      <TableCell>API version (e.g., "v1")</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>timestamp</TableCell>
+                      <TableCell>Request time in ISO 8601 format</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>requestId</TableCell>
+                      <TableCell>Unique ID for tracking the request</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>HTTP Status Codes</CardTitle>
+              <CardDescription>
+                Our API uses standard HTTP status codes along with detailed error information.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -568,21 +583,33 @@ Content-Type: application/json
                   </TableHeader>
                   <TableBody>
                     <TableRow>
+                      <TableCell>200 OK</TableCell>
+                      <TableCell>Request successful</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>400 Bad Request</TableCell>
+                      <TableCell>Invalid parameters or request format</TableCell>
+                    </TableRow>
+                    <TableRow>
                       <TableCell>401 Unauthorized</TableCell>
-                      <TableCell>Invalid or expired access token</TableCell>
+                      <TableCell>Missing or invalid authentication credentials</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>403 Forbidden</TableCell>
-                      <TableCell>Token does not have permission to access address</TableCell>
+                      <TableCell>Valid credentials but insufficient permissions</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>404 Not Found</TableCell>
-                      <TableCell>Address not found for the user</TableCell>
+                      <TableCell>Requested resource not found</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell>429 Too Many Requests</TableCell>
                       <TableCell>Rate limit exceeded</TableCell>
                     </TableRow>
+                    <TableRow>
+                      <TableCell>500 Internal Server Error</TableCell>
+                      <TableCell>Server-side error</TableCell>
+                    </TableRow>
                   </TableBody>
                 </Table>
               </div>
@@ -590,96 +617,70 @@ Content-Type: application/json
           </Card>
         </TabsContent>
         
-        <TabsContent value="sdk" className="space-y-8">
+        <TabsContent value="errors" className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                JavaScript SDK
-                <Badge variant="outline" className="ml-2">v2.2.2</Badge>
-              </CardTitle>
+              <CardTitle>Error Handling</CardTitle>
               <CardDescription>
-                The SecureAddress Bridge JavaScript SDK simplifies integration into web applications
-                with enhanced Web3 capabilities.
+                Our API provides detailed error information to help with debugging and issue resolution.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <h3 className="text-lg font-medium">Installation</h3>
-                <CodeBlock
-                  code="npm install secureaddress-bridge-sdk"
-                  language="bash"
-                  showLineNumbers={false}
-                />
-                
-                <h3 className="text-lg font-medium mt-6">Initialization</h3>
+                <h3 className="text-lg font-medium">Error Structure</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Initialize the SDK with your app credentials and optional configurations.
+                  All errors follow a consistent structure with error codes, messages, and optional details.
                 </p>
                 <CodeBlock
-                  code={authCodeExample}
-                  language="javascript"
+                  code={errorCodesExample}
+                  language="json"
                   showLineNumbers={true}
                 />
                 
-                <h3 className="text-lg font-medium mt-6">React Integration</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  The SDK includes a convenient React hook for easy integration.
-                </p>
-                <CodeBlock
-                  code={`import { useSecureAddress } from 'secureaddress-bridge-sdk';
-
-function AddressComponent() {
-  const { 
-    address, 
-    isLoading, 
-    error, 
-    requestAccess, 
-    hasValidPermission,
-    permissionDetails,
-    walletInfo,
-    connectWallet,
-    linkAddressToWallet,
-    getUsageStats
-  } = useSecureAddress({
-    appId: 'YOUR_APP_ID',
-    // Optional configuration
-    includeVerificationInfo: true
-  });
-  
-  // Now you can use these values and functions in your component
-}`}
-                  language="javascript"
-                  showLineNumbers={true}
-                />
-                
-                <h3 className="text-lg font-medium mt-6">Enhanced Features</h3>
+                <h3 className="text-lg font-medium mt-6">Common Error Codes</h3>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Feature</TableHead>
+                      <TableHead>Error Code</TableHead>
                       <TableHead>Description</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     <TableRow>
-                      <TableCell>Multi-chain support</TableCell>
-                      <TableCell>Support for multiple blockchain networks (Ethereum, Polygon, etc.)</TableCell>
+                      <TableCell>invalid_request</TableCell>
+                      <TableCell>Missing or invalid parameters</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell>Wallet integration</TableCell>
-                      <TableCell>Connect to MetaMask, WalletConnect, and other Web3 wallets</TableCell>
+                      <TableCell>unauthorized</TableCell>
+                      <TableCell>Invalid or missing credentials</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell>Verifiable credentials</TableCell>
-                      <TableCell>Generate on-chain verifiable credentials for address verification</TableCell>
+                      <TableCell>forbidden</TableCell>
+                      <TableCell>Valid credentials but insufficient permissions</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell>Enhanced security</TableCell>
-                      <TableCell>CSRF protection, signature verification, and secure storage</TableCell>
+                      <TableCell>not_found</TableCell>
+                      <TableCell>Requested resource not found</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell>Usage analytics</TableCell>
-                      <TableCell>Track address usage and permission statistics</TableCell>
+                      <TableCell>token_expired</TableCell>
+                      <TableCell>Access token has expired</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>permission_revoked</TableCell>
+                      <TableCell>Access has been revoked</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>max_access_exceeded</TableCell>
+                      <TableCell>Maximum access count reached</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>rate_limit_exceeded</TableCell>
+                      <TableCell>Too many requests</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell>internal_server_error</TableCell>
+                      <TableCell>Server-side error</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -689,214 +690,43 @@ function AddressComponent() {
           
           <Card>
             <CardHeader>
-              <CardTitle>SDK Reference</CardTitle>
+              <CardTitle>Rate Limiting</CardTitle>
               <CardDescription>
-                Complete reference for all methods available in the SecureAddress Bridge SDK.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Description</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-mono">authenticate()</TableCell>
-                      <TableCell>Get an access token for your app</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">authorize(options)</TableCell>
-                      <TableCell>Generate and redirect to authorization URL</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">handleCallback(options)</TableCell>
-                      <TableCell>Process authorization callback with CSRF validation</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">getAddress(options)</TableCell>
-                      <TableCell>Get user's address data with verification details</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">validateToken()</TableCell>
-                      <TableCell>Validate an access token with detailed information</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">registerWebhook(options)</TableCell>
-                      <TableCell>Register a webhook URL for notifications</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">verifyWebhookSignature(signature, payload, secret)</TableCell>
-                      <TableCell>Verify webhook signature</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">connectWallet(options)</TableCell>
-                      <TableCell>Connect to a blockchain wallet</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">linkAddressToWallet(options)</TableCell>
-                      <TableCell>Link verified address to blockchain wallet</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">getUsageStats()</TableCell>
-                      <TableCell>Get usage statistics for your application</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-                
-                <h3 className="text-lg font-medium mt-6">React Hook Properties</h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Property</TableHead>
-                      <TableHead>Description</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="font-mono">address</TableCell>
-                      <TableCell>The user's address data (if authorized)</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">isLoading</TableCell>
-                      <TableCell>Loading state for async operations</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">error</TableCell>
-                      <TableCell>Error information if any operation fails</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">hasValidPermission</TableCell>
-                      <TableCell>Whether the user has granted valid permission</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">permissionDetails</TableCell>
-                      <TableCell>Detailed information about the user's permission</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">walletInfo</TableCell>
-                      <TableCell>Connected wallet information</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">requestAccess</TableCell>
-                      <TableCell>Function to request address access</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">connectWallet</TableCell>
-                      <TableCell>Function to connect a blockchain wallet</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">linkAddressToWallet</TableCell>
-                      <TableCell>Function to link address to wallet</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">getUsageStats</TableCell>
-                      <TableCell>Function to get usage statistics</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="font-mono">sdk</TableCell>
-                      <TableCell>Direct access to the SDK instance</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="oauth" className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>OAuth Authorization Flow</CardTitle>
-              <CardDescription>
-                SecureAddress Bridge uses an OAuth 2.0 flow to authorize access to user address data.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium">Step 1: Request Authorization</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Redirect the user to the SecureAddress Bridge authorization URL.
-                </p>
-                <CodeBlock
-                  code={requestAddressExample}
-                  language="javascript"
-                  showLineNumbers={true}
-                />
-                
-                <h3 className="text-lg font-medium mt-6">Step 2: User Grants Permission</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  The user is shown a permission screen where they can approve sharing their address data.
-                  They can select which specific address components (street, city, etc.) to share.
-                </p>
-                
-                <h3 className="text-lg font-medium mt-6">Step 3: Handle Redirect</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  After approval, the user is redirected back to your application with an authorization code.
-                </p>
-                
-                <h3 className="text-lg font-medium mt-6">Step 4: Exchange Code for Token</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Exchange the authorization code for an access token.
-                </p>
-                <CodeBlock
-                  code={accessTokenExample}
-                  language="javascript"
-                  showLineNumbers={true}
-                />
-                
-                <h3 className="text-lg font-medium mt-6">Step 5: Access Address Data</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Use the access token to retrieve the user's address data.
-                </p>
-                <CodeBlock
-                  code={getAddressExample}
-                  language="javascript"
-                  showLineNumbers={true}
-                />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Scopes</CardTitle>
-              <CardDescription>
-                Scopes define what parts of a user's address your application can access.
+                Our API includes rate limiting to ensure stable service for all users.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                <h3 className="text-lg font-medium">Rate Limit Headers</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  All API responses include rate limit headers to help you track your usage.
+                </p>
+                <CodeBlock
+                  code={rateLimitExample}
+                  language="http"
+                  showLineNumbers={true}
+                />
+                
+                <h3 className="text-lg font-medium mt-4">Header Descriptions</h3>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Scope</TableHead>
+                      <TableHead>Header</TableHead>
                       <TableHead>Description</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     <TableRow>
-                      <TableCell>street</TableCell>
-                      <TableCell>Access to user's street address</TableCell>
+                      <TableCell>X-RateLimit-Limit</TableCell>
+                      <TableCell>Maximum requests allowed in the current time window</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell>city</TableCell>
-                      <TableCell>Access to user's city</TableCell>
+                      <TableCell>X-RateLimit-Remaining</TableCell>
+                      <TableCell>Remaining requests in the current time window</TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell>state</TableCell>
-                      <TableCell>Access to user's state/province</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>postal_code</TableCell>
-                      <TableCell>Access to user's postal/ZIP code</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>country</TableCell>
-                      <TableCell>Access to user's country</TableCell>
+                      <TableCell>X-RateLimit-Reset</TableCell>
+                      <TableCell>Time in seconds until the rate limit resets</TableCell>
                     </TableRow>
                   </TableBody>
                 </Table>
@@ -905,66 +735,124 @@ function AddressComponent() {
           </Card>
         </TabsContent>
         
-        <TabsContent value="web3" className="space-y-8">
+        <TabsContent value="versioning" className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle>Web3 Integration</CardTitle>
+              <CardTitle>API Versioning</CardTitle>
               <CardDescription>
-                SecureAddress Bridge provides seamless integration with blockchain wallets and Web3 features.
+                Our API uses versioning to ensure compatibility as we evolve our services.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <h3 className="text-lg font-medium">Wallet Connections</h3>
+                <h3 className="text-lg font-medium">Version Format</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Connect to popular Web3 wallets like MetaMask and WalletConnect.
+                  API versions are specified in the URL path (e.g., <code>/v1/address</code>).
                 </p>
                 <CodeBlock
-                  code={`// Connect to a wallet using the SDK
-const wallet = await client.connectWallet({
-  providerType: 'injected' // Use MetaMask or other injected providers
+                  code={versioningExample}
+                  language="javascript"
+                  showLineNumbers={true}
+                />
+                
+                <h3 className="text-lg font-medium mt-6">Version Guarantee</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  We guarantee that each API version will be supported for at least 12 months after a new version is released.
+                  When a version is deprecated, we will provide at least 6 months of notice before it is discontinued.
+                </p>
+                
+                <h3 className="text-lg font-medium mt-6">Available Versions</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Version</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Released</TableHead>
+                      <TableHead>End of Support</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow>
+                      <TableCell>v1</TableCell>
+                      <TableCell>
+                        <Badge variant="success">Current</Badge>
+                      </TableCell>
+                      <TableCell>August 2023</TableCell>
+                      <TableCell>TBD</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="security" className="space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Security Features</CardTitle>
+              <CardDescription>
+                Our API includes several security features to protect your data and prevent abuse.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <h3 className="text-lg font-medium">HTTPS Encryption</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  All API requests must use HTTPS to ensure data is encrypted in transit.
+                </p>
+                
+                <h3 className="text-lg font-medium mt-6">CSRF Protection</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Our authorization flow includes state parameters to prevent cross-site request forgery attacks.
+                </p>
+                <CodeBlock
+                  code={`// Generate a random state parameter
+const state = Math.random().toString(36).substring(2, 15);
+localStorage.setItem('secureaddress_state', state);
+
+// Include in authorization request
+await client.authorize({
+  // Other parameters...
+  state: state
 });
 
-console.log('Connected wallet:', wallet);
-// {
-//   success: true,
-//   address: '0x1234...5678',
-//   chainId: '0x1', // Ethereum Mainnet
-//   providerType: 'injected'
-// }
+// Validate state in callback
+const urlParams = new URLSearchParams(window.location.search);
+const state = urlParams.get('state');
+const storedState = localStorage.getItem('secureaddress_state');
 
-// Or using the React hook
-const { connectWallet, walletInfo } = useSecureAddress({
-  appId: 'YOUR_APP_ID'
-});
-
-const handleConnect = async () => {
-  await connectWallet();
-  // walletInfo will be updated with the connected wallet
+if (state !== storedState) {
+  // Invalid state, potential CSRF attack
+  throw new Error('Invalid state parameter');
 }`}
                   language="javascript"
                   showLineNumbers={true}
                 />
                 
-                <h3 className="text-lg font-medium mt-6">Address-Wallet Linking</h3>
+                <h3 className="text-lg font-medium mt-6">Request Tracking</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Link verified physical addresses to blockchain wallets for enhanced trust and verification.
+                  Each API request gets a unique request ID for tracking and auditing.
                 </p>
                 <CodeBlock
-                  code={walletLinkingExample}
-                  language="javascript"
+                  code={`// Request ID in response header
+X-Request-Id: req_1234567890abcdef
+
+// Request ID in response body
+{
+  "meta": {
+    "requestId": "req_1234567890abcdef",
+    // Other metadata...
+  }
+}`}
+                  language="http"
                   showLineNumbers={true}
                 />
                 
-                <h3 className="text-lg font-medium mt-6">Verifiable Credentials</h3>
+                <h3 className="text-lg font-medium mt-6">Access Token Rotation</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Generate verifiable credentials for on-chain address verification that can be used in dApps.
+                  When you refresh an access token, both the access token and refresh token are rotated for security.
                 </p>
-                <CodeBlock
-                  code={verifiableCredentialExample}
-                  language="javascript"
-                  showLineNumbers={true}
-                />
               </div>
             </CardContent>
           </Card>
@@ -973,128 +861,43 @@ const handleConnect = async () => {
         <TabsContent value="examples" className="space-y-8">
           <Card>
             <CardHeader>
-              <CardTitle>React Integration Example</CardTitle>
+              <CardTitle>Example: Authorization Flow</CardTitle>
               <CardDescription>
-                Complete example of integrating the SDK in a React application.
+                Example of implementing the OAuth authorization flow.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <CodeBlock
-                code={sdkExample}
-                language="javascript"
-                showLineNumbers={true}
-              />
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Marketplace Verification</CardTitle>
-              <CardDescription>
-                Example of verifying marketplace seller addresses.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CodeBlock
-                code={marketplaceVerificationExample}
-                language="javascript"
-                showLineNumbers={true}
-              />
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Usage Statistics</CardTitle>
-              <CardDescription>
-                Example of getting usage statistics for your application.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CodeBlock
-                code={usageStatsExample}
-                language="javascript"
-                showLineNumbers={true}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="webhooks" className="space-y-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Webhook Integration</CardTitle>
-              <CardDescription>
-                Set up webhooks to receive real-time notifications about address and permission changes.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium">Setting Up Webhooks</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Register a webhook URL to receive notifications when users update their addresses or modify permissions.
-                </p>
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Step 1: Redirect to Authorization</h3>
                 <CodeBlock
-                  code={`// Register a webhook URL
-const result = await client.registerWebhook({
-  url: 'https://your-app.com/webhooks/secureaddress',
-  events: ['address.updated', 'address.verified', 'permission.granted', 'permission.revoked'],
-  secret: 'your-webhook-secret' // Store this securely
-});
-
-console.log(result);
-// {
-//   id: 'webhook_123456',
-//   url: 'https://your-app.com/webhooks/secureaddress',
-//   events: ['address.updated', 'address.verified', 'permission.granted', 'permission.revoked'],
-//   created_at: '2023-07-15T10:30:00Z'
-// }`}
+                  code={authCodeExample}
                   language="javascript"
                   showLineNumbers={true}
                 />
                 
-                <h3 className="text-lg font-medium mt-6">Handling Webhook Events</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Set up a server endpoint to receive and process webhook events with signature verification.
-                </p>
+                <h3 className="text-lg font-medium mt-4">Step 2: Handle Callback & Get Address</h3>
                 <CodeBlock
-                  code={webhookExample}
+                  code={requestAddressExample}
                   language="javascript"
                   showLineNumbers={true}
                 />
-                
-                <h3 className="text-lg font-medium mt-6">Webhook Event Types</h3>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Event</TableHead>
-                      <TableHead>Description</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell>address.updated</TableCell>
-                      <TableCell>User updated their address information</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>address.verified</TableCell>
-                      <TableCell>User's address was verified successfully</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>permission.granted</TableCell>
-                      <TableCell>User granted permission to access their address</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>permission.revoked</TableCell>
-                      <TableCell>User revoked permission to access their address</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell>wallet.linked</TableCell>
-                      <TableCell>User linked a blockchain wallet to their address</TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
               </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Example: Verification Status</CardTitle>
+              <CardDescription>
+                Example of checking address verification status.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CodeBlock
+                code={verificationStatusExample}
+                language="javascript"
+                showLineNumbers={true}
+              />
             </CardContent>
           </Card>
         </TabsContent>
