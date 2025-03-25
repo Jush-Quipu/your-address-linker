@@ -5,7 +5,7 @@ import CodeBlock from '@/components/CodeBlock';
 
 const ZkProofs: React.FC = () => {
   const zkpClientCode = `// Client-side implementation using the SecureAddress Bridge ZKP SDK
-import { SecureAddressBridge } from '@secureaddress/bridge-sdk';
+import { SecureAddressBridge } from 'secureaddress-bridge-sdk';
 import { useState } from 'react';
 
 function AddressVerificationComponent() {
@@ -74,7 +74,7 @@ function AddressVerificationComponent() {
 
   const zkpServerCode = `// Server-side verification of ZK proofs
 const express = require('express');
-const { SecureAddressBridgeServer } = require('@secureaddress/bridge-sdk-server');
+const { SecureAddressBridgeServer } = require('secureaddress-bridge-sdk-server');
 const router = express.Router();
 
 // Initialize the server-side SDK with your secret key

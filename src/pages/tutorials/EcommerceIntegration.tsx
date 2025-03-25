@@ -1,10 +1,11 @@
+
 import React from 'react';
 import TutorialLayout from '@/components/TutorialLayout';
 import CodeBlock from '@/components/CodeBlock';
 
 const EcommerceIntegration: React.FC = () => {
   const frontendCodeExample = `// Initialize the SDK in your checkout component
-import { SecureAddressBridge } from '@secureaddress/bridge-sdk';
+import { SecureAddressBridge } from 'secureaddress-bridge-sdk';
 import { useState } from 'react';
 
 function CheckoutComponent() {
@@ -57,7 +58,7 @@ function CheckoutComponent() {
 
   const backendCodeExample = `// Example Node.js backend endpoint to process an order
 const express = require('express');
-const { SecureAddressBridgeServer } = require('@secureaddress/bridge-sdk-server');
+const { SecureAddressBridgeServer } = require('secureaddress-bridge-sdk-server');
 const router = express.Router();
 
 // Initialize the server-side SDK with your secret key

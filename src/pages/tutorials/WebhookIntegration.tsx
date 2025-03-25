@@ -98,7 +98,7 @@ function removeAccessToAddress(permissionId) {
 }`;
 
   const registerWebhookCode = `// Using the SecureAddress Bridge SDK to register webhooks
-import { SecureAddressBridgeAdmin } from '@secureaddress/bridge-sdk-admin';
+import { SecureAddressBridgeAdmin } from 'secureaddress-bridge-sdk-admin';
 
 const bridgeAdmin = new SecureAddressBridgeAdmin({
   apiKey: process.env.SECUREADDRESS_API_KEY

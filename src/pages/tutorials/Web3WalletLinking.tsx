@@ -5,7 +5,7 @@ import CodeBlock from '@/components/CodeBlock';
 
 const Web3WalletLinking: React.FC = () => {
   const walletIntegrationCode = `// Initialize both the SecureAddress SDK and ethers.js
-import { SecureAddressBridge } from '@secureaddress/bridge-sdk';
+import { SecureAddressBridge } from 'secureaddress-bridge-sdk';
 import { ethers } from 'ethers';
 import { useState, useEffect } from 'react';
 
