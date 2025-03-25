@@ -5,8 +5,35 @@ import { toast } from 'sonner';
 
 export type ZkpVerification = Tables<'zkp_verifications'>;
 
-// This is a simplified mock implementation of ZKP
-// In a real application, you would use a proper ZKP library like snarkjs or circom
+// ZKP Circuit types
+export enum ZkpCircuitType {
+  ADDRESS_OWNERSHIP = 'address_ownership',
+  LOCATION_VERIFICATION = 'location_verification',
+  COUNTRY_RESIDENCE = 'country_residence',
+  REGION_RESIDENCE = 'region_residence',
+  POSTAL_AREA = 'postal_area'
+}
+
+// ZKP proof types
+export type ZkpProof = {
+  pi_a: string[];
+  pi_b: string[][];
+  pi_c: string[];
+  protocol: string;
+  curve: string;
+};
+
+// Public inputs that are revealed on-chain
+export type ZkpPublicInputs = {
+  addressHash: string;
+  timestamp: number;
+  predicate?: {
+    field: string;
+    operation: string;
+    value?: string;
+    values?: string[];
+  };
+};
 
 /**
  * Creates a zero-knowledge proof for address ownership
@@ -20,7 +47,8 @@ export const generateAddressProof = async (
     state: string;
     postal_code: string;
     country: string;
-  }
+  },
+  circuitType: ZkpCircuitType = ZkpCircuitType.ADDRESS_OWNERSHIP
 ): Promise<{
   proof: string;
   public_inputs: string;
@@ -30,14 +58,42 @@ export const generateAddressProof = async (
     // For now, we'll just create a mock proof
     
     // Create public inputs (non-confidential data that will be visible on-chain)
-    // Typically this would be the hash of the address or some other public identifier
-    const publicInputs = {
+    const publicInputs: ZkpPublicInputs = {
       addressHash: await hashAddress(addressData),
       timestamp: Date.now()
     };
     
-    // Generate a mock proof (in a real implementation, this would be a ZKP)
-    const mockProof = {
+    // Add predicate information if it's a specific type of proof
+    if (circuitType !== ZkpCircuitType.ADDRESS_OWNERSHIP) {
+      switch (circuitType) {
+        case ZkpCircuitType.COUNTRY_RESIDENCE:
+          publicInputs.predicate = {
+            field: 'country',
+            operation: 'equals',
+            value: addressData.country
+          };
+          break;
+        case ZkpCircuitType.REGION_RESIDENCE:
+          publicInputs.predicate = {
+            field: 'state',
+            operation: 'equals',
+            value: addressData.state
+          };
+          break;
+        case ZkpCircuitType.POSTAL_AREA:
+          // For postal area, we only reveal the first 3 digits of the postal code
+          const postalPrefix = addressData.postal_code.substring(0, 3);
+          publicInputs.predicate = {
+            field: 'postal_code',
+            operation: 'starts_with',
+            value: postalPrefix
+          };
+          break;
+      }
+    }
+    
+    // Generate a mock ZK proof (in a real implementation, this would be a proper ZKP)
+    const mockProof: ZkpProof = {
       pi_a: [BigInt(Math.floor(Math.random() * 1000000)).toString(), BigInt(Math.floor(Math.random() * 1000000)).toString()],
       pi_b: [[BigInt(Math.floor(Math.random() * 1000000)).toString(), BigInt(Math.floor(Math.random() * 1000000)).toString()], [BigInt(Math.floor(Math.random() * 1000000)).toString(), BigInt(Math.floor(Math.random() * 1000000)).toString()]],
       pi_c: [BigInt(Math.floor(Math.random() * 1000000)).toString(), BigInt(Math.floor(Math.random() * 1000000)).toString()],
@@ -47,6 +103,9 @@ export const generateAddressProof = async (
     
     // For demonstration purposes, we'll simulate a delay as ZKP generation is computationally intensive
     await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Log proof generation
+    console.log(`Generated ${circuitType} proof for address ${addressId}`);
     
     return {
       proof: JSON.stringify(mockProof),
@@ -64,21 +123,76 @@ export const generateAddressProof = async (
  */
 export const verifyAddressProof = async (
   proof: string,
-  publicInputs: string
-): Promise<boolean> => {
+  publicInputs: string,
+  circuitType: ZkpCircuitType = ZkpCircuitType.ADDRESS_OWNERSHIP
+): Promise<{
+  isValid: boolean;
+  verificationData: any;
+}> => {
   try {
     // In a real implementation, this would use a ZKP library to verify the proof
-    // For now, we'll just simulate verification
+    // Parse the proof and public inputs
+    const proofObj = JSON.parse(proof);
+    const inputsObj = JSON.parse(publicInputs);
     
-    // For demonstration purposes, we'll simulate a delay and random success
+    // Perform basic validation
+    const hasValidStructure = 
+      proofObj.pi_a && 
+      proofObj.pi_b && 
+      proofObj.pi_c && 
+      inputsObj.addressHash && 
+      inputsObj.timestamp;
+    
+    if (!hasValidStructure) {
+      console.error('Invalid proof structure');
+      return { 
+        isValid: false, 
+        verificationData: { 
+          error: 'Invalid proof structure',
+          timestamp: Date.now()
+        }
+      };
+    }
+    
+    // Check if the proof is expired (more than 7 days old)
+    const proofAge = Date.now() - inputsObj.timestamp;
+    const maxProofAge = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+    
+    if (proofAge > maxProofAge) {
+      console.warn('Proof is expired');
+      return { 
+        isValid: false, 
+        verificationData: { 
+          error: 'Proof expired',
+          timestamp: inputsObj.timestamp,
+          maxAge: maxProofAge,
+          actualAge: proofAge
+        }
+      };
+    }
+    
+    // For demonstration purposes, we'll simulate a verification delay
     await new Promise(resolve => setTimeout(resolve, 500));
     
     // Always return true for this mock implementation
-    // In a real implementation, this would perform actual verification
-    return true;
+    // In a real implementation, this would perform cryptographic verification
+    return { 
+      isValid: true,
+      verificationData: {
+        circuitType,
+        timestamp: Date.now(),
+        publicInputs: inputsObj
+      }
+    };
   } catch (error) {
     console.error('Error verifying proof:', error);
-    return false;
+    return { 
+      isValid: false,
+      verificationData: {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: Date.now()
+      }
+    };
   }
 };
 
@@ -139,6 +253,104 @@ export const getZkpVerificationsForAddress = async (
   } catch (error) {
     console.error('Error in getZkpVerificationsForAddress:', error);
     return [];
+  }
+};
+
+/**
+ * Creates a conditional ZK proof that only proves certain predicates about an address
+ * without revealing the address itself
+ */
+export const createConditionalProof = async (
+  addressId: string,
+  addressData: {
+    street_address: string;
+    city: string;
+    state: string;
+    postal_code: string;
+    country: string;
+  },
+  conditions: {
+    field: 'country' | 'state' | 'city' | 'postal_code';
+    operation: 'equals' | 'in' | 'starts_with' | 'contains';
+    value?: string;
+    values?: string[];
+  }[]
+): Promise<{
+  proof: string;
+  public_inputs: string;
+}> => {
+  try {
+    // In a real implementation, this would use a ZKP library to generate a proof
+    // based on the specified conditions
+    
+    // Create public inputs with the predicates
+    const publicInputs: ZkpPublicInputs = {
+      addressHash: await hashAddress(addressData),
+      timestamp: Date.now(),
+      predicate: conditions.length === 1 ? conditions[0] : undefined
+    };
+    
+    // Generate a mock ZK proof
+    const mockProof: ZkpProof = {
+      pi_a: [BigInt(Math.floor(Math.random() * 1000000)).toString(), BigInt(Math.floor(Math.random() * 1000000)).toString()],
+      pi_b: [[BigInt(Math.floor(Math.random() * 1000000)).toString(), BigInt(Math.floor(Math.random() * 1000000)).toString()], [BigInt(Math.floor(Math.random() * 1000000)).toString(), BigInt(Math.floor(Math.random() * 1000000)).toString()]],
+      pi_c: [BigInt(Math.floor(Math.random() * 1000000)).toString(), BigInt(Math.floor(Math.random() * 1000000)).toString()],
+      protocol: "groth16",
+      curve: "bn128"
+    };
+    
+    // For demonstration purposes, we'll simulate a delay
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    
+    // Log proof generation
+    console.log(`Generated conditional proof for address ${addressId} with ${conditions.length} conditions`);
+    
+    return {
+      proof: JSON.stringify(mockProof),
+      public_inputs: JSON.stringify(publicInputs)
+    };
+  } catch (error) {
+    console.error('Error generating conditional proof:', error);
+    throw error;
+  }
+};
+
+/**
+ * Prepares a ZKP proof for on-chain verification
+ * This would prepare the data to be used in a smart contract verification
+ */
+export const prepareProofForBlockchain = async (
+  proof: string,
+  publicInputs: string
+): Promise<{
+  proofFormatted: string[];
+  publicInputsFormatted: string[];
+}> => {
+  try {
+    const proofObj = JSON.parse(proof) as ZkpProof;
+    const inputsObj = JSON.parse(publicInputs) as ZkpPublicInputs;
+    
+    // Format proof for smart contract consumption
+    // In a real implementation, this would format the proof according to the smart contract requirements
+    const proofFormatted = [
+      ...proofObj.pi_a,
+      ...proofObj.pi_b.flat(),
+      ...proofObj.pi_c
+    ];
+    
+    // Format public inputs for smart contract consumption
+    const publicInputsFormatted = [
+      inputsObj.addressHash,
+      inputsObj.timestamp.toString()
+    ];
+    
+    return {
+      proofFormatted,
+      publicInputsFormatted
+    };
+  } catch (error) {
+    console.error('Error preparing proof for blockchain:', error);
+    throw error;
   }
 };
 
