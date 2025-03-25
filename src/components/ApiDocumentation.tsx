@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CodeBlock from '@/components/CodeBlock';
@@ -6,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { InfoIcon } from 'lucide-react';
+import { InfoIcon, Play } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const ApiDocumentation: React.FC = () => {
   const [activeTab, setActiveTab] = useState('api-reference');
@@ -194,10 +194,10 @@ X-RateLimit-Reset: 58
     <div className="space-y-8">
       <Alert variant="warning" className="mb-8">
         <InfoIcon className="h-4 w-4" />
-        <AlertTitle>API Improvements</AlertTitle>
+        <AlertTitle>API Implementation Updates</AlertTitle>
         <AlertDescription>
-          Our API has been enhanced with standardized responses, versioning, comprehensive error handling, 
-          and new endpoints for better integration with your applications.
+          Our API is now implemented using Supabase Edge Functions for enhanced performance and reliability.
+          Updated endpoints and comprehensive testing tools are now available.
         </AlertDescription>
       </Alert>
       
@@ -216,7 +216,7 @@ X-RateLimit-Reset: 58
             <CardHeader>
               <CardTitle className="flex items-center">
                 RESTful API Endpoints
-                <Badge variant="outline" className="ml-2">v1</Badge>
+                <Badge variant="secondary" className="ml-2">v1</Badge>
               </CardTitle>
               <CardDescription>
                 SecureAddress Bridge provides a RESTful API for accessing user address data with consent.
@@ -226,7 +226,7 @@ X-RateLimit-Reset: 58
               <div className="space-y-6">
                 <h3 className="text-lg font-medium">Base URL</h3>
                 <CodeBlock
-                  code="https://api.secureaddress-bridge.com/v1"
+                  code="https://akfieehzgpcapuhdujvf.supabase.co/functions/v1"
                   language="bash"
                   showLineNumbers={false}
                 />
@@ -903,9 +903,33 @@ X-Request-Id: req_1234567890abcdef
           </Card>
         </TabsContent>
       </Tabs>
+      
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle>API Testing Tools</CardTitle>
+          <CardDescription>
+            Use our built-in testing tools to verify your integration with the SecureAddress Bridge API.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4">
+            Our new API testing tools allow you to easily test your integration with various endpoints, 
+            view responses, and troubleshoot issues.
+          </p>
+          <div className="flex justify-center">
+            <Button
+              component="a"
+              href="/api-testing"
+              className="flex items-center gap-2"
+            >
+              <Play className="h-4 w-4" />
+              Go to API Testing
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
 
 export default ApiDocumentation;
-

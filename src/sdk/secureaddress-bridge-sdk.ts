@@ -1,4 +1,3 @@
-
 import React from 'react';
 import type { ZkpCircuitType, ZkpPublicInputs } from '@/services/zkpService';
 
@@ -104,7 +103,7 @@ export class SecureAddressBridge {
   constructor(config: SecureAddressBridgeConfig) {
     this.appId = config.appId;
     this.redirectUri = config.redirectUri;
-    this.apiUrl = config.apiUrl || 'https://api.secureaddress-bridge.com';
+    this.apiUrl = config.apiUrl || 'https://akfieehzgpcapuhdujvf.supabase.co/functions';
     this.apiVersion = config.apiVersion || 'v1';
     this.storageKeyPrefix = config.storageKey || 'secureaddress_';
     this.debug = config.debug || false;
@@ -801,6 +800,43 @@ export class SecureAddressBridge {
     
     if (this.debug) {
       console.log('SecureAddress Bridge SDK logout: Cleared all stored tokens and data');
+    }
+  }
+
+  /**
+   * Test API connectivity
+   */
+  async testConnection(): Promise<{ status: 'ok' | 'error', message: string, version: string }> {
+    try {
+      const response = await fetch(`${this.apiUrl}/${this.apiVersion}/health-check`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-App-ID': this.appId,
+          'X-SDK-Version': '2.3.0'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      return {
+        status: 'ok',
+        message: data.data?.message || 'API is operational',
+        version: data.meta?.version || 'unknown'
+      };
+    } catch (error) {
+      if (this.debug) {
+        console.error('API connection test failed:', error);
+      }
+      
+      return {
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Unknown error testing API connection',
+        version: 'unknown'
+      };
     }
   }
 }
