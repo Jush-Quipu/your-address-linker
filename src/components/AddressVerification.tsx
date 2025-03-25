@@ -1,25 +1,23 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { createPhysicalAddress } from '@/services/addressService';
+import { createPhysicalAddress, getPhysicalAddressById } from '@/services/addressService';
 import { useAuth } from '@/context/AuthContext';
 import { validateAddress, GeocodingResult } from '@/services/geocodingService';
 import DocumentUpload from '@/components/DocumentUpload';
+import PostalVerification from '@/components/PostalVerification';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Check, MapPin, AlertTriangle, Loader2 } from 'lucide-react';
+import { Check, MapPin, AlertTriangle, Loader2, Mail } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// List of countries for the select dropdown
 const countries = [
   'United States', 'Canada', 'United Kingdom', 'Australia', 
   'Germany', 'France', 'Japan', 'Brazil', 'India', 'China',
-  // Add more countries as needed
 ];
 
 const AddressVerification: React.FC = () => {
@@ -31,6 +29,9 @@ const AddressVerification: React.FC = () => {
   const [addressVerified, setAddressVerified] = useState(false);
   const [geocodingResult, setGeocodingResult] = useState<GeocodingResult | null>(null);
   const [verificationConfidence, setVerificationConfidence] = useState(0);
+  const [activeVerificationTab, setActiveVerificationTab] = useState('address-form');
+  const [savedAddressId, setSavedAddressId] = useState<string | null>(null);
+  const [postalVerified, setPostalVerified] = useState(false);
   
   const [formData, setFormData] = useState({
     streetAddress: '',
@@ -44,7 +45,6 @@ const AddressVerification: React.FC = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Reset verification when form changes
     if (addressVerified) {
       setAddressVerified(false);
       setGeocodingResult(null);
@@ -54,7 +54,6 @@ const AddressVerification: React.FC = () => {
   const handleCountryChange = (value: string) => {
     setFormData(prev => ({ ...prev, country: value }));
     
-    // Reset verification when form changes
     if (addressVerified) {
       setAddressVerified(false);
       setGeocodingResult(null);
@@ -69,7 +68,6 @@ const AddressVerification: React.FC = () => {
       return;
     }
 
-    // Basic validation
     if (!formData.streetAddress || !formData.city || !formData.state || 
         !formData.postalCode || !formData.country) {
       toast.error('Please fill in all fields', {
@@ -80,7 +78,6 @@ const AddressVerification: React.FC = () => {
 
     setVerifying(true);
     try {
-      // Validate address with geocoding service
       const result = await validateAddress(
         formData.streetAddress,
         formData.city,
@@ -118,6 +115,13 @@ const AddressVerification: React.FC = () => {
     setDocumentPath(filePath);
   };
 
+  const handlePostalVerificationComplete = () => {
+    setPostalVerified(true);
+    toast.success('Address fully verified with postal code!', {
+      description: 'Your address has been verified with the highest level of confidence.'
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -128,7 +132,6 @@ const AddressVerification: React.FC = () => {
       return;
     }
 
-    // Basic validation
     if (!formData.streetAddress || !formData.city || !formData.state || 
         !formData.postalCode || !formData.country) {
       toast.error('Please fill in all fields', {
@@ -139,19 +142,20 @@ const AddressVerification: React.FC = () => {
 
     setLoading(true);
     try {
-      // Determine verification status and method
       let verificationStatus = 'pending';
       let verificationMethod = 'form_submission';
       
       if (addressVerified && documentUploaded) {
         verificationMethod = 'geocoding_and_document';
+        verificationStatus = 'verified';
       } else if (addressVerified) {
         verificationMethod = 'geocoding';
+        verificationStatus = 'verified';
       } else if (documentUploaded) {
         verificationMethod = 'document_upload';
+        verificationStatus = 'pending';
       }
       
-      // Create the address data with required fields for the updated schema
       const addressData = {
         user_id: user!.id,
         street_address: formData.streetAddress,
@@ -161,8 +165,7 @@ const AddressVerification: React.FC = () => {
         country: formData.country,
         verification_status: verificationStatus,
         verification_method: verificationMethod,
-        verification_date: null,
-        // Add new required fields with null values for encrypted data
+        verification_date: verificationStatus === 'verified' ? new Date().toISOString() : null,
         encrypted_street_address: null,
         encrypted_city: null,
         encrypted_state: null,
@@ -176,29 +179,17 @@ const AddressVerification: React.FC = () => {
         zkp_created_at: null
       };
       
-      // Save the address to Supabase
-      await createPhysicalAddress(addressData);
+      const savedAddress = await createPhysicalAddress(addressData);
+      
+      if (savedAddress && savedAddress.id) {
+        setSavedAddressId(savedAddress.id);
+        setActiveVerificationTab('postal-verification');
+      }
 
       toast.success('Address submitted successfully!', {
-        description: 'Your address has been submitted for verification.',
+        description: 'Your address has been saved and is ready for verification.',
       });
 
-      // Reset form after successful submission
-      setFormData({
-        streetAddress: '',
-        city: '',
-        state: '',
-        postalCode: '',
-        country: '',
-      });
-      
-      setAddressVerified(false);
-      setGeocodingResult(null);
-      setDocumentUploaded(false);
-      setDocumentPath(null);
-      
-      // Redirect to dashboard
-      window.location.href = '/dashboard';
     } catch (error) {
       console.error('Error submitting address:', error);
       toast.error('Error submitting address', {
@@ -214,14 +205,23 @@ const AddressVerification: React.FC = () => {
       <CardHeader>
         <CardTitle className="text-2xl">Verify Your Address</CardTitle>
         <CardDescription>
-          Complete both steps to verify your physical address
+          Complete all steps to fully verify your physical address
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="address-form" className="space-y-6">
-          <TabsList className="grid grid-cols-2 w-full">
+        <Tabs 
+          value={activeVerificationTab} 
+          onValueChange={setActiveVerificationTab}
+          className="space-y-6"
+        >
+          <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="address-form">1. Enter Address</TabsTrigger>
-            <TabsTrigger value="document-upload" disabled={!addressVerified}>2. Upload Document</TabsTrigger>
+            <TabsTrigger value="document-upload" disabled={!addressVerified && !savedAddressId}>
+              2. Upload Document
+            </TabsTrigger>
+            <TabsTrigger value="postal-verification" disabled={!savedAddressId}>
+              3. Postal Verify
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="address-form" className="space-y-6">
@@ -359,24 +359,62 @@ const AddressVerification: React.FC = () => {
           <TabsContent value="document-upload">
             <DocumentUpload onDocumentUploaded={handleDocumentUploaded} />
           </TabsContent>
+          
+          <TabsContent value="postal-verification">
+            {savedAddressId ? (
+              <PostalVerification 
+                physicalAddressId={savedAddressId}
+                onVerificationComplete={handlePostalVerificationComplete}
+              />
+            ) : (
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Address Required</AlertTitle>
+                <AlertDescription>
+                  You need to save your address information first before proceeding with postal verification.
+                </AlertDescription>
+              </Alert>
+            )}
+          </TabsContent>
         </Tabs>
       </CardContent>
       <CardFooter>
-        <Button 
-          className="w-full" 
-          type="submit" 
-          onClick={handleSubmit}
-          disabled={loading || !isAuthenticated || !addressVerified}
-        >
-          {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Submitting...
-            </>
-          ) : (
-            'Submit Address for Verification'
-          )}
-        </Button>
+        {activeVerificationTab === 'address-form' && (
+          <Button 
+            className="w-full" 
+            type="submit" 
+            onClick={handleSubmit}
+            disabled={loading || !isAuthenticated}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              'Save Address and Continue'
+            )}
+          </Button>
+        )}
+        
+        {activeVerificationTab === 'document-upload' && (
+          <Button 
+            className="w-full" 
+            onClick={() => setActiveVerificationTab('postal-verification')}
+            disabled={!documentUploaded && !savedAddressId}
+          >
+            Continue to Postal Verification
+          </Button>
+        )}
+        
+        {activeVerificationTab === 'postal-verification' && postalVerified && (
+          <Button 
+            className="w-full" 
+            onClick={() => window.location.href = '/dashboard'}
+          >
+            Go to Dashboard
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );

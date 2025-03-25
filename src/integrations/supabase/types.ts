@@ -224,6 +224,8 @@ export type Database = {
           encryption_version: number | null
           id: string
           postal_code: string
+          postal_verification_date: string | null
+          postal_verified: boolean | null
           state: string
           street_address: string
           updated_at: string
@@ -249,6 +251,8 @@ export type Database = {
           encryption_version?: number | null
           id?: string
           postal_code: string
+          postal_verification_date?: string | null
+          postal_verified?: boolean | null
           state: string
           street_address: string
           updated_at?: string
@@ -274,6 +278,8 @@ export type Database = {
           encryption_version?: number | null
           id?: string
           postal_code?: string
+          postal_verification_date?: string | null
+          postal_verified?: boolean | null
           state?: string
           street_address?: string
           updated_at?: string
@@ -286,6 +292,59 @@ export type Database = {
           zkp_public_inputs?: string | null
         }
         Relationships: []
+      }
+      postal_verification_codes: {
+        Row: {
+          attempts: number
+          created_at: string
+          expires_at: string
+          id: string
+          mail_status: string
+          max_attempts: number
+          physical_address_id: string
+          status: string
+          tracking_number: string | null
+          user_id: string
+          verification_code: string
+          verified_at: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          mail_status?: string
+          max_attempts?: number
+          physical_address_id: string
+          status?: string
+          tracking_number?: string | null
+          user_id: string
+          verification_code: string
+          verified_at?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          mail_status?: string
+          max_attempts?: number
+          physical_address_id?: string
+          status?: string
+          tracking_number?: string | null
+          user_id?: string
+          verification_code?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "postal_verification_codes_physical_address_id_fkey"
+            columns: ["physical_address_id"]
+            isOneToOne: false
+            referencedRelation: "physical_addresses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
