@@ -7,6 +7,7 @@ This directory contains scripts for preparing and publishing the SecureAddress B
 
 - `setup-permissions.sh`: Sets the correct permissions for all scripts
 - `publish-with-token.sh`: Main script to publish all packages with the provided npm token
+- `publish-windows.bat`: Windows version of the publish script
 - `release.js`: Handles versioning and releasing all JavaScript packages
 - `publish.js`: Publishes JavaScript packages to npm
 - `package-prep.js`: Prepares packages for publishing (creates README files, etc.)
@@ -16,6 +17,8 @@ This directory contains scripts for preparing and publishing the SecureAddress B
 ## Quick Start
 
 ### Publishing JavaScript SDKs to npm
+
+#### On macOS/Linux:
 
 ```bash
 # First, make sure scripts are executable
@@ -31,6 +34,19 @@ This directory contains scripts for preparing and publishing the SecureAddress B
 ./publish-with-token.sh major
 ```
 
+#### On Windows:
+
+```cmd
+# Publish a patch release (increments the third number: 1.2.3 -> 1.2.4)
+publish-windows.bat patch
+
+# Or publish a minor release (increments the second number: 1.2.3 -> 1.3.0)
+publish-windows.bat minor
+
+# Or publish a major release (increments the first number: 1.2.3 -> 2.0.0)
+publish-windows.bat major
+```
+
 ### Publishing Python SDK to PyPI
 
 To publish the Python SDK, you'll need to set your PyPI token:
@@ -43,9 +59,19 @@ export PYPI_TOKEN=your-pypi-token
 ./python/setup-pypi.sh
 ```
 
+On Windows:
+```cmd
+# Set your PyPI token
+set PYPI_TOKEN=your-pypi-token
+
+# Run the Python publishing script directly with Node
+node publish-python.js
+```
+
 ## Notes
 
 - The npm token is built into the `publish-with-token.sh` script
 - For security, do not commit or share this token with others
 - Make sure you have the appropriate permissions to publish to the @secureaddress organization on npm
 - For PyPI publishing, you must set the PYPI_TOKEN environment variable before running the scripts
+
