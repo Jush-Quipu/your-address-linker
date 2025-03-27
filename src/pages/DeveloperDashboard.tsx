@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
@@ -13,6 +12,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbS
 import { HomeIcon, Code, Settings, Compass, ServerIcon, Bell, Database, Book, Beaker, History, BarChart } from 'lucide-react';
 import { toast } from 'sonner';
 import WebhookManager from '@/components/WebhookManager';
+import WebhookManagerTabs from '@/components/WebhookManagerTabs';
 import { getDeveloperApps, checkDeveloperAccess } from '@/services/developerService';
 
 const DeveloperDashboard = () => {
@@ -46,12 +46,10 @@ const DeveloperDashboard = () => {
     checkAccess();
   }, [isAuthenticated, user]);
 
-  // Redirect to login if not authenticated
   if (!isLoading && !isAuthenticated) {
     return <Navigate to="/auth" />;
   }
 
-  // Show access denied message if user doesn't have developer access
   if (!isLoading && !hasDeveloperAccess && isAuthenticated) {
     return (
       <div className="min-h-screen">
@@ -336,7 +334,7 @@ const DeveloperDashboard = () => {
                           
                           <div>
                             <h3 className="text-xl font-semibold mb-4">Webhooks</h3>
-                            <WebhookManager appId={app.id} appName={app.app_name} />
+                            <WebhookManagerTabs appId={app.id} appName={app.app_name} />
                           </div>
                         </TabsContent>
                       ))}

@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createErrorResponse, createSuccessResponse, corsHeaders, checkRateLimit, getRateLimitHeaders } from '../_shared/apiHelpers.ts';
 
@@ -82,6 +81,7 @@ serve(async (req) => {
 
     // Parse the URL to get the webhook ID if present
     const url = new URL(req.url);
+    const path = url.pathname;
     const pathParts = url.pathname.split('/').filter(Boolean);
     const webhookId = pathParts.length > 1 ? pathParts[1] : null;
     const appIdParam = url.searchParams.get('app_id');
@@ -408,6 +408,199 @@ serve(async (req) => {
           })),
           {
             status: 200,
+            headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+        
+      case 'test':
+        // Test webhook delivery
+        // Extract webhook ID from path
+        const pathParts = path.split('/');
+        const webhookId = pathParts[pathParts.length - 2];
+
+        // Check if webhook exists and belongs to user
+        const { data: webhook, error: webhookError } = await supabase
+          .from('webhooks')
+          .select('id, url, events, is_active, secret_key, app_id')
+          .eq('id', webhookId)
+          .eq('user_id', user.id)
+          .single();
+          
+        if (webhookError || !webhook) {
+          return new Response(
+            JSON.stringify(createErrorResponse(
+              'not_found', 
+              'Webhook not found or does not belong to the user'
+            )),
+            {
+              status: 404,
+              headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+        
+        if (!webhook.is_active) {
+          return new Response(
+            JSON.stringify(createErrorResponse(
+              'webhook_disabled', 
+              'Cannot test a disabled webhook'
+            )),
+            {
+              status: 400,
+              headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+        
+        // Parse request body for custom event type and payload
+        let eventType;
+        let customPayload;
+        
+        if (req.method === 'POST') {
+          try {
+            const requestBody = await req.json();
+            eventType = requestBody.event_type;
+            customPayload = requestBody.custom_payload;
+          } catch (e) {
+            // If body parsing fails, continue with default event
+            console.log('No custom event type or payload provided');
+          }
+        }
+        
+        // Use default event type if none specified or invalid
+        if (!eventType || !webhook.events.includes(eventType)) {
+          eventType = webhook.events[0] || 'test.event';
+        }
+        
+        // Prepare test payload
+        const timestamp = new Date().toISOString();
+        const testPayload = customPayload || {
+          event_type: eventType,
+          test: true,
+          app_id: webhook.app_id,
+          timestamp
+        };
+        
+        // Create webhook log entry
+        const { data: webhookLog, error: logError } = await supabase
+          .from('webhook_logs')
+          .insert({
+            webhook_id: webhookId,
+            event_type: eventType,
+            payload: testPayload,
+            status: 'pending',
+            attempt_count: 1
+          })
+          .select()
+          .single();
+          
+        if (logError) {
+          console.error('Error creating webhook log:', logError);
+          return new Response(
+            JSON.stringify(createErrorResponse(
+              'server_error', 
+              'Error creating webhook log'
+            )),
+            {
+              status: 500,
+              headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
+            }
+          );
+        }
+        
+        // Calculate signature if webhook has a secret key
+        let signature = '';
+        if (webhook.secret_key) {
+          const encoder = new TextEncoder();
+          const data = encoder.encode(JSON.stringify(testPayload) + webhook.secret_key);
+          const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        
+        // Deliver the webhook in the background
+        const deliverWebhook = async () => {
+          try {
+            const webhookResponse = await fetch(webhook.url, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Webhook-Signature': signature,
+                'X-Webhook-ID': webhookId,
+                'X-Event-Type': eventType,
+                'X-Delivery-ID': webhookLog.id
+              },
+              body: JSON.stringify(testPayload)
+            });
+            
+            const responseStatus = webhookResponse.status;
+            let responseBody;
+            try {
+              responseBody = await webhookResponse.text();
+            } catch (e) {
+              responseBody = 'Could not read response body';
+            }
+            
+            // Update the webhook log
+            await supabase
+              .from('webhook_logs')
+              .update({
+                status: responseStatus >= 200 && responseStatus < 300 ? 'success' : 'failed',
+                status_code: responseStatus,
+                response_body: responseBody
+              })
+              .eq('id', webhookLog.id);
+              
+            // If successful, update the webhook last triggered timestamp
+            if (responseStatus >= 200 && responseStatus < 300) {
+              await supabase
+                .from('webhooks')
+                .update({
+                  last_triggered_at: timestamp
+                })
+                .eq('id', webhookId);
+            } else {
+              // If failed, increment the failure count
+              await supabase
+                .from('webhooks')
+                .update({
+                  failure_count: supabase.rpc('increment', { x: 1 })
+                })
+                .eq('id', webhookId);
+            }
+          } catch (error) {
+            console.error('Error delivering webhook:', error);
+            
+            // Update the webhook log with failure
+            await supabase
+              .from('webhook_logs')
+              .update({
+                status: 'failed',
+                response_body: `Error: ${error.message || 'Unknown error'}`
+              })
+              .eq('id', webhookLog.id);
+              
+            // Increment the failure count
+            await supabase
+              .from('webhooks')
+              .update({
+                failure_count: supabase.rpc('increment', { x: 1 })
+              })
+              .eq('id', webhookId);
+          }
+        };
+        
+        // Start the delivery process in the background
+        EdgeRuntime.waitUntil(deliverWebhook());
+        
+        return new Response(
+          JSON.stringify(createSuccessResponse({
+            message: 'Test webhook sent successfully',
+            delivery_id: webhookLog.id,
+            event_type: eventType
+          })),
+          {
+            status: 202,
             headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
           }
         );

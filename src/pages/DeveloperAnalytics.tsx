@@ -1,57 +1,23 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { HomeIcon, DatabaseIcon, ActivityIcon, PieChartIcon, CpuIcon, Clock } from 'lucide-react';
+import { HomeIcon, DatabaseIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-// Sample data - would be replaced with real data from API
-const apiUsageData = [
-  { name: 'Monday', requests: 120 },
-  { name: 'Tuesday', requests: 150 },
-  { name: 'Wednesday', requests: 180 },
-  { name: 'Thursday', requests: 145 },
-  { name: 'Friday', requests: 190 },
-  { name: 'Saturday', requests: 80 },
-  { name: 'Sunday', requests: 70 },
-];
-
-const responseTimeData = [
-  { name: 'Monday', time: 85 },
-  { name: 'Tuesday', time: 90 },
-  { name: 'Wednesday', time: 115 },
-  { name: 'Thursday', time: 95 },
-  { name: 'Friday', time: 105 },
-  { name: 'Saturday', time: 70 },
-  { name: 'Sunday', time: 65 },
-];
-
-const endpointUsageData = [
-  { name: '/address', value: 350 },
-  { name: '/wallet-verify', value: 200 },
-  { name: '/verify-address', value: 150 },
-  { name: '/blind-shipping', value: 100 },
-  { name: '/other', value: 80 }
-];
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+import ApiAnalyticsDashboard from '@/components/ApiAnalyticsDashboard';
 
 const DeveloperAnalytics: React.FC = () => {
   const { isAuthenticated, isLoading, user } = useAuth();
+  const location = useLocation();
   const [timeRange, setTimeRange] = useState('7d');
   const [applications, setApplications] = useState<any[]>([]);
-  const [selectedApp, setSelectedApp] = useState<string | null>(null);
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [usageData, setUsageData] = useState<any[]>([]);
 
   // Redirect to login if not authenticated
   if (!isLoading && !isAuthenticated) {
@@ -72,8 +38,14 @@ const DeveloperAnalytics: React.FC = () => {
         if (error) throw error;
         
         setApplications(data || []);
-        if (data && data.length > 0) {
-          setSelectedApp(data[0].id);
+        
+        // If we have an app ID from location state, use that
+        const appIdFromState = location.state?.appId;
+        if (appIdFromState && data?.some(app => app.id === appIdFromState)) {
+          setSelectedAppId(appIdFromState);
+        } else if (data && data.length > 0) {
+          // Otherwise use the first app
+          setSelectedAppId(data[0].id);
         }
       } catch (error) {
         console.error('Error fetching applications:', error);
@@ -84,19 +56,14 @@ const DeveloperAnalytics: React.FC = () => {
     };
     
     fetchApplications();
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, location.state]);
 
-  useEffect(() => {
-    const fetchUsageData = async () => {
-      if (!selectedApp) return;
-      
-      // In a real app, this would fetch actual usage data from the API
-      // For now, we'll just use the sample data
-      setUsageData(apiUsageData);
-    };
-    
-    fetchUsageData();
-  }, [selectedApp, timeRange]);
+  // Get the selected app's name
+  const getSelectedAppName = () => {
+    if (!selectedAppId || !applications.length) return '';
+    const app = applications.find(app => app.id === selectedAppId);
+    return app?.app_name || '';
+  };
 
   return (
     <div className="min-h-screen">
@@ -113,7 +80,7 @@ const DeveloperAnalytics: React.FC = () => {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbLink href="/developer-dashboard">Developer</BreadcrumbLink>
+                <BreadcrumbLink href="/developer">Developer</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
@@ -143,8 +110,8 @@ const DeveloperAnalytics: React.FC = () => {
               </Select>
               
               <Select 
-                onValueChange={setSelectedApp} 
-                value={selectedApp || ''} 
+                onValueChange={setSelectedAppId} 
+                value={selectedAppId || ''} 
                 disabled={applications.length === 0}
               >
                 <SelectTrigger className="w-[200px]">
@@ -173,187 +140,20 @@ const DeveloperAnalytics: React.FC = () => {
                 <p className="text-muted-foreground max-w-md mb-6">
                   You need to register an application before you can view analytics data.
                 </p>
-                <Button asChild>
-                  <a href="/developer">Register Application</a>
-                </Button>
+                <a href="/developer" className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded">
+                  Register Application
+                </a>
               </CardContent>
             </Card>
+          ) : selectedAppId ? (
+            <ApiAnalyticsDashboard 
+              appId={selectedAppId} 
+              appName={getSelectedAppName()} 
+              timeRange={timeRange} 
+            />
           ) : (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-lg">
-                      <ActivityIcon className="h-5 w-5 mr-2 text-primary" />
-                      API Requests
-                    </CardTitle>
-                    <CardDescription>Total requests in selected period</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-end space-x-2">
-                      <div className="text-3xl font-bold">1,234</div>
-                      <div className="text-sm text-green-500">+12% ↑</div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-lg">
-                      <Clock className="h-5 w-5 mr-2 text-primary" />
-                      Average Response Time
-                    </CardTitle>
-                    <CardDescription>Average API response time</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-end space-x-2">
-                      <div className="text-3xl font-bold">89ms</div>
-                      <div className="text-sm text-green-500">-5% ↓</div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-lg">
-                      <CpuIcon className="h-5 w-5 mr-2 text-primary" />
-                      Success Rate
-                    </CardTitle>
-                    <CardDescription>Percentage of successful requests</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-end space-x-2">
-                      <div className="text-3xl font-bold">99.8%</div>
-                      <div className="text-sm text-green-500">+0.2% ↑</div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Tabs defaultValue="requests" className="w-full">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="requests">API Requests</TabsTrigger>
-                  <TabsTrigger value="performance">Performance</TabsTrigger>
-                  <TabsTrigger value="endpoints">Endpoint Usage</TabsTrigger>
-                  <TabsTrigger value="errors">Errors</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="requests">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Request Volume</CardTitle>
-                      <CardDescription>
-                        API requests over time for the selected period
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={apiUsageData}>
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Tooltip />
-                            <Bar dataKey="requests" fill="#3b82f6" />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                
-                <TabsContent value="performance">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Response Time</CardTitle>
-                      <CardDescription>
-                        Average response time in milliseconds
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={responseTimeData}>
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Tooltip />
-                            <Line type="monotone" dataKey="time" stroke="#8884d8" />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                
-                <TabsContent value="endpoints">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Endpoint Usage</CardTitle>
-                      <CardDescription>
-                        Distribution of requests by endpoint
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex justify-between">
-                      <div className="h-[300px] w-1/2">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={endpointUsageData}
-                              cx="50%"
-                              cy="50%"
-                              labelLine={false}
-                              outerRadius={80}
-                              fill="#8884d8"
-                              dataKey="value"
-                              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            >
-                              {endpointUsageData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <div className="w-1/2 pl-6">
-                        <h4 className="font-medium mb-4">Top Endpoints</h4>
-                        <div className="space-y-4">
-                          {endpointUsageData.map((entry, index) => (
-                            <div key={`endpoint-${index}`} className="flex justify-between">
-                              <div className="flex items-center">
-                                <div 
-                                  className="w-3 h-3 rounded-full mr-2" 
-                                  style={{ backgroundColor: COLORS[index % COLORS.length] }} 
-                                />
-                                <span>{entry.name}</span>
-                              </div>
-                              <span className="font-medium">{entry.value} requests</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-                
-                <TabsContent value="errors">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Error Analysis</CardTitle>
-                      <CardDescription>
-                        API errors by type and frequency
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-8">
-                        <PieChartIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                        <p className="text-muted-foreground">
-                          No errors recorded in the selected time period.
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
+            <div className="text-center py-20">
+              <p className="text-muted-foreground">Please select an application to view analytics.</p>
             </div>
           )}
         </div>

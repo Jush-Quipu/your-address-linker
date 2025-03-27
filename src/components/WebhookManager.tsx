@@ -4,30 +4,34 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { PlusCircle, Trash2, RefreshCw, Power, PowerOff, AlertTriangle, Info, CheckCircle2 } from 'lucide-react';
-import { getWebhooks, registerWebhook, updateWebhook, deleteWebhook, testWebhook, Webhook, WebhookCreateParams, WebhookUpdateParams } from '@/services/webhookService';
+import { getWebhooks, registerWebhook, updateWebhook, deleteWebhook, Webhook, WebhookCreateParams, WebhookUpdateParams } from '@/services/webhookService';
 
 interface WebhookManagerProps {
   appId: string;
   appName: string;
+  onSelectWebhook?: (webhook: Webhook) => void;
+  refreshTrigger?: number;
 }
 
 const eventTypeOptions = [
-  { id: 'address.created', label: 'Address Created' },
+  { id: 'address.verified', label: 'Address Verified' },
   { id: 'address.updated', label: 'Address Updated' },
-  { id: 'address.deleted', label: 'Address Deleted' },
-  { id: 'permission.granted', label: 'Permission Granted' },
+  { id: 'address.accessed', label: 'Address Accessed' },
+  { id: 'permission.created', label: 'Permission Granted' },
   { id: 'permission.revoked', label: 'Permission Revoked' },
-  { id: 'verification.completed', label: 'Verification Completed' },
-  { id: 'verification.failed', label: 'Verification Failed' },
 ];
 
-const WebhookManager: React.FC<WebhookManagerProps> = ({ appId, appName }) => {
+const WebhookManager: React.FC<WebhookManagerProps> = ({ 
+  appId, 
+  appName, 
+  onSelectWebhook,
+  refreshTrigger = 0
+}) => {
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [formOpen, setFormOpen] = useState<boolean>(false);
@@ -43,10 +47,10 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ appId, appName }) => {
   });
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  // Fetch webhooks on component mount
+  // Fetch webhooks on component mount and when refreshTrigger changes
   useEffect(() => {
     fetchWebhooks();
-  }, [appId]);
+  }, [appId, refreshTrigger]);
 
   // Function to fetch webhooks
   const fetchWebhooks = async () => {
@@ -127,16 +131,6 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ appId, appName }) => {
     }
   };
 
-  // Handle webhook test
-  const handleTest = async (webhookId: string) => {
-    try {
-      await testWebhook(webhookId);
-      toast.success('Test webhook sent');
-    } catch (error) {
-      console.error('Error testing webhook:', error);
-    }
-  };
-
   // Handle toggling webhook active state
   const handleToggleActive = async (webhook: Webhook) => {
     try {
@@ -168,6 +162,13 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ appId, appName }) => {
       description: webhook.metadata?.description || '',
     });
     setFormOpen(true);
+  };
+  
+  // Handle view webhook details
+  const handleViewDetails = (webhook: Webhook) => {
+    if (onSelectWebhook) {
+      onSelectWebhook(webhook);
+    }
   };
 
   return (
@@ -305,15 +306,6 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ appId, appName }) => {
                     >
                       {webhook.is_active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="icon" 
-                      className="h-8 w-8" 
-                      onClick={() => handleTest(webhook.id)}
-                      title="Test webhook"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button 
@@ -371,10 +363,15 @@ const WebhookManager: React.FC<WebhookManagerProps> = ({ appId, appName }) => {
                   </div>
                 )}
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={() => handleEdit(webhook)}>
                   Edit
                 </Button>
+                {onSelectWebhook && (
+                  <Button variant="default" size="sm" onClick={() => handleViewDetails(webhook)}>
+                    View Details
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           ))}
