@@ -22,7 +22,14 @@ import {
   Code, Beaker, HomeIcon, Plus, Settings, BarChart, List, Search, 
   AlertTriangle, Check, ShieldCheck, Info, RefreshCw, Key, Lock
 } from 'lucide-react';
-import { AppStatus, AppVerificationStatus, DeveloperApp, createDeveloperApp, parseOAuthSettings } from '@/services/developerService';
+import { 
+  AppStatus, 
+  AppVerificationStatus, 
+  DeveloperApp, 
+  createDeveloperApp, 
+  parseOAuthSettings 
+} from '@/services/developerService';
+
 import { 
   Select, 
   SelectContent, 

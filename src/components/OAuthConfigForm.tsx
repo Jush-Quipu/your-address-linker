@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -10,8 +11,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { updateDeveloperApp } from "@/services/developerService";
-import { DeveloperApp } from "@/services/developerService";
+import { updateDeveloperApp, DeveloperApp } from "@/services/developerService";
 
 // OAuth configuration schema
 const oauthConfigSchema = z.object({
