@@ -1,4 +1,3 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.33.1';
 
 // CORS headers for Edge Functions
@@ -140,37 +139,35 @@ export const logApiUsage = async (
   }
 };
 
-// Rotate an app's secret
+// Helper function to rotate an app secret
 export const rotateAppSecret = async (
   supabase: any,
   appId: string,
   userId: string
-) => {
-  try {
-    // Generate new app secret
-    const newAppSecret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+): Promise<string> => {
+  // Generate a new app secret
+  const newAppSecret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+  
+  // Update the app with the new secret
+  const { data, error } = await supabase
+    .from('developer_apps')
+    .update({ 
+      app_secret: newAppSecret,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', appId)
+    .eq('user_id', userId)
+    .select()
+    .single();
     
-    // Update app secret in database
-    const { data, error } = await supabase
-      .from('developer_apps')
-      .update({ 
-        app_secret: newAppSecret,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', appId)
-      .eq('user_id', userId)
-      .select('app_secret')
-      .single();
-    
-    if (error) throw error;
-    
-    return data.app_secret;
-  } catch (error) {
+  if (error) {
     console.error('Error rotating app secret:', error);
-    throw error;
+    throw new Error('Failed to rotate app secret');
   }
+  
+  return newAppSecret;
 };
 
 // Check developer app permissions

@@ -452,11 +452,13 @@ export type Database = {
           id: string
           monthly_request_limit: number | null
           oauth_settings: Json | null
-          status: string | null
+          status: Database["public"]["Enums"]["app_status"] | null
           updated_at: string | null
           user_id: string
           verification_details: Json | null
-          verification_status: string | null
+          verification_status:
+            | Database["public"]["Enums"]["app_verification_status"]
+            | null
           website_url: string | null
         }
         Insert: {
@@ -468,11 +470,13 @@ export type Database = {
           id: string
           monthly_request_limit?: number | null
           oauth_settings?: Json | null
-          status?: string | null
+          status?: Database["public"]["Enums"]["app_status"] | null
           updated_at?: string | null
           user_id: string
           verification_details?: Json | null
-          verification_status?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["app_verification_status"]
+            | null
           website_url?: string | null
         }
         Update: {
@@ -484,11 +488,13 @@ export type Database = {
           id?: string
           monthly_request_limit?: number | null
           oauth_settings?: Json | null
-          status?: string | null
+          status?: Database["public"]["Enums"]["app_status"] | null
           updated_at?: string | null
           user_id?: string
           verification_details?: Json | null
-          verification_status?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["app_verification_status"]
+            | null
           website_url?: string | null
         }
         Relationships: []
@@ -973,10 +979,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: {
+          user_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_status: "active" | "suspended" | "development"
+      app_verification_status: "pending" | "verified" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
