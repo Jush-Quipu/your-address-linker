@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { SecureAddressBridge } from '@/sdk/secureaddress-bridge-sdk';
 import { ApiTestCase, ApiTestResult, runApiTest, runApiTests, standardApiTests, formatTestReport } from '@/utils/apiTesting';
 import CodeBlock from '@/components/CodeBlock';
+import { testConnection } from '@/utils/apiHelpers';
 
 const ApiTesting: React.FC = () => {
   const [activeTab, setActiveTab] = useState('basic-tests');
@@ -34,9 +35,8 @@ const ApiTesting: React.FC = () => {
   useEffect(() => {
     // Create SDK instance for testing
     const sdk = new SecureAddressBridge({
-      appId: 'test-app-id',
-      redirectUri: window.location.origin + '/callback',
-      debug: true
+      apiKey: 'test-app-id',
+      sandboxMode: true
     });
     
     setSdkInstance(sdk);
@@ -48,28 +48,13 @@ const ApiTesting: React.FC = () => {
     try {
       setApiStatus({ status: 'idle' });
       
-      if (!sdkInstance) {
-        const sdk = new SecureAddressBridge({
-          appId: 'test-app-id',
-          redirectUri: window.location.origin + '/callback',
-          debug: true
-        });
-        setSdkInstance(sdk);
-        
-        const result = await sdk.testConnection();
-        setApiStatus({
-          status: result.status,
-          message: result.message,
-          version: result.version
-        });
-      } else {
-        const result = await sdkInstance.testConnection();
-        setApiStatus({
-          status: result.status,
-          message: result.message,
-          version: result.version
-        });
-      }
+      const result = await testConnection('https://akfieehzgpcapuhdujvf.supabase.co/functions/v1', 'test-app-id');
+      
+      setApiStatus({
+        status: result.success ? 'ok' : 'error',
+        message: result.error ? result.error.message : 'API is operational',
+        version: result.meta?.version
+      });
     } catch (error) {
       console.error('API connection test error:', error);
       setApiStatus({ 

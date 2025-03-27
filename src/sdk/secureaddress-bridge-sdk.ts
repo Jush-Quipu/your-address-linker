@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -161,6 +162,12 @@ export class SecureAddressBridge {
       // This would typically upload to a storage service
       // For demonstration, we'll simulate success
       
+      // Get the current user's session
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        throw new Error('User not authenticated');
+      }
+      
       // Update the verification status in the database
       const { error } = await supabase
         .from('physical_addresses')
@@ -172,7 +179,7 @@ export class SecureAddressBridge {
 
       if (error) throw error;
 
-      // Log the verification attempt
+      // Log the verification attempt - now including the user_id
       await supabase
         .from('address_verification_logs')
         .insert({
@@ -180,6 +187,7 @@ export class SecureAddressBridge {
           verification_type: 'document_upload',
           document_type: documentFile.type,
           status: 'pending',
+          user_id: session.session.user.id, // Important: Add the user_id
           metadata: { 
             file_name: documentFile.name,
             file_size: documentFile.size,
