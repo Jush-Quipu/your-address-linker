@@ -58,7 +58,6 @@ export type DeveloperApp = {
 // Check if a user has developer access
 export const checkDeveloperAccess = async (userId: string): Promise<boolean> => {
   try {
-    // Check if the user has a developer role in the developer_roles table
     const { data, error } = await supabase
       .from('developer_roles')
       .select('*')
@@ -70,7 +69,6 @@ export const checkDeveloperAccess = async (userId: string): Promise<boolean> => 
       return false;
     }
     
-    // User has developer access if they have at least one role
     return (data && data.length > 0);
   } catch (error) {
     console.error('Error checking developer access:', error);
@@ -92,7 +90,6 @@ export const checkAdminAccess = async (userId: string): Promise<boolean> => {
       return false;
     }
     
-    // User has admin access if they have an admin role
     return (data && data.length > 0);
   } catch (error) {
     console.error('Error checking admin access:', error);
@@ -110,7 +107,6 @@ export const getUserRoles = async (userId: string): Promise<DeveloperRole[]> => 
       
     if (error) throw error;
     
-    // Map the role strings to DeveloperRole enum values
     return (data || []).map(record => record.role as DeveloperRole);
   } catch (error) {
     console.error('Error fetching user roles:', error);
@@ -184,7 +180,19 @@ export const getDeveloperApps = async () => {
       
     if (error) throw error;
     
-    return data || [];
+    const appsWithDefaults = (data || []).map(app => ({
+      ...app,
+      status: app.status || AppStatus.DEVELOPMENT,
+      verification_status: app.verification_status || AppVerificationStatus.PENDING,
+      oauth_settings: app.oauth_settings || {
+        scopes: ['read:profile', 'read:address'],
+        token_lifetime: 3600,
+        refresh_token_rotation: true
+      },
+      monthly_request_limit: app.monthly_request_limit || 1000
+    }));
+    
+    return appsWithDefaults;
   } catch (error) {
     console.error('Error fetching developer apps:', error);
     toast.error('Failed to load your applications');
@@ -212,11 +220,20 @@ export const createDeveloperApp = async (appData: {
       throw new Error('Authentication required');
     }
 
-    // Generate app ID and secret
     const appId = `app_${Date.now()}`;
     const appSecret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
+    
+    const oauthSettings = appData.oauthSettings ? {
+      scopes: appData.oauthSettings.scopes,
+      token_lifetime: appData.oauthSettings.tokenLifetime,
+      refresh_token_rotation: appData.oauthSettings.refreshTokenRotation
+    } : {
+      scopes: ['read:profile', 'read:address'],
+      token_lifetime: 3600,
+      refresh_token_rotation: true
+    };
     
     const { data, error } = await supabase
       .from('developer_apps')
@@ -231,15 +248,7 @@ export const createDeveloperApp = async (appData: {
         status: appData.status || AppStatus.DEVELOPMENT,
         verification_status: AppVerificationStatus.PENDING,
         monthly_request_limit: appData.requestLimit || 1000,
-        oauth_settings: appData.oauthSettings ? {
-          scopes: appData.oauthSettings.scopes,
-          token_lifetime: appData.oauthSettings.tokenLifetime,
-          refresh_token_rotation: appData.oauthSettings.refreshTokenRotation
-        } : {
-          scopes: ['read:profile', 'read:address'],
-          token_lifetime: 3600,
-          refresh_token_rotation: true
-        }
+        oauth_settings: oauthSettings
       })
       .select()
       .single();
@@ -280,7 +289,6 @@ export const updateDeveloperApp = async (appId: string, appData: {
       throw new Error('Authentication required');
     }
 
-    // Create update object for only provided fields
     const updateObj: any = {};
     
     if (appData.appName !== undefined) updateObj.app_name = appData.appName;
@@ -290,7 +298,6 @@ export const updateDeveloperApp = async (appId: string, appData: {
     if (appData.status !== undefined) updateObj.status = appData.status;
     if (appData.requestLimit !== undefined) updateObj.monthly_request_limit = appData.requestLimit;
     
-    // Update OAuth settings if provided
     if (appData.oauthSettings) {
       try {
         const { data: appDetails } = await supabase
@@ -311,7 +318,6 @@ export const updateDeveloperApp = async (appId: string, appData: {
         };
       } catch (error) {
         console.error('Error fetching current OAuth settings:', error);
-        // If we can't get current settings, just use the new ones
         updateObj.oauth_settings = {
           scopes: appData.oauthSettings.scopes || ['read:profile', 'read:address'],
           token_lifetime: appData.oauthSettings.tokenLifetime || 3600,
@@ -322,7 +328,6 @@ export const updateDeveloperApp = async (appId: string, appData: {
       }
     }
     
-    // Add updated_at timestamp
     updateObj.updated_at = new Date().toISOString();
     
     const { data, error } = await supabase
@@ -355,12 +360,10 @@ export const rotateAppSecret = async (appId: string) => {
       throw new Error('Authentication required');
     }
 
-    // Generate new app secret
     const newAppSecret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
     
-    // Update app secret
     const { data, error } = await supabase
       .from('developer_apps')
       .update({ 
@@ -388,7 +391,7 @@ export const rotateAppSecret = async (appId: string) => {
   }
 };
 
-// Set app status (admin function)
+// Set app verification status (admin function)
 export const setAppVerificationStatus = async (appId: string, status: AppVerificationStatus, notes?: string) => {
   try {
     const { data: session } = await supabase.auth.getSession();
@@ -396,13 +399,11 @@ export const setAppVerificationStatus = async (appId: string, status: AppVerific
       throw new Error('Authentication required');
     }
 
-    // Check admin access
     const isAdmin = await checkAdminAccess(session.session.user.id);
     if (!isAdmin) {
       throw new Error('Admin access required');
     }
     
-    // Update verification status with properly typed object
     const updateData = { 
       verification_status: status,
       verification_details: {
@@ -442,24 +443,20 @@ export const getDeveloperAnalytics = async (appId?: string) => {
       throw new Error('Authentication required');
     }
 
-    // Build the query for developer_api_usage
     let query = supabase
       .from('developer_api_usage')
       .select('*');
       
-    // Filter by app_id if provided
     if (appId) {
       query = query.eq('app_id', appId);
     }
     
-    // Execute the query
     const { data, error } = await query
       .order('created_at', { ascending: false })
       .limit(100);
       
     if (error) throw error;
     
-    // Process and return the analytics data
     return {
       rawData: data,
       summary: processAnalyticsSummary(data)
@@ -483,19 +480,16 @@ const processAnalyticsSummary = (data: any[]) => {
     };
   }
   
-  // Calculate basic metrics
   const totalRequests = data.length;
   const successfulRequests = data.filter(item => item.response_status >= 200 && item.response_status < 300).length;
   const totalResponseTime = data.reduce((sum, item) => sum + (item.execution_time_ms || 0), 0);
   
-  // Compile endpoint breakdown
   const endpointBreakdown: Record<string, number> = {};
   data.forEach(item => {
     const endpoint = item.endpoint || 'unknown';
     endpointBreakdown[endpoint] = (endpointBreakdown[endpoint] || 0) + 1;
   });
   
-  // Generate time series data (last 7 days)
   const timeSeriesData = generateTimeSeriesData(data);
   
   return {
@@ -509,7 +503,6 @@ const processAnalyticsSummary = (data: any[]) => {
 
 // Helper function to generate time series data
 const generateTimeSeriesData = (data: any[]) => {
-  // Create a 7-day window
   const result = [];
   const now = new Date();
   
