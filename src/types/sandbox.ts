@@ -1,4 +1,6 @@
 
+// Sandbox environment types
+
 export interface SandboxConfig {
   responseDelay: number;
   simulateErrors: boolean;
@@ -11,8 +13,8 @@ export interface SandboxConfig {
     state: string;
     postal_code: string;
     country: string;
-    verification_method: 'document_upload' | 'postal_code' | 'id_verification' | 'blockchain_attestation';
-    verified_at?: string;
+    verification_method: string;
+    verified_at: string;
   };
   mockShipping: {
     available: boolean;
@@ -27,7 +29,7 @@ export interface SandboxConfig {
   };
 }
 
-export interface SandboxResponse<T> {
+export interface SandboxResponse<T = any> {
   success: boolean;
   data?: T;
   error?: {
@@ -43,8 +45,8 @@ export interface AddressResponse {
   state: string;
   postal_code: string;
   country: string;
-  verification_status: 'verified' | 'pending' | 'failed';
-  verification_method: string;
+  verification_status?: string;
+  verification_method?: string;
   verified_at?: string;
 }
 
@@ -74,7 +76,7 @@ export interface ShipmentResponse {
 export interface TrackingResponse {
   tracking_number: string;
   carrier: string;
-  status: 'pending' | 'in_transit' | 'delivered' | 'exception';
+  status: 'created' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'exception';
   estimated_delivery: string;
   tracking_events: {
     timestamp: string;
@@ -82,4 +84,22 @@ export interface TrackingResponse {
     location: string;
     description: string;
   }[];
+}
+
+export interface SandboxOptions {
+  // Configuration options for the sandbox environment
+  verificationSuccess?: boolean;
+  mockResponses?: Record<string, any>;
+  walletData?: {
+    address?: string;
+    chainId?: number;
+    network?: string;
+  };
+  addressData?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+  };
 }
