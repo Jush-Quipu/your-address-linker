@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -458,13 +457,15 @@ const DeveloperPortalManager = () => {
               <TabsContent value="apps">
                 <div className="mb-6 flex flex-col sm:flex-row justify-between gap-4">
                   <div className="flex-1">
-                    <Input
-                      placeholder="Search applications..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="max-w-md"
-                      icon={<Search className="h-4 w-4 text-muted-foreground" />}
-                    />
+                    <div className="relative max-w-md">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search applications..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="max-w-md pl-10"
+                      />
+                    </div>
                   </div>
                   
                   <div className="flex gap-2">

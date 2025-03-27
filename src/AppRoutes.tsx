@@ -1,50 +1,46 @@
+
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
-import LandingPage from '@/pages/LandingPage';
-import DashboardPage from '@/pages/DashboardPage';
-import AuthPage from '@/pages/AuthPage';
-import ProfilePage from '@/pages/ProfilePage';
-import AddressBookPage from '@/pages/AddressBookPage';
-import AddressDetailsPage from '@/pages/AddressDetailsPage';
-import NewAddressPage from '@/pages/NewAddressPage';
-import EditAddressPage from '@/pages/EditAddressPage';
-import VerifyAddressPage from '@/pages/VerifyAddressPage';
-import BlindShippingPage from '@/pages/BlindShippingPage';
-import ApiKeysPage from '@/pages/ApiKeysPage';
-import DeveloperDashboard from '@/components/DeveloperDashboard';
+import Index from '@/pages/Index';
+import Dashboard from '@/pages/Dashboard';
+import Auth from '@/pages/Auth';
+import Connect from '@/pages/Connect';
+import { Navigate } from 'react-router-dom';
 import DeveloperPortal from '@/pages/DeveloperPortal';
 import DeveloperAnalytics from '@/pages/DeveloperAnalytics';
 import DeveloperSandbox from '@/pages/DeveloperSandbox';
-import TodoPage from '@/pages/TodoPage';
+import DeveloperTodoPage from '@/pages/DeveloperTodoPage';
 import AdminPage from '@/pages/AdminPage';
 import AdminRolesPage from '@/pages/AdminRolesPage';
 import DeveloperPortalManager from '@/pages/DeveloperPortalManager';
+import BlindShipping from '@/pages/BlindShipping';
+import DashboardApiKeys from '@/pages/DashboardApiKeys';
 
 const AppRoutes = () => {
   return (
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/auth" element={<AuthPage />} />
+      <Route path="/" element={<Index />} />
+      <Route path="/auth" element={<Auth />} />
       
       {/* User Routes */}
-      <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/connect" element={<Connect />} />
       
       {/* Address Book Routes */}
-      <Route path="/address-book" element={<AddressBookPage />} />
-      <Route path="/address/:id" element={<AddressDetailsPage />} />
-      <Route path="/address/new" element={<NewAddressPage />} />
-      <Route path="/address/edit/:id" element={<EditAddressPage />} />
+      <Route path="/dashboard/addresses" element={<Navigate to="/dashboard" />} />
+      <Route path="/address/:id" element={<Navigate to="/dashboard" />} />
+      <Route path="/address/new" element={<Navigate to="/dashboard" />} />
+      <Route path="/address/edit/:id" element={<Navigate to="/dashboard" />} />
       
       {/* Verification Routes */}
-      <Route path="/verify-address" element={<VerifyAddressPage />} />
+      <Route path="/verify-address" element={<Navigate to="/dashboard" />} />
       
       {/* Blind Shipping Route */}
-      <Route path="/blind-shipping" element={<BlindShippingPage />} />
+      <Route path="/blind-shipping" element={<BlindShipping />} />
       
       {/* API Keys Route */}
-      <Route path="/dashboard/api-keys" element={<ApiKeysPage />} />
+      <Route path="/dashboard/api-keys" element={<DashboardApiKeys />} />
       
       {/* Developer Routes */}
       <Route path="/developer">
@@ -53,7 +49,7 @@ const AppRoutes = () => {
         <Route path="apps/:appId" element={<DeveloperPortalManager />} />
         <Route path="analytics" element={<DeveloperAnalytics />} />
         <Route path="sandbox" element={<DeveloperSandbox />} />
-        <Route path="todo" element={<TodoPage />} />
+        <Route path="todo" element={<DeveloperTodoPage />} />
         <Route path="admin">
           <Route index element={<AdminPage />} />
           <Route path="roles" element={<AdminRolesPage />} />

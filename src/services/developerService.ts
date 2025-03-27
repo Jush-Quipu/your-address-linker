@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -53,6 +52,7 @@ export type DeveloperApp = {
     verified_by?: string;
     verification_notes?: string;
   };
+  user_id?: string;
 }
 
 // Check if a user has developer access
@@ -292,22 +292,34 @@ export const updateDeveloperApp = async (appId: string, appData: {
     
     // Update OAuth settings if provided
     if (appData.oauthSettings) {
-      const { data: appDetails } = await supabase
-        .from('developer_apps')
-        .select('oauth_settings')
-        .eq('id', appId)
-        .single();
+      try {
+        const { data: appDetails } = await supabase
+          .from('developer_apps')
+          .select('*')
+          .eq('id', appId)
+          .single();
+          
+        const currentOAuthSettings = appDetails?.oauth_settings || {
+          scopes: ['read:profile', 'read:address'],
+          token_lifetime: 3600,
+          refresh_token_rotation: true
+        };
         
-      const currentOAuthSettings = appDetails?.oauth_settings || {
-        scopes: ['read:profile', 'read:address'],
-        token_lifetime: 3600,
-        refresh_token_rotation: true
-      };
-      
-      updateObj.oauth_settings = {
-        ...currentOAuthSettings,
-        ...appData.oauthSettings
-      };
+        updateObj.oauth_settings = {
+          ...currentOAuthSettings,
+          ...appData.oauthSettings
+        };
+      } catch (error) {
+        console.error('Error fetching current OAuth settings:', error);
+        // If we can't get current settings, just use the new ones
+        updateObj.oauth_settings = {
+          scopes: appData.oauthSettings.scopes || ['read:profile', 'read:address'],
+          token_lifetime: appData.oauthSettings.tokenLifetime || 3600,
+          refresh_token_rotation: appData.oauthSettings.refreshTokenRotation !== undefined 
+            ? appData.oauthSettings.refreshTokenRotation 
+            : true
+        };
+      }
     }
     
     // Add updated_at timestamp
@@ -390,18 +402,20 @@ export const setAppVerificationStatus = async (appId: string, status: AppVerific
       throw new Error('Admin access required');
     }
     
-    // Update verification status
+    // Update verification status with properly typed object
+    const updateData = { 
+      verification_status: status,
+      verification_details: {
+        verified_at: new Date().toISOString(),
+        verified_by: session.session.user.id,
+        verification_notes: notes
+      },
+      updated_at: new Date().toISOString()
+    };
+    
     const { data, error } = await supabase
       .from('developer_apps')
-      .update({ 
-        verification_status: status,
-        verification_details: {
-          verified_at: new Date().toISOString(),
-          verified_by: session.session.user.id,
-          verification_notes: notes
-        },
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', appId)
       .select()
       .single();
