@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -18,7 +17,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu"
-import { Menu, X, LogOut, User, Shield, Truck, Code, Settings, Home, Book, Beaker, Server } from 'lucide-react';
+import { Menu, X, LogOut, User, Shield, Truck, Code, Settings, Home, Book, Beaker, Server, Activity, BarChart, ListChecks, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const Navbar: React.FC = () => {
@@ -72,7 +71,7 @@ const Navbar: React.FC = () => {
     { to: '/blind-shipping', label: 'Blind Shipping', icon: <Truck className="h-4 w-4 mr-2" /> },
     { to: '/dashboard/settings', label: 'Settings', icon: <Settings className="h-4 w-4 mr-2" /> },
     { to: '/dashboard/api-keys', label: 'API Keys', icon: <Code className="h-4 w-4 mr-2" /> },
-    { to: '/connect', label: 'Connect Wallet', icon: <Wallet className="h-4 w-4 mr-2" /> },
+    { to: '/connect', label: 'Connect Wallet', icon: <Shield className="h-4 w-4 mr-2" /> },
   ];
   
   // Developer navigation items
