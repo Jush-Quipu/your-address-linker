@@ -15,6 +15,13 @@ import AdminRolesPage from '@/pages/AdminRolesPage';
 import DeveloperPortalManager from '@/pages/DeveloperPortalManager';
 import BlindShipping from '@/pages/BlindShipping';
 import DashboardApiKeys from '@/pages/DashboardApiKeys';
+import ApiTesting from '@/pages/ApiTesting';
+import ApiMonitoring from '@/pages/ApiMonitoring';
+import Contact from '@/pages/Contact';
+import About from '@/pages/About';
+import Cookies from '@/pages/Cookies';
+import NotFound from '@/pages/NotFound';
+import DashboardSettings from '@/pages/DashboardSettings';
 
 const AppRoutes = () => {
   return (
@@ -22,10 +29,14 @@ const AppRoutes = () => {
       {/* Public Routes */}
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/contact" element={<Contact />} />
+      <Route path="/cookies" element={<Cookies />} />
       
       {/* User Routes */}
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/connect" element={<Connect />} />
+      <Route path="/dashboard/settings" element={<DashboardSettings />} />
       
       {/* Address Book Routes */}
       <Route path="/dashboard/addresses" element={<Navigate to="/dashboard" />} />
@@ -48,6 +59,8 @@ const AppRoutes = () => {
         <Route path="apps" element={<DeveloperPortalManager />} />
         <Route path="apps/:appId" element={<DeveloperPortalManager />} />
         <Route path="analytics" element={<DeveloperAnalytics />} />
+        <Route path="testing" element={<ApiTesting />} />
+        <Route path="monitoring" element={<ApiMonitoring />} />
         <Route path="sandbox" element={<DeveloperSandbox />} />
         <Route path="todo" element={<DeveloperTodoPage />} />
         <Route path="admin">
@@ -57,7 +70,7 @@ const AppRoutes = () => {
       </Route>
       
       {/* Catch-all route */}
-      <Route path="*" element={<div>Page not found</div>} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };
