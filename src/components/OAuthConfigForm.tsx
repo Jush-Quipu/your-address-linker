@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -59,7 +58,6 @@ const OAuthConfigForm: React.FC<OAuthConfigFormProps> = ({
     try {
       const updatedApp = await updateDeveloperApp(app.id, {
         oauthSettings: {
-          // Correctly map tokenLifetime to token_lifetime for the API
           scopes: values.scopes,
           tokenLifetime: values.tokenLifetime,
           refreshTokenRotation: values.refreshTokenRotation,

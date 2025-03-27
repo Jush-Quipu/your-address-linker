@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -21,7 +22,7 @@ import {
   Code, Beaker, HomeIcon, Plus, Settings, BarChart, List, Search, 
   AlertTriangle, Check, ShieldCheck, Info, RefreshCw, Key, Lock
 } from 'lucide-react';
-import { AppStatus, AppVerificationStatus, DeveloperApp, createDeveloperApp } from '@/services/developerService';
+import { AppStatus, AppVerificationStatus, DeveloperApp, createDeveloperApp, parseOAuthSettings } from '@/services/developerService';
 import { 
   Select, 
   SelectContent, 
@@ -101,6 +102,7 @@ const DeveloperPortalManager = () => {
           ...app,
           status: app.status as AppStatus || AppStatus.DEVELOPMENT,
           verification_status: app.verification_status as AppVerificationStatus || AppVerificationStatus.PENDING,
+          oauth_settings: parseOAuthSettings(app.oauth_settings)
         }));
         
         setApplications(typedApps);
