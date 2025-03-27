@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { useSecureAddress } from '@/sdk/secureaddress-bridge-sdk';
+import { useSecureAddress } from '@/sdk/secureaddress-context';
 import { connectWallet, formatAddress, getCurrentChainId, CHAINS } from '@/utils/blockchain';
 import { toast } from 'sonner';
 import { Shield, AlertCircle, Check, Wallet, Key, Link as LinkIcon } from 'lucide-react';
