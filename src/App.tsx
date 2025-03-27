@@ -31,9 +31,9 @@ function App() {
 
   return (
     <ThemeProvider defaultTheme="light">
-      <AuthProvider>
-        <RoleProvider>
-          <Router>
+      <Router>
+        <AuthProvider>
+          <RoleProvider>
             <Routes>
               {/* Main pages */}
               <Route path="/" element={<Index />} />
@@ -58,10 +58,10 @@ function App() {
               {/* Catch-all route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </Router>
-          <Toaster position="top-right" />
-        </RoleProvider>
-      </AuthProvider>
+            <Toaster position="top-right" />
+          </RoleProvider>
+        </AuthProvider>
+      </Router>
     </ThemeProvider>
   );
 }
