@@ -1,6 +1,14 @@
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createErrorResponse, createSuccessResponse, corsHeaders, checkRateLimit, getRateLimitHeaders, ErrorCodes } from '../_shared/apiHelpers.ts';
+import { 
+  createErrorResponse, 
+  createSuccessResponse, 
+  corsHeaders, 
+  checkRateLimit, 
+  getRateLimitHeaders, 
+  ErrorCodes,
+  rotateAppSecret as rotateSecret
+} from '../_shared/apiHelpers.ts';
 
 serve(async (req) => {
   console.log('Request to developer-app-details endpoint received:', req.url);
@@ -97,19 +105,36 @@ serve(async (req) => {
       );
     }
     
-    // Check if the app exists and belongs to the user
-    const { data: appData, error: appError } = await supabase
-      .from('developer_apps')
+    // First, check if the user is an admin
+    const { data: adminRoleData } = await supabase
+      .from('developer_roles')
       .select('*')
-      .eq('id', appId)
       .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .single();
+    
+    const isAdmin = !!adminRoleData;
+    
+    // If user is not admin, check if the app belongs to the user
+    let appQuery = supabase
+      .from('developer_apps')
+      .select('*');
+      
+    if (!isAdmin) {
+      // Regular users can only access their own apps
+      appQuery = appQuery.eq('user_id', user.id);
+    }
+    
+    // Get the app details
+    const { data: appData, error: appError } = await appQuery
+      .eq('id', appId)
       .single();
       
     if (appError || !appData) {
       return new Response(
         JSON.stringify(createErrorResponse(
           'not_found', 
-          'App not found or does not belong to the user'
+          'App not found or you do not have permission to access it'
         )),
         {
           status: 404,
@@ -142,15 +167,24 @@ serve(async (req) => {
           app_name,
           description,
           website_url,
-          callback_urls
+          callback_urls,
+          status,
+          verification_status,
+          verification_details,
+          monthly_request_limit,
+          oauth_settings
         } = requestBody;
         
         // Build update object with only provided fields
-        const updates: Record<string, any> = {};
+        const updates: Record<string, any> = {
+          updated_at: new Date().toISOString()
+        };
         
         if (app_name !== undefined) updates.app_name = app_name;
         if (description !== undefined) updates.description = description;
         if (website_url !== undefined) updates.website_url = website_url;
+        
+        // Update callback URLs if provided
         if (callback_urls !== undefined) {
           // Validate callback URLs format if provided
           if (!Array.isArray(callback_urls) || callback_urls.length === 0) {
@@ -185,8 +219,62 @@ serve(async (req) => {
           updates.callback_urls = callback_urls;
         }
         
+        // These fields can only be updated by admins
+        if (isAdmin) {
+          if (status !== undefined) updates.status = status;
+          if (verification_status !== undefined) updates.verification_status = verification_status;
+          if (verification_details !== undefined) updates.verification_details = verification_details;
+        }
+        
+        // Both admins and app owners can update these
+        if (monthly_request_limit !== undefined) {
+          // Add validation if needed
+          if (typeof monthly_request_limit !== 'number' || monthly_request_limit < 100) {
+            return new Response(
+              JSON.stringify(createErrorResponse(
+                'invalid_request', 
+                'monthly_request_limit must be a number >= 100'
+              )),
+              {
+                status: 400,
+                headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
+              }
+            );
+          }
+          updates.monthly_request_limit = monthly_request_limit;
+        }
+        
+        // Update OAuth settings if provided
+        if (oauth_settings !== undefined) {
+          // Get current OAuth settings to merge with updates
+          const currentOAuthSettings = appData.oauth_settings || {
+            scopes: ['read:profile', 'read:address'],
+            token_lifetime: 3600,
+            refresh_token_rotation: true
+          };
+          
+          updates.oauth_settings = {
+            ...currentOAuthSettings,
+            ...oauth_settings
+          };
+          
+          // Add validation if needed
+          if (updates.oauth_settings.token_lifetime < 300 || updates.oauth_settings.token_lifetime > 86400) {
+            return new Response(
+              JSON.stringify(createErrorResponse(
+                'invalid_request', 
+                'token_lifetime must be between 300 and 86400 seconds'
+              )),
+              {
+                status: 400,
+                headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
+              }
+            );
+          }
+        }
+        
         // If no updates provided
-        if (Object.keys(updates).length === 0) {
+        if (Object.keys(updates).length === 1) { // Only updated_at
           return new Response(
             JSON.stringify(createErrorResponse(
               'invalid_request', 
@@ -200,12 +288,18 @@ serve(async (req) => {
         }
         
         // Update the app
-        const { data: updatedData, error: updateError } = await supabase
+        let query = supabase
           .from('developer_apps')
           .update(updates)
-          .eq('id', appId)
-          .eq('user_id', user.id)
-          .select('id, app_name, description, website_url, callback_urls, created_at')
+          .eq('id', appId);
+          
+        // Add user_id filter for non-admins for extra security
+        if (!isAdmin) {
+          query = query.eq('user_id', user.id);
+        }
+        
+        const { data: updatedData, error: updateError } = await query
+          .select('*')
           .single();
           
         if (updateError) {
@@ -222,8 +316,14 @@ serve(async (req) => {
           );
         }
         
+        // Remove app_secret before returning
+        const responseData = {
+          ...updatedData,
+          app_secret: undefined
+        };
+        
         return new Response(
-          JSON.stringify(createSuccessResponse(updatedData)),
+          JSON.stringify(createSuccessResponse(responseData)),
           {
             status: 200,
             headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
@@ -233,11 +333,17 @@ serve(async (req) => {
       
       case 'DELETE': {
         // Delete the app
-        const { error: deleteError } = await supabase
+        let query = supabase
           .from('developer_apps')
-          .delete()
-          .eq('id', appId)
-          .eq('user_id', user.id);
+          .delete();
+        
+        // Add user_id filter for non-admins for extra security
+        if (!isAdmin) {
+          query = query.eq('user_id', user.id);
+        }
+        
+        const { error: deleteError } = await query
+          .eq('id', appId);
           
         if (deleteError) {
           console.error('Error deleting developer app:', deleteError);
@@ -254,7 +360,7 @@ serve(async (req) => {
         }
         
         return new Response(
-          JSON.stringify(createSuccessResponse({ deleted: true })),
+          JSON.stringify(createSuccessResponse({ deleted: true, appId })),
           {
             status: 200,
             headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
@@ -263,36 +369,58 @@ serve(async (req) => {
       }
       
       case 'POST': {
-        // Handle app secret rotation
-        const { data: newSecretData, error: newSecretError } = await supabase.rpc(
-          'rotate_app_secret',
-          { app_id: appId, user_id: user.id }
-        );
+        // Get action from request body
+        const requestBody = await req.json();
+        const { action } = requestBody;
         
-        if (newSecretError || !newSecretData) {
-          console.error('Error rotating app secret:', newSecretError);
-          return new Response(
-            JSON.stringify(createErrorResponse(
-              'server_error', 
-              'Error rotating app secret'
-            )),
-            {
-              status: 500,
-              headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
+        // Handle different actions
+        switch (action) {
+          case 'rotate_secret': {
+            try {
+              // Use the helper function to rotate the app secret
+              const newSecret = await rotateSecret(
+                supabase,
+                appId,
+                isAdmin ? appData.user_id : user.id // Allow admins to rotate secrets for any app
+              );
+              
+              return new Response(
+                JSON.stringify(createSuccessResponse({ 
+                  new_secret: newSecret,
+                  message: 'App secret rotated successfully. Save this secret, it will not be shown again.'
+                })),
+                {
+                  status: 200,
+                  headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
+                }
+              );
+            } catch (error) {
+              console.error('Error rotating app secret:', error);
+              return new Response(
+                JSON.stringify(createErrorResponse(
+                  'server_error', 
+                  'Error rotating app secret'
+                )),
+                {
+                  status: 500,
+                  headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
+                }
+              );
             }
-          );
-        }
-        
-        return new Response(
-          JSON.stringify(createSuccessResponse({ 
-            new_secret: newSecretData,
-            message: 'App secret rotated successfully. Save this secret, it will not be shown again.'
-          })),
-          {
-            status: 200,
-            headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
           }
-        );
+          
+          default:
+            return new Response(
+              JSON.stringify(createErrorResponse(
+                'invalid_request', 
+                `Unknown action: ${action}`
+              )),
+              {
+                status: 400,
+                headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' },
+              }
+            );
+        }
       }
       
       default:

@@ -16,6 +16,45 @@ type DeveloperRoleRecord = {
   created_at: string;
 }
 
+// Define app verification status
+export enum AppVerificationStatus {
+  PENDING = 'pending',
+  VERIFIED = 'verified',
+  REJECTED = 'rejected'
+}
+
+// Define app status
+export enum AppStatus {
+  ACTIVE = 'active',
+  SUSPENDED = 'suspended',
+  DEVELOPMENT = 'development'
+}
+
+// Developer app type with extended information
+export type DeveloperApp = {
+  id: string;
+  app_name: string;
+  description: string | null;
+  website_url: string | null;
+  callback_urls: string[];
+  app_secret?: string;
+  created_at: string;
+  updated_at?: string;
+  status?: AppStatus;
+  verification_status?: AppVerificationStatus;
+  monthly_request_limit?: number;
+  oauth_settings?: {
+    scopes: string[];
+    token_lifetime: number;
+    refresh_token_rotation: boolean;
+  };
+  verification_details?: {
+    verified_at?: string;
+    verified_by?: string;
+    verification_notes?: string;
+  };
+}
+
 // Check if a user has developer access
 export const checkDeveloperAccess = async (userId: string): Promise<boolean> => {
   try {
@@ -159,6 +198,13 @@ export const createDeveloperApp = async (appData: {
   description: string;
   websiteUrl: string;
   callbackUrls: string[];
+  status?: AppStatus;
+  oauthSettings?: {
+    scopes: string[];
+    tokenLifetime: number;
+    refreshTokenRotation: boolean;
+  };
+  requestLimit?: number;
 }) => {
   try {
     const { data: session } = await supabase.auth.getSession();
@@ -181,7 +227,19 @@ export const createDeveloperApp = async (appData: {
         description: appData.description || null,
         website_url: appData.websiteUrl || null,
         callback_urls: appData.callbackUrls,
-        app_secret: appSecret
+        app_secret: appSecret,
+        status: appData.status || AppStatus.DEVELOPMENT,
+        verification_status: AppVerificationStatus.PENDING,
+        monthly_request_limit: appData.requestLimit || 1000,
+        oauth_settings: appData.oauthSettings ? {
+          scopes: appData.oauthSettings.scopes,
+          token_lifetime: appData.oauthSettings.tokenLifetime,
+          refresh_token_rotation: appData.oauthSettings.refreshTokenRotation
+        } : {
+          scopes: ['read:profile', 'read:address'],
+          token_lifetime: 3600,
+          refresh_token_rotation: true
+        }
       })
       .select()
       .single();
@@ -196,6 +254,166 @@ export const createDeveloperApp = async (appData: {
   } catch (error) {
     console.error('Error registering application:', error);
     toast.error('Failed to register application', {
+      description: error instanceof Error ? error.message : 'Unknown error'
+    });
+    throw error;
+  }
+};
+
+// Update developer app
+export const updateDeveloperApp = async (appId: string, appData: {
+  appName?: string;
+  description?: string;
+  websiteUrl?: string;
+  callbackUrls?: string[];
+  status?: AppStatus;
+  oauthSettings?: {
+    scopes?: string[];
+    tokenLifetime?: number;
+    refreshTokenRotation?: boolean;
+  };
+  requestLimit?: number;
+}) => {
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      throw new Error('Authentication required');
+    }
+
+    // Create update object for only provided fields
+    const updateObj: any = {};
+    
+    if (appData.appName !== undefined) updateObj.app_name = appData.appName;
+    if (appData.description !== undefined) updateObj.description = appData.description;
+    if (appData.websiteUrl !== undefined) updateObj.website_url = appData.websiteUrl;
+    if (appData.callbackUrls !== undefined) updateObj.callback_urls = appData.callbackUrls;
+    if (appData.status !== undefined) updateObj.status = appData.status;
+    if (appData.requestLimit !== undefined) updateObj.monthly_request_limit = appData.requestLimit;
+    
+    // Update OAuth settings if provided
+    if (appData.oauthSettings) {
+      const { data: appDetails } = await supabase
+        .from('developer_apps')
+        .select('oauth_settings')
+        .eq('id', appId)
+        .single();
+        
+      const currentOAuthSettings = appDetails?.oauth_settings || {
+        scopes: ['read:profile', 'read:address'],
+        token_lifetime: 3600,
+        refresh_token_rotation: true
+      };
+      
+      updateObj.oauth_settings = {
+        ...currentOAuthSettings,
+        ...appData.oauthSettings
+      };
+    }
+    
+    // Add updated_at timestamp
+    updateObj.updated_at = new Date().toISOString();
+    
+    const { data, error } = await supabase
+      .from('developer_apps')
+      .update(updateObj)
+      .eq('id', appId)
+      .eq('user_id', session.session.user.id)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    
+    toast.success('Application updated successfully');
+    
+    return data;
+  } catch (error) {
+    console.error('Error updating application:', error);
+    toast.error('Failed to update application', {
+      description: error instanceof Error ? error.message : 'Unknown error'
+    });
+    throw error;
+  }
+};
+
+// Rotate app secret
+export const rotateAppSecret = async (appId: string) => {
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      throw new Error('Authentication required');
+    }
+
+    // Generate new app secret
+    const newAppSecret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    // Update app secret
+    const { data, error } = await supabase
+      .from('developer_apps')
+      .update({ 
+        app_secret: newAppSecret,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', appId)
+      .eq('user_id', session.session.user.id)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    
+    toast.success('Application secret rotated successfully', {
+      description: 'Save this secret, it will not be shown again'
+    });
+    
+    return data;
+  } catch (error) {
+    console.error('Error rotating application secret:', error);
+    toast.error('Failed to rotate application secret', {
+      description: error instanceof Error ? error.message : 'Unknown error'
+    });
+    throw error;
+  }
+};
+
+// Set app status (admin function)
+export const setAppVerificationStatus = async (appId: string, status: AppVerificationStatus, notes?: string) => {
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) {
+      throw new Error('Authentication required');
+    }
+
+    // Check admin access
+    const isAdmin = await checkAdminAccess(session.session.user.id);
+    if (!isAdmin) {
+      throw new Error('Admin access required');
+    }
+    
+    // Update verification status
+    const { data, error } = await supabase
+      .from('developer_apps')
+      .update({ 
+        verification_status: status,
+        verification_details: {
+          verified_at: new Date().toISOString(),
+          verified_by: session.session.user.id,
+          verification_notes: notes
+        },
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', appId)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    
+    toast.success(`Application ${status === AppVerificationStatus.VERIFIED ? 'verified' : 'updated'} successfully`);
+    
+    return data;
+  } catch (error) {
+    console.error('Error updating application verification status:', error);
+    toast.error('Failed to update application verification status', {
       description: error instanceof Error ? error.message : 'Unknown error'
     });
     throw error;
