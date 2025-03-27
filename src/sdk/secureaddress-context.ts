@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useContext, createContext, useCallback, ReactNode } from 'react';
 import { SecureAddressBridge } from './secureaddress-bridge-sdk';
 
