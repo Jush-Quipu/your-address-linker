@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRole } from '@/context/RoleContext';
@@ -51,12 +50,16 @@ const AdminRolesPage: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<DeveloperRole>(DeveloperRole.DEVELOPER);
   const [emailToAdd, setEmailToAdd] = useState('');
   const [addingUser, setAddingUser] = useState(false);
+  const [redirect, setRedirect] = useState<boolean>(false);
 
-  // Redirect if not authenticated or not admin
-  if (!isLoading && (!isAuthenticated || !isAdmin)) {
-    return <Navigate to="/" />;
-  }
+  // First, check auth status
+  useEffect(() => {
+    if (!isLoading && (!isAuthenticated || !isAdmin)) {
+      setRedirect(true);
+    }
+  }, [isLoading, isAuthenticated, isAdmin]);
 
+  // Fetch users effect
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -101,8 +104,15 @@ const AdminRolesPage: React.FC = () => {
       }
     };
     
-    fetchUsers();
-  }, []);
+    if (isAuthenticated && isAdmin) {
+      fetchUsers();
+    }
+  }, [isAuthenticated, isAdmin]);
+
+  // If not authenticated or not admin, redirect
+  if (redirect) {
+    return <Navigate to="/" />;
+  }
 
   const handleAddRole = async (userId: string, role: DeveloperRole) => {
     const success = await addUserRole(userId, role);
