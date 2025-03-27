@@ -27,7 +27,8 @@ import {
   AppVerificationStatus, 
   DeveloperApp, 
   createDeveloperApp, 
-  parseOAuthSettings 
+  parseOAuthSettings,
+  parseVerificationDetails
 } from '@/services/developerService';
 
 import { 
@@ -107,8 +108,9 @@ const DeveloperPortalManager = () => {
         
         const typedApps: DeveloperApp[] = data.map(app => ({
           ...app,
-          status: app.status as AppStatus || AppStatus.DEVELOPMENT,
-          verification_status: app.verification_status as AppVerificationStatus || AppVerificationStatus.PENDING,
+          status: app.status as AppStatus,
+          verification_status: app.verification_status as AppVerificationStatus,
+          verification_details: parseVerificationDetails(app.verification_details),
           oauth_settings: parseOAuthSettings(app.oauth_settings)
         }));
         

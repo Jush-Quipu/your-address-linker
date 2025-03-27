@@ -9,8 +9,12 @@ export interface OAuthSettings {
   refresh_token_rotation: boolean;
 }
 
-// Developer role type
-export type DeveloperRole = 'developer' | 'admin' | 'support';
+// Developer role enum
+export enum DeveloperRole {
+  DEVELOPER = 'developer',
+  ADMIN = 'admin',
+  SUPPORT = 'support'
+}
 
 // App status enum
 export enum AppStatus {
@@ -125,11 +129,28 @@ export function parseOAuthSettings(rawSettings: Json | null): OAuthSettings {
   }
 }
 
+// Parse verification details from JSON
+export function parseVerificationDetails(details: Json | null): VerificationDetails | undefined {
+  if (!details) return undefined;
+  
+  try {
+    const parsedDetails = typeof details === 'string' ? JSON.parse(details) : details;
+    return {
+      verified_at: parsedDetails.verified_at,
+      verified_by: parsedDetails.verified_by,
+      verification_notes: parsedDetails.verification_notes
+    };
+  } catch (e) {
+    console.error('Error parsing verification details:', e);
+    return undefined;
+  }
+}
+
 // Map database record to DeveloperApp
 function mapToDeveloperApp(app: DeveloperAppRecord): DeveloperApp {
   return {
     ...app,
-    verification_details: app.verification_details ? (app.verification_details as unknown as VerificationDetails) : undefined,
+    verification_details: parseVerificationDetails(app.verification_details),
     oauth_settings: parseOAuthSettings(app.oauth_settings)
   };
 }
@@ -253,6 +274,7 @@ export async function createDeveloperApp(appData: {
   
   const userId = sessionData.session.user.id;
   
+  // Generate a unique ID for the app (we'll let Supabase handle this with default values)
   const { data, error } = await supabase
     .from('developer_apps')
     .insert({
