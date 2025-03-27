@@ -19,9 +19,11 @@ import { Navigate } from 'react-router-dom';
 // Import the sandbox controller and the SDK types
 import * as sandboxController from '@/services/sandbox/sandboxController';
 import { SecureAddressBridge } from '@/sdk/secureaddress-bridge-sdk';
+import { useRole } from '@/context/RoleContext';
 
 const SdkSandbox: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
+  const { isDeveloper } = useRole();
   const [activeTab, setActiveTab] = useState('configure');
   const [testId, setTestId] = useState(`sandbox-${Date.now()}`);
   const [testConfig, setTestConfig] = useState(sandboxController.getSandboxConfig());
@@ -53,7 +55,9 @@ const SdkSandbox: React.FC = () => {
       document.body.appendChild(script);
       
       return () => {
-        document.body.removeChild(script);
+        if (script.parentNode) {
+          document.body.removeChild(script);
+        }
       };
     }
   }, []);
@@ -63,8 +67,8 @@ const SdkSandbox: React.FC = () => {
     sandboxController.updateSandboxConfig(testConfig);
   }, [testConfig]);
   
-  // Redirect to login if not authenticated
-  if (!isLoading && !isAuthenticated) {
+  // Redirect to login if not authenticated or not a developer
+  if (!isLoading && (!isAuthenticated || !isDeveloper)) {
     return <Navigate to="/auth" />;
   }
   
@@ -110,6 +114,9 @@ const SdkSandbox: React.FC = () => {
           sandboxOptions: testConfig
         });
         
+        // Inject the sandbox controller
+        sdk._setSandboxController(sandboxController);
+        
         setSdkInstance(sdk);
         addTestResult('SDK Initialized', 'success', {
           appId: 'app_sandbox',
@@ -153,10 +160,7 @@ const SdkSandbox: React.FC = () => {
         state: testId
       });
       
-      // Instead of redirecting, simulate the flow
-      const result = await sandboxController.handleAuthorize({
-        appId: 'app_sandbox',
-        redirectUri: window.location.origin + '/developer/sandbox',
+      const result = await sdkInstance.authorize({
         scope: ['street', 'city', 'state', 'postal_code', 'country'],
         expiryDays: 30,
         state: testId
@@ -164,14 +168,13 @@ const SdkSandbox: React.FC = () => {
       
       addTestResult('Authorization Response', result.success ? 'success' : 'error', result);
       
-      if (result.success) {
+      if (result.success && result.data) {
         // Simulate the callback
-        const callbackResult = await sandboxController.handleCallback();
+        const callbackResult = await sdkInstance.handleCallback();
         addTestResult('Callback Response', callbackResult.success ? 'success' : 'error', callbackResult);
         
-        if (callbackResult.success && callbackResult.accessToken) {
-          setToken(callbackResult.accessToken);
-          sdkInstance.setAccessToken(callbackResult.accessToken);
+        if (callbackResult.success && callbackResult.data && callbackResult.data.accessToken) {
+          setToken(callbackResult.data.accessToken);
         }
       }
     } catch (error) {
@@ -198,7 +201,7 @@ const SdkSandbox: React.FC = () => {
         includeVerificationInfo: true
       });
       
-      const result = await sandboxController.getAddress({
+      const result = await sdkInstance.getAddress({
         includeVerificationInfo: true
       });
       
@@ -222,7 +225,7 @@ const SdkSandbox: React.FC = () => {
         providerType: 'injected'
       });
       
-      const result = await sandboxController.connectWallet({
+      const result = await sdkInstance.connectWallet({
         providerType: 'injected'
       });
       
@@ -247,20 +250,20 @@ const SdkSandbox: React.FC = () => {
     }
     
     try {
-      const walletResult = await sandboxController.connectWallet({
+      const walletResult = await sdkInstance.connectWallet({
         providerType: 'injected'
       });
       
-      if (walletResult.success) {
+      if (walletResult.success && walletResult.data) {
         addTestResult('Link Wallet Request', 'info', {
-          walletAddress: walletResult.address,
-          chainId: walletResult.chainId,
+          walletAddress: walletResult.data.address,
+          chainId: walletResult.data.chainId,
           createVerifiableCredential: true
         });
         
-        const result = await sandboxController.linkAddressToWallet({
-          walletAddress: walletResult.address,
-          chainId: walletResult.chainId,
+        const result = await sdkInstance.linkAddressToWallet({
+          walletAddress: walletResult.data.address,
+          chainId: walletResult.data.chainId,
           createVerifiableCredential: true
         });
         
@@ -299,7 +302,7 @@ const SdkSandbox: React.FC = () => {
         maxUses: 1
       });
       
-      const result = await sandboxController.createBlindShippingToken({
+      const result = await sdkInstance.createBlindShippingToken({
         carriers,
         shippingMethods: ['Priority', 'Ground', 'Express'],
         requireConfirmation: false,
@@ -309,10 +312,10 @@ const SdkSandbox: React.FC = () => {
       
       addTestResult('Shipping Token Response', result.success ? 'success' : 'error', result);
       
-      if (result.success && result.shipping_token) {
+      if (result.success && result.data && result.data.shipping_token) {
         // Test request shipment
         addTestResult('Request Shipment Request', 'info', {
-          shippingToken: result.shipping_token,
+          shippingToken: result.data.shipping_token,
           carrier: carriers[0],
           service: 'Priority',
           package: {
@@ -326,8 +329,8 @@ const SdkSandbox: React.FC = () => {
           }
         });
         
-        const shipmentResult = await sandboxController.requestShipment({
-          shippingToken: result.shipping_token,
+        const shipmentResult = await sdkInstance.requestShipment({
+          shippingToken: result.data.shipping_token,
           carrier: carriers[0],
           service: 'Priority',
           package: {
@@ -344,14 +347,14 @@ const SdkSandbox: React.FC = () => {
         addTestResult('Request Shipment Response', shipmentResult.success ? 'success' : 'error', shipmentResult);
         
         // Test tracking
-        if (shipmentResult.success && shipmentResult.tracking_number) {
+        if (shipmentResult.success && shipmentResult.data && shipmentResult.data.tracking_number) {
           addTestResult('Tracking Request', 'info', {
-            trackingNumber: shipmentResult.tracking_number,
+            trackingNumber: shipmentResult.data.tracking_number,
             carrier: carriers[0]
           });
           
-          const trackingResult = await sandboxController.getTrackingInfo(
-            shipmentResult.tracking_number,
+          const trackingResult = await sdkInstance.getTrackingInfo(
+            shipmentResult.data.tracking_number,
             carriers[0]
           );
           

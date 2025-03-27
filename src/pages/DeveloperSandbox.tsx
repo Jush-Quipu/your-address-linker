@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { HomeIcon, Beaker, Code, Send, RefreshCw } from 'lucide-react';
+import { HomeIcon, Beaker, Code, Send, RefreshCw, Box } from 'lucide-react';
 import { toast } from 'sonner';
 import { useRole } from '@/context/RoleContext';
 
@@ -31,19 +30,15 @@ const DeveloperSandbox: React.FC = () => {
   const [oauthScopes, setOauthScopes] = useState('read:profile read:address');
   const [oauthState, setOauthState] = useState('');
 
-  // Redirect if not authenticated or not developer
   if (!isLoading && (!isAuthenticated || !isDeveloper)) {
     return <Navigate to="/auth" />;
   }
 
-  // Test API endpoint
   const handleTestApi = async () => {
     setLoading(true);
     try {
       setApiResponse('Loading...');
       
-      // In a real implementation, this would make an actual API request
-      // For now, we'll just simulate a response after a delay
       setTimeout(() => {
         setApiResponse(JSON.stringify({
           success: true,
@@ -69,7 +64,6 @@ const DeveloperSandbox: React.FC = () => {
     }
   };
 
-  // Generate OAuth URL
   const handleGenerateOAuthUrl = () => {
     if (!oauthClientId) {
       toast.error('Client ID is required');
@@ -81,11 +75,9 @@ const DeveloperSandbox: React.FC = () => {
       return;
     }
     
-    // Generate random state if not provided
     const state = oauthState || Math.random().toString(36).substring(2, 15);
     setOauthState(state);
     
-    // Build OAuth URL
     const url = new URL('https://secureaddress-bridge.com/api/oauth/authorize');
     url.searchParams.append('client_id', oauthClientId);
     url.searchParams.append('redirect_uri', oauthRedirectUri);
@@ -93,7 +85,6 @@ const DeveloperSandbox: React.FC = () => {
     url.searchParams.append('scope', oauthScopes);
     url.searchParams.append('state', state);
     
-    // Display the URL
     setApiResponse(url.toString());
     toast.success('OAuth URL generated successfully');
   };
@@ -132,6 +123,18 @@ const DeveloperSandbox: React.FC = () => {
             </h1>
             <p className="text-muted-foreground">
               Test your integration with our API in a safe environment
+            </p>
+          </div>
+
+          <div className="mb-8">
+            <Button asChild variant="outline" className="mb-4">
+              <Link to="/developer/sdk-sandbox">
+                <Box className="h-4 w-4 mr-2" />
+                Open Full SDK Sandbox Environment
+              </Link>
+            </Button>
+            <p className="text-sm text-muted-foreground">
+              Try our advanced SDK sandbox with full configuration options, response logs, and interactive testing.
             </p>
           </div>
 

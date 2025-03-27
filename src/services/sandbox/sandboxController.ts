@@ -1,400 +1,356 @@
 
-/**
- * SecureAddress Bridge Sandbox Controller
- * 
- * This controller provides mock API responses for testing the SDK
- * without making actual API calls or requiring real address verification.
- */
-
-export interface SandboxConfig {
-  // Controls response delay to simulate network latency (in ms)
-  responseDelay: number;
-  // Controls if errors should be simulated
-  simulateErrors: boolean;
-  // Error rate (0-1) if simulation is enabled
-  errorRate: number;
-  // Controls if address verification should be simulated as successful
-  verificationSuccess: boolean;
-  // Controls if wallet connection should be simulated as successful
-  walletConnectionSuccess: boolean;
-  // Controls the default mock address to return
-  mockAddress: {
-    street: string;
-    city: string;
-    state: string;
-    postal_code: string;
-    country: string;
-    verified: boolean;
-    verification_method: string;
-    verification_date: string;
-  };
-  // Controls mock shipping options
-  mockShipping: {
-    carriers: string[];
-    available: boolean;
-    trackingAvailable: boolean;
-  };
-}
+import { SandboxConfig, SandboxResponse, AddressResponse, WalletResponse, ShippingTokenResponse, ShipmentResponse, TrackingResponse } from '@/types/sandbox';
 
 // Default sandbox configuration
-const defaultConfig: SandboxConfig = {
+const DEFAULT_CONFIG: SandboxConfig = {
   responseDelay: 300,
   simulateErrors: false,
   errorRate: 0.1,
   verificationSuccess: true,
   walletConnectionSuccess: true,
   mockAddress: {
-    street: "123 Privacy Lane",
-    city: "Secureville",
-    state: "California",
-    postal_code: "94321",
-    country: "United States",
-    verified: true,
-    verification_method: "document_upload",
-    verification_date: new Date().toISOString(),
+    street: '123 Main St',
+    city: 'San Francisco',
+    state: 'CA',
+    postal_code: '94105',
+    country: 'USA',
+    verification_method: 'document_upload',
+    verified_at: new Date().toISOString()
   },
   mockShipping: {
-    carriers: ["usps", "fedex", "ups"],
     available: true,
     trackingAvailable: true,
+    carriers: ['usps', 'fedex', 'ups'],
+    shippingMethods: ['Standard', 'Express', 'Priority']
+  },
+  mockWallet: {
+    address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
+    chainId: 1,
+    network: 'ethereum'
   }
 };
 
-let sandboxConfig: SandboxConfig = { ...defaultConfig };
+// Current configuration (starts with defaults)
+let currentConfig: SandboxConfig = { ...DEFAULT_CONFIG };
 
-/**
- * Get the current sandbox configuration
- */
-export function getSandboxConfig(): SandboxConfig {
-  return { ...sandboxConfig };
+// Simulates network delay and randomly generates errors based on config
+async function simulateResponse<T>(responseData: T): Promise<SandboxResponse<T>> {
+  // Wait for the configured delay
+  await new Promise(resolve => setTimeout(resolve, currentConfig.responseDelay));
+  
+  // Determine if we should simulate an error
+  if (currentConfig.simulateErrors && Math.random() < currentConfig.errorRate) {
+    const errors = [
+      { code: 'auth_error', message: 'Authentication failed' },
+      { code: 'rate_limit', message: 'Rate limit exceeded' },
+      { code: 'validation_error', message: 'Invalid request parameters' },
+      { code: 'server_error', message: 'Internal server error' },
+      { code: 'network_error', message: 'Network connectivity issue' }
+    ];
+    
+    const randomError = errors[Math.floor(Math.random() * errors.length)];
+    
+    return {
+      success: false,
+      error: randomError,
+      timestamp: new Date().toISOString()
+    };
+  }
+  
+  // Return successful response
+  return {
+    success: true,
+    data: responseData,
+    timestamp: new Date().toISOString()
+  };
 }
 
-/**
- * Update the sandbox configuration
- */
+// Get the current sandbox configuration
+export function getSandboxConfig(): SandboxConfig {
+  return { ...currentConfig };
+}
+
+// Update the sandbox configuration
 export function updateSandboxConfig(config: Partial<SandboxConfig>): SandboxConfig {
-  sandboxConfig = {
-    ...sandboxConfig,
+  currentConfig = {
+    ...currentConfig,
     ...config,
-    // Merge nested objects
     mockAddress: {
-      ...sandboxConfig.mockAddress,
+      ...currentConfig.mockAddress,
       ...(config.mockAddress || {})
     },
     mockShipping: {
-      ...sandboxConfig.mockShipping,
+      ...currentConfig.mockShipping,
       ...(config.mockShipping || {})
+    },
+    mockWallet: {
+      ...currentConfig.mockWallet,
+      ...(config.mockWallet || {})
     }
   };
-  return { ...sandboxConfig };
-}
-
-/**
- * Reset sandbox configuration to defaults
- */
-export function resetSandboxConfig(): SandboxConfig {
-  sandboxConfig = { ...defaultConfig };
-  return { ...sandboxConfig };
-}
-
-/**
- * Should this request simulate an error based on config
- */
-function shouldSimulateError(): boolean {
-  if (!sandboxConfig.simulateErrors) return false;
-  return Math.random() < sandboxConfig.errorRate;
-}
-
-/**
- * Create a delayed response to simulate network latency
- */
-async function delayedResponse<T>(response: T): Promise<T> {
-  if (sandboxConfig.responseDelay > 0) {
-    await new Promise(resolve => setTimeout(resolve, sandboxConfig.responseDelay));
-  }
-  return response;
-}
-
-/**
- * Mock authorization request response
- */
-export async function handleAuthorize(options: any): Promise<any> {
-  if (shouldSimulateError()) {
-    return delayedResponse({
-      success: false,
-      error: "sandbox_error",
-      errorDescription: "Simulated error in the sandbox environment"
-    });
-  }
-
-  // In real app this would redirect to authorization page
-  // For sandbox, we return a mockup of redirect URL
-  const mockRedirectUrl = `https://api.secureaddress.bridge/authorize?` +
-    `app_id=${options.appId || "app_sandbox"}` +
-    `&redirect_uri=${encodeURIComponent(options.redirectUri || "https://example.com/callback")}` +
-    `&scope=${encodeURIComponent(Array.isArray(options.scope) ? options.scope.join(' ') : (options.scope || "address.basic"))}` +
-    `&state=${options.state || "sandbox_state"}`;
-
-  return delayedResponse({
-    success: true,
-    redirectUrl: mockRedirectUrl
-  });
-}
-
-/**
- * Mock callback handling response
- */
-export async function handleCallback(token?: string): Promise<any> {
-  if (shouldSimulateError()) {
-    return delayedResponse({
-      success: false,
-      error: "invalid_request",
-      errorDescription: "Simulated error in callback handling"
-    });
-  }
-
-  // Generate a mock token if none provided
-  const accessToken = token || `sandbox_token_${Date.now()}`;
-
-  return delayedResponse({
-    success: true,
-    accessToken
-  });
-}
-
-/**
- * Mock address retrieval
- */
-export async function getAddress(options: any = {}): Promise<any> {
-  if (shouldSimulateError()) {
-    return delayedResponse({
-      success: false,
-      error: "unauthorized",
-      errorDescription: "Simulated error in address retrieval"
-    });
-  }
-
-  if (!sandboxConfig.verificationSuccess) {
-    return delayedResponse({
-      success: false,
-      error: "verification_failed",
-      errorDescription: "Address verification has not been completed"
-    });
-  }
-
-  // Return the mock address from config
-  return delayedResponse({
-    success: true,
-    address: { ...sandboxConfig.mockAddress },
-    permission: {
-      id: "perm_sandbox",
-      created_at: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      max_accesses: 10,
-      remaining_accesses: 9,
-      scope: options.fields || ["street", "city", "state", "postal_code", "country"]
-    }
-  });
-}
-
-/**
- * Mock token validation
- */
-export async function validateToken(): Promise<any> {
-  if (shouldSimulateError()) {
-    return delayedResponse({
-      valid: false,
-      error: "token_invalid",
-      status: 401
-    });
-  }
-
-  return delayedResponse({
-    valid: true,
-    expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    scope: ["street", "city", "state", "postal_code", "country"],
-    user_id: "usr_sandbox",
-    app_id: "app_sandbox"
-  });
-}
-
-/**
- * Mock wallet connection
- */
-export async function connectWallet(options: any = {}): Promise<any> {
-  if (shouldSimulateError() || !sandboxConfig.walletConnectionSuccess) {
-    return delayedResponse({
-      success: false,
-      error: "wallet_connection_failed",
-      errorDescription: "Simulated wallet connection failure"
-    });
-  }
-
-  return delayedResponse({
-    success: true,
-    address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
-    chainId: "0x1",
-    providerType: options.providerType || "injected"
-  });
-}
-
-/**
- * Mock address to wallet linking
- */
-export async function linkAddressToWallet(options: any): Promise<any> {
-  if (shouldSimulateError()) {
-    return delayedResponse({
-      success: false,
-      error: "linking_failed",
-      errorDescription: "Simulated error in wallet linking"
-    });
-  }
-
-  if (!sandboxConfig.verificationSuccess) {
-    return delayedResponse({
-      success: false,
-      error: "verification_required",
-      errorDescription: "Address must be verified before linking to wallet"
-    });
-  }
-
-  return delayedResponse({
-    success: true,
-    wallet_address: options.walletAddress || "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
-    chain_id: options.chainId || "0x1",
-    linked_at: new Date().toISOString(),
-    verifiable_credential: options.createVerifiableCredential ? {
-      id: "vc_sandbox",
-      type: ["VerifiableCredential", "AddressCredential"],
-      issuer: "did:web:secureaddress.bridge",
-      issuanceDate: new Date().toISOString(),
-      expirationDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-    } : null
-  });
-}
-
-/**
- * Mock shipping token creation
- */
-export async function createBlindShippingToken(options: any = {}): Promise<any> {
-  if (shouldSimulateError() || !sandboxConfig.mockShipping.available) {
-    return delayedResponse({
-      success: false,
-      error: "shipping_unavailable",
-      errorDescription: "Simulated shipping unavailability"
-    });
-  }
-
-  // Validate carriers from the request against the available ones
-  const requestedCarriers = options.carriers || [];
-  const availableCarriers = sandboxConfig.mockShipping.carriers;
-  const invalidCarriers = requestedCarriers.filter(c => !availableCarriers.includes(c));
   
-  if (invalidCarriers.length > 0) {
-    return delayedResponse({
-      success: false,
-      error: "invalid_carriers",
-      errorDescription: `Carriers not supported: ${invalidCarriers.join(', ')}`
-    });
-  }
+  return { ...currentConfig };
+}
 
-  return delayedResponse({
-    success: true,
-    shipping_token: `ship_sandbox_${Date.now()}`,
-    expires_at: new Date(Date.now() + (options.expiryDays || 7) * 24 * 60 * 60 * 1000).toISOString(),
-    max_uses: options.maxUses || 1,
-    remaining_uses: options.maxUses || 1,
-    carriers: options.carriers || availableCarriers,
-    shipping_methods: options.shippingMethods || ["Priority", "Ground", "Express"]
+// Reset sandbox configuration to defaults
+export function resetSandboxConfig(): SandboxConfig {
+  currentConfig = { ...DEFAULT_CONFIG };
+  return { ...currentConfig };
+}
+
+// Handle authorization request
+export async function handleAuthorize(params: {
+  appId: string;
+  redirectUri: string;
+  scope: string[];
+  expiryDays?: number;
+  state?: string;
+}): Promise<SandboxResponse<{ code: string; state: string }>> {
+  const authCode = `auth_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+  
+  return simulateResponse({
+    code: authCode,
+    state: params.state || 'state123'
   });
 }
 
-/**
- * Mock shipment request
- */
-export async function requestShipment(options: any = {}): Promise<any> {
-  if (shouldSimulateError() || !sandboxConfig.mockShipping.available) {
-    return delayedResponse({
-      success: false,
-      error: "shipment_failed",
-      errorDescription: "Simulated shipment failure"
+// Handle callback with code exchange
+export async function handleCallback(): Promise<SandboxResponse<{
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  tokenType: string;
+  scope: string[];
+}>> {
+  const accessToken = `access_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+  const refreshToken = `refresh_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+  
+  return simulateResponse({
+    accessToken,
+    refreshToken,
+    expiresIn: 3600,
+    tokenType: 'Bearer',
+    scope: ['read:profile', 'read:address']
+  });
+}
+
+// Get address information
+export async function getAddress(params: {
+  includeVerificationInfo?: boolean;
+}): Promise<SandboxResponse<AddressResponse>> {
+  if (!currentConfig.verificationSuccess) {
+    return simulateResponse({
+      street: '',
+      city: '',
+      state: '',
+      postal_code: '',
+      country: '',
+      verification_status: 'pending',
+      verification_method: ''
     });
   }
+  
+  const addressData: AddressResponse = {
+    ...currentConfig.mockAddress,
+    verification_status: 'verified'
+  };
+  
+  if (!params.includeVerificationInfo) {
+    delete addressData.verification_method;
+    delete addressData.verified_at;
+  }
+  
+  return simulateResponse(addressData);
+}
 
-  return delayedResponse({
-    success: true,
-    tracking_number: `TRACK${Math.floor(Math.random() * 10000000)}`,
-    carrier: options.carrier || "usps",
-    service: options.service || "Priority",
-    label_url: "https://sandbox-secureaddress.bridge/labels/sample-label.pdf",
-    estimated_delivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-    cost: {
-      amount: Math.random() * 20 + 5,
-      currency: "USD"
+// Connect to wallet
+export async function connectWallet(params: {
+  providerType: 'injected' | 'walletconnect' | 'coinbase';
+}): Promise<SandboxResponse<WalletResponse>> {
+  if (!currentConfig.walletConnectionSuccess) {
+    return simulateResponse({
+      address: '',
+      chainId: 0,
+      network: '',
+      connected: false
+    });
+  }
+  
+  return simulateResponse({
+    ...currentConfig.mockWallet,
+    connected: true
+  });
+}
+
+// Link address to wallet
+export async function linkAddressToWallet(params: {
+  walletAddress: string;
+  chainId: number;
+  createVerifiableCredential?: boolean;
+}): Promise<SandboxResponse<{
+  linked: boolean;
+  verifiable_credential?: {
+    id: string;
+    type: string;
+    proof: string;
+  };
+}>> {
+  if (!currentConfig.verificationSuccess) {
+    return simulateResponse({
+      linked: false
+    });
+  }
+  
+  const response: any = { linked: true };
+  
+  if (params.createVerifiableCredential) {
+    response.verifiable_credential = {
+      id: `vc_${Date.now()}`,
+      type: 'AddressCredential',
+      proof: `proof_${Math.random().toString(36).substring(2)}`
+    };
+  }
+  
+  return simulateResponse(response);
+}
+
+// Create blind shipping token
+export async function createBlindShippingToken(params: {
+  carriers: string[];
+  shippingMethods: string[];
+  requireConfirmation?: boolean;
+  expiryDays?: number;
+  maxUses?: number;
+}): Promise<SandboxResponse<ShippingTokenResponse>> {
+  if (!currentConfig.mockShipping.available) {
+    return simulateResponse({
+      success: false,
+      error: {
+        code: 'shipping_unavailable',
+        message: 'Shipping is not available for this address'
+      },
+      timestamp: new Date().toISOString()
+    }) as any;
+  }
+  
+  const expiry = new Date();
+  expiry.setDate(expiry.getDate() + (params.expiryDays || 30));
+  
+  return simulateResponse({
+    shipping_token: `shipping_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+    expires_at: expiry.toISOString(),
+    available_carriers: params.carriers.filter(c => 
+      currentConfig.mockShipping.carriers.includes(c)
+    ),
+    available_methods: params.shippingMethods.filter(m => 
+      currentConfig.mockShipping.shippingMethods.includes(m)
+    ),
+    max_uses: params.maxUses || 1
+  });
+}
+
+// Request shipment with token
+export async function requestShipment(params: {
+  shippingToken: string;
+  carrier: string;
+  service: string;
+  package: {
+    type: string;
+    weight: number;
+    dimensions?: {
+      length: number;
+      width: number;
+      height: number;
+    };
+  };
+}): Promise<SandboxResponse<ShipmentResponse>> {
+  if (!currentConfig.mockShipping.available || 
+      !currentConfig.mockShipping.carriers.includes(params.carrier)) {
+    return simulateResponse({
+      success: false,
+      error: {
+        code: 'shipping_unavailable',
+        message: `Carrier ${params.carrier} is not available for this address`
+      },
+      timestamp: new Date().toISOString()
+    }) as any;
+  }
+  
+  const deliveryDate = new Date();
+  deliveryDate.setDate(deliveryDate.getDate() + (params.service === 'Express' ? 2 : 5));
+  
+  return simulateResponse({
+    tracking_number: `${params.carrier.toUpperCase()}${Date.now().toString().substring(5)}`,
+    label_url: `https://sandbox.secureaddress.example/labels/${params.carrier}/${Date.now()}.pdf`,
+    carrier: params.carrier,
+    service: params.service,
+    estimated_delivery: deliveryDate.toISOString()
+  });
+}
+
+// Get tracking info
+export async function getTrackingInfo(
+  trackingNumber: string,
+  carrier: string
+): Promise<SandboxResponse<TrackingResponse>> {
+  if (!currentConfig.mockShipping.trackingAvailable || 
+      !currentConfig.mockShipping.carriers.includes(carrier)) {
+    return simulateResponse({
+      success: false,
+      error: {
+        code: 'tracking_unavailable',
+        message: 'Tracking is not available for this shipment'
+      },
+      timestamp: new Date().toISOString()
+    }) as any;
+  }
+  
+  const now = new Date();
+  
+  // Create some mock tracking events
+  const events = [
+    {
+      timestamp: new Date(now.getTime() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+      status: 'created',
+      location: 'Shipping Origin',
+      description: 'Shipping label created'
+    },
+    {
+      timestamp: new Date(now.getTime() - 1000 * 60 * 60 * 24).toISOString(),
+      status: 'in_transit',
+      location: 'Shipping Hub',
+      description: 'Package received at carrier facility'
     }
-  });
-}
-
-/**
- * Mock tracking info
- */
-export async function getTrackingInfo(trackingNumber: string, carrier: string): Promise<any> {
-  if (shouldSimulateError() || !sandboxConfig.mockShipping.trackingAvailable) {
-    return delayedResponse({
-      success: false,
-      error: "tracking_unavailable",
-      errorDescription: "Simulated tracking unavailability"
+  ];
+  
+  // Randomly add a more recent event
+  if (Math.random() > 0.5) {
+    events.push({
+      timestamp: new Date(now.getTime() - 1000 * 60 * 60 * 12).toISOString(),
+      status: 'in_transit',
+      location: 'Local Facility',
+      description: 'Package in transit to destination'
     });
   }
-
-  // Generate random status based on time
-  const statuses = ["pre_transit", "in_transit", "out_for_delivery", "delivered", "exception"];
-  const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-
-  return delayedResponse({
-    success: true,
+  
+  // If we're really lucky, it's delivered
+  if (Math.random() > 0.8) {
+    events.push({
+      timestamp: new Date(now.getTime() - 1000 * 60 * 60 * 2).toISOString(),
+      status: 'delivered',
+      location: 'Destination',
+      description: 'Package delivered'
+    });
+  }
+  
+  const deliveryDate = new Date();
+  deliveryDate.setDate(deliveryDate.getDate() + 3);
+  
+  return simulateResponse({
     tracking_number: trackingNumber,
     carrier: carrier,
-    status: randomStatus,
-    estimated_delivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-    last_update: new Date().toISOString(),
-    tracking_events: [
-      {
-        status: "pre_transit",
-        location: "Shipping Label Created",
-        timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        status: "in_transit",
-        location: "Origin Facility",
-        timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      randomStatus === "delivered" ? {
-        status: "delivered",
-        location: "Destination",
-        timestamp: new Date().toISOString()
-      } : null
-    ].filter(Boolean)
-  });
-}
-
-/**
- * Mock webhook registration
- */
-export async function registerWebhook(options: any): Promise<any> {
-  if (shouldSimulateError()) {
-    return delayedResponse({
-      success: false,
-      error: "webhook_registration_failed",
-      errorDescription: "Simulated webhook registration failure"
-    });
-  }
-
-  return delayedResponse({
-    success: true,
-    webhook_id: `hook_sandbox_${Date.now()}`,
-    url: options.url,
-    events: options.events,
-    created_at: new Date().toISOString()
+    status: events[events.length - 1].status as any,
+    estimated_delivery: deliveryDate.toISOString(),
+    tracking_events: events
   });
 }
