@@ -54,7 +54,6 @@ const DeveloperPortalManager = () => {
   const [registrationFilter, setRegistrationFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   
-  // New app form state
   const [formData, setFormData] = useState({
     appName: '',
     description: '',
@@ -63,7 +62,6 @@ const DeveloperPortalManager = () => {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  // Redirect to login if not authenticated or not a developer
   if (!isLoading && !isAuthenticated) {
     return <Navigate to="/auth" />;
   }
@@ -72,13 +70,11 @@ const DeveloperPortalManager = () => {
     return <Navigate to="/dashboard" />;
   }
 
-  // Handle form input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Reset form
   const resetForm = () => {
     setFormData({
       appName: '',
@@ -88,7 +84,6 @@ const DeveloperPortalManager = () => {
     });
   };
 
-  // Fetch developer applications
   useEffect(() => {
     const fetchApplications = async () => {
       if (!isAuthenticated || !user) return;
@@ -102,11 +97,16 @@ const DeveloperPortalManager = () => {
           
         if (error) throw error;
         
-        setApplications(data as DeveloperApp[] || []);
+        const typedApps: DeveloperApp[] = data.map(app => ({
+          ...app,
+          status: app.status as AppStatus || AppStatus.DEVELOPMENT,
+          verification_status: app.verification_status as AppVerificationStatus || AppVerificationStatus.PENDING,
+        }));
         
-        // If appId is provided in the URL, select that app
+        setApplications(typedApps);
+        
         if (appId) {
-          const app = data.find(a => a.id === appId);
+          const app = typedApps.find(a => a.id === appId);
           if (app) {
             setSelectedApp(app);
             setActiveTab('app-details');
@@ -123,7 +123,6 @@ const DeveloperPortalManager = () => {
     fetchApplications();
   }, [isAuthenticated, user, appId]);
 
-  // Handle app registration
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -132,7 +131,6 @@ const DeveloperPortalManager = () => {
       return;
     }
     
-    // Validate form
     if (!formData.appName) {
       toast.error('App name is required');
       return;
@@ -143,7 +141,6 @@ const DeveloperPortalManager = () => {
       return;
     }
     
-    // Parse callback URLs
     const callbackUrls = formData.callbackUrls
       .split('\n')
       .map(url => url.trim())
@@ -154,7 +151,6 @@ const DeveloperPortalManager = () => {
       return;
     }
     
-    // Check URL format
     const urlRegex = /^https?:\/\//i;
     const invalidUrls = callbackUrls.filter(url => !urlRegex.test(url));
     
@@ -168,7 +164,6 @@ const DeveloperPortalManager = () => {
     setSubmitting(true);
     
     try {
-      // Register the app
       const newApp = await createDeveloperApp({
         appName: formData.appName,
         description: formData.description,
@@ -177,18 +172,14 @@ const DeveloperPortalManager = () => {
         status: AppStatus.DEVELOPMENT
       });
       
-      // Add to the applications list
       setApplications(prev => [newApp as DeveloperApp, ...prev]);
       
-      // Select the new app
       setSelectedApp(newApp as DeveloperApp);
       setActiveTab('app-details');
       
-      // Close the dialog and reset form
       setShowRegisterDialog(false);
       resetForm();
       
-      // Show success message
       toast.success('Application registered successfully', {
         description: 'Your app credentials have been generated'
       });
@@ -202,21 +193,17 @@ const DeveloperPortalManager = () => {
     }
   };
 
-  // Filter applications based on search term and filters
   const filteredApps = applications.filter(app => {
-    // Search filter
     const matchesSearch = 
       app.app_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (app.description && app.description.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    // Verification status filter
     const matchesVerification = 
       registrationFilter === 'all' || 
       (registrationFilter === 'verified' && app.verification_status === AppVerificationStatus.VERIFIED) ||
       (registrationFilter === 'pending' && app.verification_status === AppVerificationStatus.PENDING) ||
       (registrationFilter === 'rejected' && app.verification_status === AppVerificationStatus.REJECTED);
     
-    // App status filter
     const matchesStatus = 
       statusFilter === 'all' || 
       (statusFilter === 'active' && app.status === AppStatus.ACTIVE) ||
@@ -226,7 +213,6 @@ const DeveloperPortalManager = () => {
     return matchesSearch && matchesVerification && matchesStatus;
   });
 
-  // Get status badge color
   const getStatusBadge = (status?: AppStatus) => {
     switch (status) {
       case AppStatus.ACTIVE:
@@ -239,7 +225,6 @@ const DeveloperPortalManager = () => {
     }
   };
 
-  // Get verification status badge
   const getVerificationBadge = (status?: AppVerificationStatus) => {
     switch (status) {
       case AppVerificationStatus.VERIFIED:
@@ -254,14 +239,12 @@ const DeveloperPortalManager = () => {
     }
   };
 
-  // Handle app selection
   const handleSelectApp = (app: DeveloperApp) => {
     setSelectedApp(app);
     setActiveTab('app-details');
     navigate(`/developer/apps/${app.id}`);
   };
 
-  // Handle app update
   const handleAppUpdated = (updatedApp: DeveloperApp) => {
     setSelectedApp(updatedApp);
     setApplications(prev => 
@@ -269,7 +252,6 @@ const DeveloperPortalManager = () => {
     );
   };
 
-  // Back to apps list
   const handleBackToApps = () => {
     setSelectedApp(null);
     setActiveTab('apps');

@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Database } from '@/integrations/supabase/types';
 
 // Developer role types
 export enum DeveloperRole {
@@ -17,18 +18,20 @@ type DeveloperRoleRecord = {
 }
 
 // Define app verification status
-export enum AppVerificationStatus {
-  PENDING = 'pending',
-  VERIFIED = 'verified',
-  REJECTED = 'rejected'
-}
+export type AppVerificationStatus = Database['public']['Enums']['app_verification_status'];
+export const AppVerificationStatus = {
+  PENDING: 'pending' as AppVerificationStatus,
+  VERIFIED: 'verified' as AppVerificationStatus,
+  REJECTED: 'rejected' as AppVerificationStatus
+};
 
 // Define app status
-export enum AppStatus {
-  ACTIVE = 'active',
-  SUSPENDED = 'suspended',
-  DEVELOPMENT = 'development'
-}
+export type AppStatus = Database['public']['Enums']['app_status'];
+export const AppStatus = {
+  ACTIVE: 'active' as AppStatus,
+  SUSPENDED: 'suspended' as AppStatus,
+  DEVELOPMENT: 'development' as AppStatus
+};
 
 // Developer app type with extended information
 export type DeveloperApp = {
@@ -209,7 +212,7 @@ export const getDeveloperApps = async () => {
     if (error) throw error;
     
     // Enhance the app data with default values for added fields
-    const appsWithDefaults = (data || []).map((app: DeveloperAppRecord): DeveloperApp => ({
+    const appsWithDefaults = data?.map((app): DeveloperApp => ({
       ...app,
       status: app.status || AppStatus.DEVELOPMENT,
       verification_status: app.verification_status || AppVerificationStatus.PENDING,
@@ -219,7 +222,7 @@ export const getDeveloperApps = async () => {
         refresh_token_rotation: true
       },
       monthly_request_limit: app.monthly_request_limit || 1000
-    }));
+    })) || [];
     
     return appsWithDefaults;
   } catch (error) {
@@ -412,7 +415,7 @@ export const rotateAppSecret = async (appId: string) => {
       description: 'Save this secret, it will not be shown again'
     });
     
-    return data;
+    return data as DeveloperApp;
   } catch (error) {
     console.error('Error rotating application secret:', error);
     toast.error('Failed to rotate application secret', {

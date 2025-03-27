@@ -28,7 +28,10 @@ const ApiKeyRotationSection: React.FC<ApiKeyRotationSectionProps> = ({ app, onAp
       setNewSecret(updatedApp.app_secret);
       
       // Update the app in the parent component without the secret
-      const appWithoutSecret = { ...updatedApp, app_secret: undefined };
+      const appWithoutSecret: DeveloperApp = { 
+        ...updatedApp,
+        app_secret: undefined
+      };
       onAppUpdated(appWithoutSecret);
       
       toast.success("API secret rotated successfully");

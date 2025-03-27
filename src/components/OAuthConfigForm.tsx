@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { updateDeveloperApp } from "@/services/developerService";
@@ -60,9 +59,10 @@ const OAuthConfigForm: React.FC<OAuthConfigFormProps> = ({
     try {
       const updatedApp = await updateDeveloperApp(app.id, {
         oauthSettings: {
-          token_lifetime: values.tokenLifetime,
-          refresh_token_rotation: values.refreshTokenRotation,
+          // Correctly map tokenLifetime to token_lifetime for the API
           scopes: values.scopes,
+          tokenLifetime: values.tokenLifetime,
+          refreshTokenRotation: values.refreshTokenRotation,
         }
       });
       
