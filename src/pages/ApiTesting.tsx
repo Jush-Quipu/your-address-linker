@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -35,8 +36,9 @@ const ApiTesting: React.FC = () => {
   useEffect(() => {
     // Create SDK instance for testing
     const sdk = new SecureAddressBridge({
-      apiKey: 'test-app-id',
-      sandboxMode: true
+      appId: 'test-app-id',
+      redirectUri: window.location.origin + '/callback',
+      sandbox: true
     });
     
     setSdkInstance(sdk);
