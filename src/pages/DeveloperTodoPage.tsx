@@ -26,6 +26,7 @@ const DeveloperTodoPage: React.FC = () => {
   const [selectedTodo, setSelectedTodo] = useState<DeveloperTodo | null>(null);
   const [isAddingTodo, setIsAddingTodo] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [redirectToAuth, setRedirectToAuth] = useState(false);
   const isDevelopment = process.env.NODE_ENV === 'development';
 
   // Make the todo manager available globally for Lovable
@@ -37,6 +38,13 @@ const DeveloperTodoPage: React.FC = () => {
       delete window.LovableTodoManager;
     };
   }, []);
+
+  // Check authentication status
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      setRedirectToAuth(true);
+    }
+  }, [isLoading, isAuthenticated]);
 
   // Fetch todos on component mount
   useEffect(() => {
@@ -76,8 +84,8 @@ const DeveloperTodoPage: React.FC = () => {
     fetchTodos();
   };
 
-  // If not authenticated and not loading, redirect to auth
-  if (!isLoading && !isAuthenticated) {
+  // Redirect to auth if not authenticated
+  if (redirectToAuth) {
     return <Navigate to="/auth" />;
   }
 

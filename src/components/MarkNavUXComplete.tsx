@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { LovableTodoManager } from '@/utils/lovableTodoManager';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle2, ListChecks } from 'lucide-react';
+import { getDeveloperTodos } from '@/services/developerTodoService';
 
 const MarkNavUXComplete: React.FC = () => {
   const [marking, setMarking] = useState(false);
@@ -14,7 +15,7 @@ const MarkNavUXComplete: React.FC = () => {
   useEffect(() => {
     const checkTodoStatus = async () => {
       try {
-        const todos = await LovableTodoManager.getTodos();
+        const todos = await getDeveloperTodos();
         const navUxTodo = todos.find(todo => todo.title === "Navigation & User Experience");
         if (navUxTodo && navUxTodo.status === 'completed') {
           setCompleted(true);
