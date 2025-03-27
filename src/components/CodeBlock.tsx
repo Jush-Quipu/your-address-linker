@@ -8,16 +8,24 @@ interface CodeBlockProps {
   code: string;
   language: string;
   showLineNumbers?: boolean;
+  onCopy?: (text: string) => void;
+  copied?: boolean;
 }
 
 const CodeBlock: React.FC<CodeBlockProps> = ({ 
   code, 
   language, 
-  showLineNumbers = true 
+  showLineNumbers = true,
+  onCopy,
+  copied = false
 }) => {
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(code);
-    toast.success('Code copied to clipboard');
+  const handleCopy = () => {
+    if (onCopy) {
+      onCopy(code);
+    } else {
+      navigator.clipboard.writeText(code);
+      toast.success('Code copied to clipboard');
+    }
   };
 
   return (
@@ -40,10 +48,10 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
         variant="outline"
         size="sm"
         className="absolute top-2 right-2 text-xs px-2 py-1 h-auto opacity-50 hover:opacity-100"
-        onClick={copyToClipboard}
+        onClick={handleCopy}
       >
         <ClipboardCopy className="h-3 w-3 mr-1" />
-        Copy
+        {copied ? 'Copied' : 'Copy'}
       </Button>
     </div>
   );
