@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -70,14 +69,18 @@ const DeveloperPortalManager = () => {
     callbackUrls: ''
   });
   const [submitting, setSubmitting] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
 
-  if (!isLoading && !isAuthenticated) {
-    return <Navigate to="/auth" />;
-  }
-
-  if (!isLoading && isAuthenticated && !isDeveloper) {
-    return <Navigate to="/dashboard" />;
-  }
+  // Check if we need to redirect and set state accordingly
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        setShouldRedirect(true);
+      } else if (!isDeveloper) {
+        setShouldRedirect(true);
+      }
+    }
+  }, [isLoading, isAuthenticated, isDeveloper]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -131,7 +134,9 @@ const DeveloperPortalManager = () => {
       }
     };
     
-    fetchApplications();
+    if (isAuthenticated && user) {
+      fetchApplications();
+    }
   }, [isAuthenticated, user, appId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -268,6 +273,11 @@ const DeveloperPortalManager = () => {
     setActiveTab('apps');
     navigate('/developer/apps');
   };
+
+  // Handle redirect if needed
+  if (shouldRedirect) {
+    return <Navigate to={isAuthenticated ? "/dashboard" : "/auth"} />;
+  }
 
   return (
     <div className="min-h-screen">

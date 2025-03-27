@@ -12,8 +12,6 @@ import DeveloperTodoDetails from '@/components/DeveloperTodoDetails';
 import DeveloperTodoForm from '@/components/DeveloperTodoForm';
 import { type DeveloperTodo, getDeveloperTodos, getDeveloperTodoWithSubtasks } from '@/services/developerTodoService';
 import { LovableTodoManager } from '@/utils/lovableTodoManager';
-import { DeveloperSidebarWrapper } from '@/components/DeveloperSidebar';
-import MarkNavUXComplete from '@/components/MarkNavUXComplete';
 
 // Global reference to allow Lovable to access the todo manager
 declare global {
@@ -29,7 +27,6 @@ const DeveloperTodoPage: React.FC = () => {
   const [isAddingTodo, setIsAddingTodo] = useState(false);
   const [loading, setLoading] = useState(true);
   const isDevelopment = process.env.NODE_ENV === 'development';
-  const [showCompleteTodoButton, setShowCompleteTodoButton] = useState(true);
 
   // Make the todo manager available globally for Lovable
   useEffect(() => {
@@ -41,14 +38,11 @@ const DeveloperTodoPage: React.FC = () => {
     };
   }, []);
 
-  // Redirect to login if not authenticated
-  if (!isLoading && !isAuthenticated) {
-    return <Navigate to="/auth" />;
-  }
-
   // Fetch todos on component mount
   useEffect(() => {
-    fetchTodos();
+    if (isAuthenticated) {
+      fetchTodos();
+    }
   }, [isAuthenticated]);
 
   const fetchTodos = async () => {
@@ -56,14 +50,6 @@ const DeveloperTodoPage: React.FC = () => {
     try {
       const data = await getDeveloperTodos();
       setTodos(data);
-      
-      // Check if "Navigation & User Experience" todo exists and is not completed
-      const navigationTodo = data.find(todo => 
-        todo.title.toLowerCase() === "navigation & user experience" && 
-        todo.status !== 'completed'
-      );
-      
-      setShowCompleteTodoButton(!!navigationTodo);
     } finally {
       setLoading(false);
     }
@@ -90,89 +76,84 @@ const DeveloperTodoPage: React.FC = () => {
     fetchTodos();
   };
 
-  const renderPageContent = () => (
-    <div className="max-w-5xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/">
-                <HomeIcon className="h-4 w-4 mr-1" />
-                Home
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/developer">
-                <CodeIcon className="h-4 w-4 mr-1" />
-                Developer
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/developer/todo">
-                <ListChecks className="h-4 w-4 mr-1" />
-                Todo List
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-        
-        <div className="flex items-center gap-2">
-          {isDevelopment && (
-            <Badge variant="outline" className="bg-amber-100 text-amber-800">
-              Development Mode
-            </Badge>
-          )}
-          <Badge variant="outline" className="bg-blue-100 text-blue-800">
-            <Bug className="h-3 w-3 mr-1" />
-            Sandbox
-          </Badge>
-        </div>
-      </div>
-
-      {isAddingTodo ? (
-        <DeveloperTodoForm
-          onBack={handleBackToList}
-          onSuccess={handleTodoCreated}
-        />
-      ) : selectedTodo ? (
-        <DeveloperTodoDetails
-          todo={selectedTodo}
-          onBack={handleBackToList}
-          onRefresh={async () => {
-            const refreshedTodo = await getDeveloperTodoWithSubtasks(selectedTodo.id);
-            if (refreshedTodo) {
-              setSelectedTodo(refreshedTodo);
-            }
-            fetchTodos();
-          }}
-        />
-      ) : (
-        <>
-          <DeveloperTodoList
-            todos={todos}
-            onRefresh={fetchTodos}
-            onAddTodo={handleAddTodo}
-            onSelectTodo={handleSelectTodo}
-          />
-          
-          {showCompleteTodoButton && <MarkNavUXComplete />}
-        </>
-      )}
-    </div>
-  );
+  // If not authenticated and not loading, redirect to auth
+  if (!isLoading && !isAuthenticated) {
+    return <Navigate to="/auth" />;
+  }
 
   return (
-    <DeveloperSidebarWrapper>
-      <div className="min-h-screen">
-        <Navbar />
-        <main className="pt-32 pb-20 px-6 md:px-12">
-          {renderPageContent()}
-        </main>
-        <Footer />
-      </div>
-    </DeveloperSidebarWrapper>
+    <div className="min-h-screen">
+      <Navbar />
+      <main className="pt-32 pb-20 px-6 md:px-12">
+        <div className="max-w-5xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/">
+                    <HomeIcon className="h-4 w-4 mr-1" />
+                    Home
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/developer">
+                    <CodeIcon className="h-4 w-4 mr-1" />
+                    Developer
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink href="/developer/todo">
+                    <ListChecks className="h-4 w-4 mr-1" />
+                    Todo List
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
+            
+            <div className="flex items-center gap-2">
+              {isDevelopment && (
+                <Badge variant="outline" className="bg-amber-100 text-amber-800">
+                  Development Mode
+                </Badge>
+              )}
+              <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                <Bug className="h-3 w-3 mr-1" />
+                Sandbox
+              </Badge>
+            </div>
+          </div>
+
+          {isAddingTodo ? (
+            <DeveloperTodoForm
+              onBack={handleBackToList}
+              onSuccess={handleTodoCreated}
+            />
+          ) : selectedTodo ? (
+            <DeveloperTodoDetails
+              todo={selectedTodo}
+              onBack={handleBackToList}
+              onRefresh={async () => {
+                const refreshedTodo = await getDeveloperTodoWithSubtasks(selectedTodo.id);
+                if (refreshedTodo) {
+                  setSelectedTodo(refreshedTodo);
+                }
+                fetchTodos();
+              }}
+            />
+          ) : (
+            <DeveloperTodoList
+              todos={todos}
+              onRefresh={fetchTodos}
+              onAddTodo={handleAddTodo}
+              onSelectTodo={handleSelectTodo}
+            />
+          )}
+        </div>
+      </main>
+      <Footer />
+    </div>
   );
 };
 
