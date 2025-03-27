@@ -1,6 +1,4 @@
 
-import React from 'react';
-
 export interface SandboxOptions {
   responseDelay?: number;
   simulateErrors?: boolean;
@@ -101,11 +99,11 @@ export interface ShipmentRequestOptions {
 
 export class SecureAddressBridge {
   constructor(config: SecureAddressBridgeConfig);
-  setAccessToken(token: string): void;
-  authorize(options: AuthorizeOptions): void;
+  setAccessToken(token: string | null): void;
+  authorize(options: AuthorizeOptions): any;
   handleCallback(options?: CallbackOptions): Promise<{
     success: boolean;
-    accessToken?: string;
+    data?: { accessToken: string };
     error?: string;
     errorDescription?: string;
   }>;
@@ -127,7 +125,10 @@ export class SecureAddressBridge {
     chainId: string;
     providerType: string;
   }>;
-  linkAddressToWallet(options: LinkWalletOptions): Promise<Record<string, any>>;
+  linkAddressToWallet(addressId: string, walletAddress: string): Promise<{
+    success: boolean;
+    error?: string;
+  }>;
   getUsageStats(): Promise<Record<string, any>>;
   createBlindShippingToken(options?: BlindShippingOptions): Promise<{
     shipping_token: string;
