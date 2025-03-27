@@ -88,4 +88,27 @@ export class SecureAddressBridge {
   
   // This would typically handle the real SDK functionality
   // For now, we're just exposing the interface
+
+  authorize(options: AuthorizeOptions) {
+    console.log('SDK authorize called with', options);
+    // Mock implementation for sandbox mode
+    return { success: true };
+  }
+
+  handleCallback() {
+    console.log('SDK handleCallback called');
+    // Mock implementation for sandbox mode
+    return { 
+      success: true, 
+      data: { 
+        accessToken: 'mock_access_token_' + Math.random().toString(36).substring(2, 15) 
+      } 
+    };
+  }
+
+  linkAddressToWallet(addressId: string, walletAddress: string) {
+    console.log('SDK linkAddressToWallet called with', { addressId, walletAddress });
+    // Mock implementation for sandbox mode
+    return { success: true };
+  }
 }
