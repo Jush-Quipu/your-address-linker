@@ -14,14 +14,13 @@ import { Shield, AlertCircle, Check, Wallet, Key, Link as LinkIcon } from 'lucid
 
 const Connect: React.FC = () => {
   const navigate = useNavigate();
-  const { sdk, user, isAuthenticated, wallets, refreshWallets } = useSecureAddress();
+  const { client, user, isAuthenticated, wallets, refreshWallets } = useSecureAddress();
   const [connecting, setConnecting] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('connect');
 
   useEffect(() => {
-    // Check if wallet is already connected
     const checkWalletConnection = async () => {
       if (window.ethereum) {
         try {
@@ -40,7 +39,6 @@ const Connect: React.FC = () => {
     
     checkWalletConnection();
     
-    // Listen for account changes
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', (accounts: string[]) => {
         if (accounts.length > 0) {
@@ -56,7 +54,6 @@ const Connect: React.FC = () => {
     }
     
     return () => {
-      // Remove listeners
       if (window.ethereum) {
         window.ethereum.removeAllListeners('accountsChanged');
         window.ethereum.removeAllListeners('chainChanged');
@@ -96,18 +93,15 @@ const Connect: React.FC = () => {
     
     setConnecting(true);
     try {
-      // Create message for signing to verify ownership
       const message = `I am linking this wallet address ${walletAddress} to my SecureAddress Bridge account ${user?.email || 'User'}`;
       
-      // Request signature (implemented in blockchain.ts)
       const signature = await window.ethereum.request({
         method: 'personal_sign',
         params: [message, walletAddress],
       });
       
       if (signature) {
-        // Link wallet to user account
-        const response = await sdk.linkAddressToWallet('verified-address-id', walletAddress);
+        const response = await client.linkAddressToWallet('verified-address-id', walletAddress);
         
         if (response.success) {
           toast.success('Wallet linked successfully');
@@ -125,7 +119,6 @@ const Connect: React.FC = () => {
     }
   };
 
-  // Get the current chain name
   const getChainName = (chainId: string | null) => {
     if (!chainId) return 'Unknown Network';
     
@@ -133,7 +126,6 @@ const Connect: React.FC = () => {
     return chain ? chain.name : 'Unknown Network';
   };
 
-  // Wallet status badge
   const WalletStatusBadge = () => {
     if (!walletAddress) {
       return <Badge variant="outline" className="bg-yellow-100 text-yellow-800">Not Connected</Badge>;

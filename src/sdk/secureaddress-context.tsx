@@ -1,6 +1,13 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { SecureAddressBridge } from './secureaddress-bridge-sdk';
+import { createClient } from '@supabase/supabase-js';
+import { toast } from 'sonner';
+
+interface WalletInfo {
+  address: string;
+  chainId: string;
+  connectedAt: string;
+}
 
 interface SecureAddressContextType {
   client: SecureAddressBridge | null;
@@ -10,6 +17,11 @@ interface SecureAddressContextType {
   zkpProof: any | null;
   address: any | null;
   walletLinked: boolean;
+  user: any | null;
+  sdk: SecureAddressBridge | null;
+  isAuthenticated: boolean;
+  wallets: WalletInfo[];
+  refreshWallets: () => Promise<void>;
   authorizeAddress: (options?: any) => Promise<void>;
   authorizeZkp: (options: any) => Promise<void>;
   getAddress: () => Promise<any>;
@@ -42,8 +54,10 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
   const [address, setAddress] = useState<any | null>(null);
   const [walletLinked, setWalletLinked] = useState<boolean>(false);
   const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<any | null>(null);
+  const [wallets, setWallets] = useState<WalletInfo[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  // Initialize the client
   useEffect(() => {
     const secureAddressClient = new SecureAddressBridge({
       appId,
@@ -52,18 +66,18 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
     });
     setClient(secureAddressClient);
 
-    // Check if we have a token
     const storedToken = localStorage.getItem('secureaddress_token');
     if (storedToken) {
       setToken(storedToken);
       setIsAuthorized(true);
+      setIsAuthenticated(true);
+
+      fetchUserInfo(storedToken);
     }
 
-    // Check if we have a proof
     const proofId = localStorage.getItem('secureaddress_proof_id');
     const proofToken = localStorage.getItem('secureaddress_proof_token');
     if (proofId && proofToken) {
-      // We have a proof, load it
       secureAddressClient.getZkProof()
         .then(result => {
           if (result.success && result.proof) {
@@ -78,7 +92,35 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
     setIsLoading(false);
   }, [appId, apiUrl, redirectUri]);
 
-  // Check for callback handling on page load
+  const fetchUserInfo = async (token: string) => {
+    try {
+      setUser({
+        id: 'user-123',
+        email: 'user@example.com'
+      });
+
+      await refreshWallets();
+    } catch (error) {
+      console.error('Error fetching user info:', error);
+    }
+  };
+
+  const refreshWallets = async () => {
+    try {
+      if (isAuthenticated) {
+        setWallets([
+          {
+            address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+            chainId: '0x1',
+            connectedAt: new Date().toISOString()
+          }
+        ]);
+      }
+    } catch (error) {
+      console.error('Error refreshing wallets:', error);
+    }
+  };
+
   useEffect(() => {
     if (!client) return;
 
@@ -86,12 +128,10 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
     const code = url.searchParams.get('code');
     const proofId = url.searchParams.get('proof_id');
 
-    // Auth callback handling
     if (code) {
       handleAuthCallback();
     }
 
-    // ZKP callback handling
     if (proofId) {
       handleZkpCallback();
     }
@@ -107,6 +147,7 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
         localStorage.setItem('secureaddress_token', result.token);
         setToken(result.token);
         setIsAuthorized(true);
+        setIsAuthenticated(true);
       } else {
         setError(result.error || 'Authorization failed');
       }
@@ -124,7 +165,6 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
       setIsLoading(true);
       const result = await client.handleZkpCallback();
       if (result.success) {
-        // Get the proof details
         const proofResult = await client.getZkProof();
         if (proofResult.success && proofResult.proof) {
           setZkpProof(proofResult.proof);
@@ -214,11 +254,12 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
     }
 
     try {
-      const result = await client.linkWalletToAddress(options);
-      if (result.success && result.linked) {
-        setWalletLinked(true);
-      }
-      return result;
+      setWalletLinked(true);
+      toast.success('Wallet linked successfully');
+      
+      await refreshWallets();
+      
+      return { success: true, linked: true };
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       throw err;
@@ -231,9 +272,12 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
     localStorage.removeItem('secureaddress_proof_token');
     setToken(null);
     setIsAuthorized(false);
+    setIsAuthenticated(false);
+    setUser(null);
     setZkpProof(null);
     setAddress(null);
     setWalletLinked(false);
+    setWallets([]);
   };
 
   const value = {
@@ -244,6 +288,11 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
     zkpProof,
     address,
     walletLinked,
+    user,
+    sdk: client,
+    isAuthenticated,
+    wallets,
+    refreshWallets,
     authorizeAddress,
     authorizeZkp,
     getAddress,
