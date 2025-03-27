@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
+import { useRole } from '@/context/RoleContext'; // Import useRole
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Sheet,
@@ -24,11 +25,11 @@ import { Separator } from '@/components/ui/separator';
 const Navbar: React.FC = () => {
   const location = useLocation();
   const { isAuthenticated, signOut, user } = useAuth();
+  const { isDeveloper, isAdmin } = useRole(); // Use the role context
   const isMobile = useIsMobile();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isDeveloperSection, setIsDeveloperSection] = useState(false);
-  const [hasDeveloperAccess, setHasDeveloperAccess] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -41,21 +42,12 @@ const Navbar: React.FC = () => {
       const isDevPath = developerPaths.some(path => location.pathname.startsWith(path));
       setIsDeveloperSection(isDevPath);
     };
-    
-    // Check developer access
-    const checkAccess = async () => {
-      if (isAuthenticated && user) {
-        const hasAccess = await checkDeveloperAccess(user.id);
-        setHasDeveloperAccess(hasAccess);
-      }
-    };
 
     window.addEventListener('scroll', handleScroll);
     checkIfDeveloperSection();
-    checkAccess();
 
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [location.pathname, isAuthenticated, user]);
+  }, [location.pathname]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -79,10 +71,10 @@ const Navbar: React.FC = () => {
     { to: '/developer/sandbox', label: 'Sandbox', authRequired: true, icon: <Beaker className="h-4 w-4 mr-2" /> },
   ];
 
-  // Get the appropriate nav items based on the current section
+  // Get the appropriate nav items based on the current section and role
   const navItems = isDeveloperSection 
     ? developerNavItems 
-    : [...regularNavItems, { to: '/developer', label: 'Developer', authRequired: true, icon: <Code className="h-4 w-4 mr-2" /> }];
+    : [...regularNavItems, ...(isDeveloper ? [{ to: '/developer', label: 'Developer', authRequired: true, icon: <Code className="h-4 w-4 mr-2" /> }] : [])];
     
   const filteredNavItems = navItems.filter(item => !item.authRequired || isAuthenticated);
 
@@ -186,8 +178,26 @@ const Navbar: React.FC = () => {
                       </NavigationMenuItem>
                     ))}
                   </NavigationMenuList>
+                  
+                  {/* Add admin section if user is admin */}
+                  {isAdmin && (
+                    <NavigationMenuItem>
+                      <Link
+                        to="/developer/admin"
+                        className={cn(
+                          "group inline-flex h-10 w-max items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors",
+                          location.pathname === '/developer/admin'
+                            ? "bg-muted text-primary"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        )}
+                      >
+                        Admin Panel
+                      </Link>
+                    </NavigationMenuItem>
+                  )}
                 </NavigationMenu>
               ) : (
+                // Only show developer link if user has developer access
                 filteredNavItems.map((item) => (
                   <Link
                     key={item.to}
@@ -293,7 +303,7 @@ const Navbar: React.FC = () => {
                       </Link>
                     ))}
                     
-                    {!isDeveloperSection && isAuthenticated && hasDeveloperAccess && (
+                    {!isDeveloperSection && isDeveloper && (
                       <Link
                         to="/developer"
                         className={`py-2 px-4 rounded-md transition-colors flex items-center ${

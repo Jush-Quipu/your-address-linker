@@ -11,11 +11,113 @@ export enum DeveloperRole {
 // Check if a user has developer access
 export const checkDeveloperAccess = async (userId: string): Promise<boolean> => {
   try {
-    // For now, all authenticated users have developer access
-    // In a production environment, this would check against a developer_roles table
-    return true;
+    // Check if the user has a developer role in the developer_roles table
+    const { data, error } = await supabase
+      .from('developer_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .in('role', [DeveloperRole.DEVELOPER, DeveloperRole.ADMIN]);
+      
+    if (error) {
+      console.error('Error checking developer roles:', error);
+      return false;
+    }
+    
+    // User has developer access if they have at least one role
+    return (data && data.length > 0);
   } catch (error) {
     console.error('Error checking developer access:', error);
+    return false;
+  }
+};
+
+// Check if a user has admin access
+export const checkAdminAccess = async (userId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('developer_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .eq('role', DeveloperRole.ADMIN);
+      
+    if (error) {
+      console.error('Error checking admin role:', error);
+      return false;
+    }
+    
+    // User has admin access if they have an admin role
+    return (data && data.length > 0);
+  } catch (error) {
+    console.error('Error checking admin access:', error);
+    return false;
+  }
+};
+
+// Get user's developer roles
+export const getUserRoles = async (userId: string): Promise<DeveloperRole[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('developer_roles')
+      .select('role')
+      .eq('user_id', userId);
+      
+    if (error) throw error;
+    
+    // Map the role strings to DeveloperRole enum values
+    return (data || []).map(record => record.role as DeveloperRole);
+  } catch (error) {
+    console.error('Error fetching user roles:', error);
+    toast.error('Failed to load user roles');
+    return [];
+  }
+};
+
+// Add a role to a user
+export const addUserRole = async (userId: string, role: DeveloperRole): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('developer_roles')
+      .insert({ user_id: userId, role });
+      
+    if (error) {
+      if (error.code === '23505') { // Unique violation - role already exists
+        toast.error('User already has this role');
+      } else {
+        toast.error('Failed to add role to user');
+        console.error('Error adding role:', error);
+      }
+      return false;
+    }
+    
+    toast.success(`Role ${role} added successfully`);
+    return true;
+  } catch (error) {
+    console.error('Error adding user role:', error);
+    toast.error('Failed to add role');
+    return false;
+  }
+};
+
+// Remove a role from a user
+export const removeUserRole = async (userId: string, role: DeveloperRole): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('developer_roles')
+      .delete()
+      .eq('user_id', userId)
+      .eq('role', role);
+      
+    if (error) {
+      toast.error('Failed to remove role from user');
+      console.error('Error removing role:', error);
+      return false;
+    }
+    
+    toast.success(`Role ${role} removed successfully`);
+    return true;
+  } catch (error) {
+    console.error('Error removing user role:', error);
+    toast.error('Failed to remove role');
     return false;
   }
 };

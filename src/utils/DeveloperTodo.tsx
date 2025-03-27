@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -127,7 +126,7 @@ const DeveloperTodo: React.FC = () => {
     {
       title: "Role-Based Access Control",
       description: "Implement proper developer role management system",
-      status: "in-progress",
+      status: "completed",
       priority: "high",
       subtasks: [
         { 
@@ -136,15 +135,15 @@ const DeveloperTodo: React.FC = () => {
         },
         { 
           title: "Implement checkDeveloperAccess with proper role checks", 
-          status: "not-started" 
+          status: "completed" 
         },
         { 
           title: "Implement role-based UI visibility", 
-          status: "not-started" 
+          status: "completed" 
         },
         { 
           title: "Create admin interface for managing developer roles", 
-          status: "not-started" 
+          status: "completed" 
         }
       ]
     },
@@ -410,13 +409,11 @@ const DeveloperTodo: React.FC = () => {
     }
   ];
 
-  // Group items by status
   const completedItems = todoItems.filter(item => item.status === 'completed');
   const inProgressItems = todoItems.filter(item => item.status === 'in-progress');
   const notStartedItems = todoItems.filter(item => item.status === 'not-started');
   const blockedItems = todoItems.filter(item => item.status === 'blocked');
 
-  // Count total subtasks and completed subtasks
   const totalSubtasks = todoItems.reduce((total, item) => 
     total + (item.subtasks?.length || 0), 0);
   
