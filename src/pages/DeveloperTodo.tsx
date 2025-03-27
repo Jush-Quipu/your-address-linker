@@ -10,6 +10,14 @@ import DeveloperTodoList from '@/components/DeveloperTodoList';
 import DeveloperTodoDetails from '@/components/DeveloperTodoDetails';
 import DeveloperTodoForm from '@/components/DeveloperTodoForm';
 import { type DeveloperTodo, getDeveloperTodos, getDeveloperTodoWithSubtasks } from '@/services/developerTodoService';
+import { LovableTodoManager } from '@/utils/lovableTodoManager';
+
+// Global reference to allow Lovable to access the todo manager
+declare global {
+  interface Window {
+    LovableTodoManager?: typeof LovableTodoManager;
+  }
+}
 
 const DeveloperTodoPage: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -17,6 +25,16 @@ const DeveloperTodoPage: React.FC = () => {
   const [selectedTodo, setSelectedTodo] = useState<DeveloperTodo | null>(null);
   const [isAddingTodo, setIsAddingTodo] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Make the todo manager available globally for Lovable
+  useEffect(() => {
+    window.LovableTodoManager = LovableTodoManager;
+    
+    return () => {
+      // Clean up when component unmounts
+      delete window.LovableTodoManager;
+    };
+  }, []);
 
   // Redirect to login if not authenticated
   if (!isLoading && !isAuthenticated) {
