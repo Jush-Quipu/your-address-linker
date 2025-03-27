@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -53,6 +54,33 @@ export type DeveloperApp = {
     verification_notes?: string;
   };
   user_id?: string;
+}
+
+// Database representation of developer app
+type DeveloperAppRecord = {
+  id: string;
+  app_name: string;
+  description: string | null;
+  website_url: string | null;
+  callback_urls: string[];
+  app_secret: string | null;
+  created_at: string;
+  user_id: string;
+  // Extended attributes stored in a separate table or added as columns to developer_apps
+  status?: AppStatus;
+  verification_status?: AppVerificationStatus;
+  monthly_request_limit?: number;
+  oauth_settings?: {
+    scopes: string[];
+    token_lifetime: number;
+    refresh_token_rotation: boolean;
+  };
+  verification_details?: {
+    verified_at?: string;
+    verified_by?: string;
+    verification_notes?: string;
+  };
+  updated_at?: string;
 }
 
 // Check if a user has developer access
@@ -180,7 +208,8 @@ export const getDeveloperApps = async () => {
       
     if (error) throw error;
     
-    const appsWithDefaults = (data || []).map(app => ({
+    // Enhance the app data with default values for added fields
+    const appsWithDefaults = (data || []).map((app: DeveloperAppRecord): DeveloperApp => ({
       ...app,
       status: app.status || AppStatus.DEVELOPMENT,
       verification_status: app.verification_status || AppVerificationStatus.PENDING,
@@ -289,6 +318,7 @@ export const updateDeveloperApp = async (appId: string, appData: {
       throw new Error('Authentication required');
     }
 
+    // Create update object with appropriate field names for the database
     const updateObj: any = {};
     
     if (appData.appName !== undefined) updateObj.app_name = appData.appName;
@@ -300,13 +330,14 @@ export const updateDeveloperApp = async (appId: string, appData: {
     
     if (appData.oauthSettings) {
       try {
+        // Get the current app details first to merge with new settings
         const { data: appDetails } = await supabase
           .from('developer_apps')
           .select('*')
           .eq('id', appId)
           .single();
           
-        const currentOAuthSettings = appDetails?.oauth_settings || {
+        const currentOAuthSettings = appDetails.oauth_settings || {
           scopes: ['read:profile', 'read:address'],
           token_lifetime: 3600,
           refresh_token_rotation: true
@@ -404,12 +435,13 @@ export const setAppVerificationStatus = async (appId: string, status: AppVerific
       throw new Error('Admin access required');
     }
     
-    const updateData = { 
+    // Create an update object with the verification status and details
+    const updateData: any = { 
       verification_status: status,
       verification_details: {
         verified_at: new Date().toISOString(),
         verified_by: session.session.user.id,
-        verification_notes: notes
+        verification_notes: notes || ''
       },
       updated_at: new Date().toISOString()
     };
