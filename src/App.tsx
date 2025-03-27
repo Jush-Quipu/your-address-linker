@@ -27,6 +27,9 @@ import DashboardAddresses from '@/pages/DashboardAddresses'; // Import Address m
 import DashboardApiKeys from '@/pages/DashboardApiKeys'; // Import API Keys page
 import DashboardSettings from '@/pages/DashboardSettings'; // Import Settings page
 import DeveloperPortal from '@/pages/DeveloperPortal'; // Import Developer Portal page
+import DeveloperDashboardPage from '@/pages/DeveloperDashboardPage'; // Import Developer Dashboard page
+import DeveloperAnalytics from '@/pages/DeveloperAnalytics'; // Import Developer Analytics page
+import DeveloperSandbox from '@/pages/DeveloperSandbox'; // Import Developer Sandbox page
 
 function App() {
   return (
@@ -58,6 +61,9 @@ function App() {
           <Route path="/blind-shipping" element={<BlindShippingPage />} />
           <Route path="/authorize" element={<AuthorizePage />} />
           <Route path="/developer" element={<DeveloperPortal />} />
+          <Route path="/developer-dashboard" element={<DeveloperDashboardPage />} />
+          <Route path="/developer/analytics" element={<DeveloperAnalytics />} />
+          <Route path="/developer/sandbox" element={<DeveloperSandbox />} />
         </Routes>
       </AuthProvider>
     </Router>

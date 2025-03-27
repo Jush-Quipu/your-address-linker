@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
@@ -45,6 +46,10 @@ const Dashboard: React.FC<DashboardProps> = ({
   const handleAccountSettings = () => {
     toast.info('Navigating to account settings');
     navigate('/dashboard/settings');
+  };
+
+  const handleDeveloperDashboard = () => {
+    navigate('/developer-dashboard');
   };
 
   return (
@@ -156,7 +161,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                 </p>
               </CardContent>
               <CardFooter>
-                <Button variant="outline" className="w-full" onClick={handleDeveloperPortal}>Open Developer Portal</Button>
+                <Button variant="outline" className="w-full" onClick={handleDeveloperDashboard}>Open Developer Dashboard</Button>
               </CardFooter>
             </Card>
             
@@ -286,6 +291,23 @@ const Dashboard: React.FC<DashboardProps> = ({
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 <Card>
                   <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Developer Dashboard</CardTitle>
+                    <CardDescription>Centralized developer hub</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pb-2">
+                    <p className="text-sm text-muted-foreground">
+                      Access all developer resources in one place
+                    </p>
+                  </CardContent>
+                  <CardFooter>
+                    <Button className="w-full" onClick={handleDeveloperDashboard}>
+                      Open Developer Dashboard
+                    </Button>
+                  </CardFooter>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
                     <CardTitle className="text-lg">Register Applications</CardTitle>
                     <CardDescription>Create OAuth applications</CardDescription>
                   </CardHeader>
@@ -329,7 +351,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     </p>
                   </CardContent>
                   <CardFooter>
-                    <Link to="/developer" className="w-full">
+                    <Link to="/developer-dashboard?tab=webhooks" className="w-full">
                       <Button className="w-full">
                         Manage Webhooks
                       </Button>
@@ -389,6 +411,44 @@ const Dashboard: React.FC<DashboardProps> = ({
                     <Link to="/api-testing" className="w-full">
                       <Button className="w-full">
                         Open API Tester
+                      </Button>
+                    </Link>
+                  </CardFooter>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Usage Analytics</CardTitle>
+                    <CardDescription>Monitor API usage</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pb-2">
+                    <p className="text-sm text-muted-foreground">
+                      View API usage metrics and performance
+                    </p>
+                  </CardContent>
+                  <CardFooter>
+                    <Link to="/developer/analytics" className="w-full">
+                      <Button className="w-full">
+                        View Analytics
+                      </Button>
+                    </Link>
+                  </CardFooter>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">SDK Sandbox</CardTitle>
+                    <CardDescription>Test environment</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pb-2">
+                    <p className="text-sm text-muted-foreground">
+                      Test SDK functionality without affecting real data
+                    </p>
+                  </CardContent>
+                  <CardFooter>
+                    <Link to="/developer/sandbox" className="w-full">
+                      <Button className="w-full">
+                        Open Sandbox
                       </Button>
                     </Link>
                   </CardFooter>
