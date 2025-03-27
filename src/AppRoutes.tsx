@@ -84,7 +84,11 @@ const AppRoutes = () => {
       <Route path="/developer/apps" element={<DeveloperPortalManager />} />
       <Route path="/developer/apps/:appId" element={<DeveloperPortalManager />} />
       <Route path="/developer/docs" element={<DeveloperDocs />} />
+      
+      {/* Developer Admin Routes */}
       <Route path="/developer/admin/apps" element={<DeveloperPortalManager />} />
+      <Route path="/developer/admin/roles" element={<AdminRolesPage />} />
+      <Route path="/developer/admin/monitoring" element={<ApiMonitoring />} />
       
       {/* Admin Routes */}
       <Route path="/admin" element={<AdminPage />} />

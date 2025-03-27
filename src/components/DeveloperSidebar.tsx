@@ -126,18 +126,53 @@ const DeveloperSidebar: React.FC = () => {
           
           {isAdmin && (
             <li className="pt-4 mt-4 border-t">
-              <Link 
-                to="/admin" 
-                className={cn(
-                  "flex items-center gap-2 p-2 text-sm rounded-md w-full transition-colors",
-                  isPathActive("/admin")
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted"
-                )}
-              >
-                <ShieldAlert className="h-4 w-4" />
-                Admin Panel
-              </Link>
+              <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
+                Admin Controls
+              </div>
+              <ul className="mt-1 space-y-1">
+                <li>
+                  <Link 
+                    to="/developer/admin/apps" 
+                    className={cn(
+                      "flex items-center gap-2 p-2 text-sm rounded-md w-full transition-colors",
+                      isPathActive("/developer/admin/apps")
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                    )}
+                  >
+                    <Server className="h-4 w-4" />
+                    Manage Apps
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/developer/admin/roles" 
+                    className={cn(
+                      "flex items-center gap-2 p-2 text-sm rounded-md w-full transition-colors",
+                      isPathActive("/developer/admin/roles")
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                    )}
+                  >
+                    <ShieldAlert className="h-4 w-4" />
+                    User Roles
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    to="/developer/admin/monitoring" 
+                    className={cn(
+                      "flex items-center gap-2 p-2 text-sm rounded-md w-full transition-colors",
+                      isPathActive("/developer/admin/monitoring")
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                    )}
+                  >
+                    <Activity className="h-4 w-4" />
+                    System Monitoring
+                  </Link>
+                </li>
+              </ul>
             </li>
           )}
         </ul>
