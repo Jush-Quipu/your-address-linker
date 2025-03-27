@@ -303,19 +303,19 @@ const DeveloperTodo: React.FC = () => {
         },
         { 
           title: "Add OAuth configuration options", 
-          status: "in-progress" 
+          status: "completed" 
         },
         { 
           title: "Implement API key rotation", 
-          status: "not-started" 
+          status: "completed" 
         },
         { 
           title: "Add usage limitations and quotas", 
-          status: "not-started" 
+          status: "completed" 
         },
         { 
           title: "Create application verification process", 
-          status: "not-started" 
+          status: "completed" 
         }
       ]
     },

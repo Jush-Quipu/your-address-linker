@@ -450,7 +450,13 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          monthly_request_limit: number | null
+          oauth_settings: Json | null
+          status: string | null
+          updated_at: string | null
           user_id: string
+          verification_details: Json | null
+          verification_status: string | null
           website_url: string | null
         }
         Insert: {
@@ -460,7 +466,13 @@ export type Database = {
           created_at?: string
           description?: string | null
           id: string
+          monthly_request_limit?: number | null
+          oauth_settings?: Json | null
+          status?: string | null
+          updated_at?: string | null
           user_id: string
+          verification_details?: Json | null
+          verification_status?: string | null
           website_url?: string | null
         }
         Update: {
@@ -470,7 +482,13 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          monthly_request_limit?: number | null
+          oauth_settings?: Json | null
+          status?: string | null
+          updated_at?: string | null
           user_id?: string
+          verification_details?: Json | null
+          verification_status?: string | null
           website_url?: string | null
         }
         Relationships: []
