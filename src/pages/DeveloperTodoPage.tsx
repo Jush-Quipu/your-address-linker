@@ -7,6 +7,10 @@ import Footer from '@/components/Footer';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { HomeIcon, ClipboardList } from 'lucide-react';
 import TodoList from '@/components/todo/TodoList';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Create a new query client instance
+const queryClient = new QueryClient();
 
 const DeveloperTodoPage: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -43,7 +47,9 @@ const DeveloperTodoPage: React.FC = () => {
             </BreadcrumbList>
           </Breadcrumb>
 
-          <TodoList />
+          <QueryClientProvider client={queryClient}>
+            <TodoList />
+          </QueryClientProvider>
         </div>
       </main>
       <Footer />
