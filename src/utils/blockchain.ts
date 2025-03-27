@@ -197,8 +197,5 @@ export const formatAddress = (address: string, startChars: number = 6, endChars:
 };
 
 // Add blockchain types to the global window object
-declare global {
-  interface Window {
-    ethereum?: any;
-  }
-}
+// Note: Make sure this doesn't conflict with existing definitions
+// in src/types/global.d.ts or other files
