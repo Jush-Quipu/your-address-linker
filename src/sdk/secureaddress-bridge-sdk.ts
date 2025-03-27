@@ -6,6 +6,7 @@ export interface SecureAddressBridgeOptions {
   sandbox?: boolean;
   sandboxOptions?: any;
   apiUrl?: string;
+  apiKey?: string; // Added apiKey property
 }
 
 export interface AuthorizeOptions {
@@ -65,6 +66,7 @@ export class SecureAddressBridge {
   private sandbox: boolean;
   private sandboxOptions: any;
   private apiUrl: string;
+  private apiKey?: string; // Added apiKey property
   private accessToken: string | null = null;
   
   constructor(options: SecureAddressBridgeOptions) {
@@ -73,9 +75,10 @@ export class SecureAddressBridge {
     this.sandbox = options.sandbox || false;
     this.sandboxOptions = options.sandboxOptions || {};
     this.apiUrl = options.apiUrl || 'https://api.secureaddress-bridge.com';
+    this.apiKey = options.apiKey; // Initialize apiKey
   }
   
-  setAccessToken(token: string) {
+  setAccessToken(token: string | null) {
     this.accessToken = token;
   }
   
