@@ -27,9 +27,10 @@ import DashboardAddresses from '@/pages/DashboardAddresses'; // Import Address m
 import DashboardApiKeys from '@/pages/DashboardApiKeys'; // Import API Keys page
 import DashboardSettings from '@/pages/DashboardSettings'; // Import Settings page
 import DeveloperPortal from '@/pages/DeveloperPortal'; // Import Developer Portal page
-import DeveloperDashboardPage from '@/pages/DeveloperDashboardPage'; // Import Developer Dashboard page
 import DeveloperAnalytics from '@/pages/DeveloperAnalytics'; // Import Developer Analytics page
 import DeveloperSandbox from '@/pages/DeveloperSandbox'; // Import Developer Sandbox page
+import DeveloperDashboard from '@/pages/DeveloperDashboard'; // Import Developer Dashboard page
+import DeveloperDocsHub from '@/pages/DeveloperDocsHub'; // Import Developer Documentation Hub page
 
 function App() {
   return (
@@ -60,10 +61,16 @@ function App() {
           <Route path="/permissions" element={<PermissionsPage />} />
           <Route path="/blind-shipping" element={<BlindShippingPage />} />
           <Route path="/authorize" element={<AuthorizePage />} />
-          <Route path="/developer" element={<DeveloperPortal />} />
-          <Route path="/developer-dashboard" element={<DeveloperDashboardPage />} />
+          
+          {/* Developer Section - Consolidated Routes */}
+          <Route path="/developer" element={<DeveloperDashboard />} />
+          <Route path="/developer/portal" element={<DeveloperPortal />} />
           <Route path="/developer/analytics" element={<DeveloperAnalytics />} />
           <Route path="/developer/sandbox" element={<DeveloperSandbox />} />
+          <Route path="/developer/docs" element={<DeveloperDocsHub />} />
+          
+          {/* Legacy routes that redirect */}
+          <Route path="/developer-dashboard" element={<DeveloperDashboard />} />
         </Routes>
       </AuthProvider>
     </Router>
