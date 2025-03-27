@@ -61,8 +61,8 @@ const SandboxLogs: React.FC<SandboxLogsProps> = ({ logs, onClearLogs }) => {
     }
   };
 
-  const statusColor = (status?: number) => {
-    if (!status) return '';
+  const statusColor = (status?: number): "default" | "destructive" | "outline" | "secondary" | "success" => {
+    if (!status) return 'default';
     if (status >= 200 && status < 300) return 'success';
     if (status >= 400) return 'destructive';
     return 'secondary';

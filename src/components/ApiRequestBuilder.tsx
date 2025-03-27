@@ -24,7 +24,10 @@ const ApiRequestBuilder: React.FC<ApiRequestBuilderProps> = ({
   onSave,
   loading = false
 }) => {
-  const [method, setMethod] = useState(initialRequest?.method || 'GET');
+  // Define the acceptable HTTP methods type
+  type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  
+  const [method, setMethod] = useState<HttpMethod>(initialRequest?.method as HttpMethod || 'GET');
   const [endpoint, setEndpoint] = useState(initialRequest?.endpoint || 'https://api.secureaddress.bridge/v1/');
   const [name, setName] = useState(initialRequest?.name || 'Custom Request');
   const [description, setDescription] = useState(initialRequest?.description || '');
@@ -40,7 +43,7 @@ const ApiRequestBuilder: React.FC<ApiRequestBuilderProps> = ({
   // Initialize headers and body from the initialRequest
   useEffect(() => {
     if (initialRequest) {
-      setMethod(initialRequest.method || 'GET');
+      setMethod(initialRequest.method as HttpMethod || 'GET');
       setEndpoint(initialRequest.endpoint || '');
       setName(initialRequest.name || 'Custom Request');
       setDescription(initialRequest.description || '');
@@ -90,7 +93,7 @@ const ApiRequestBuilder: React.FC<ApiRequestBuilderProps> = ({
     
     const request: ApiTestCase = {
       name,
-      method: method as any,
+      method: method,
       endpoint,
       headers: parsedHeaders,
       body: parsedBody,
@@ -123,7 +126,7 @@ const ApiRequestBuilder: React.FC<ApiRequestBuilderProps> = ({
     
     const request: ApiTestCase = {
       name,
-      method: method as any,
+      method: method,
       endpoint,
       headers: parsedHeaders,
       body: parsedBody,
@@ -195,7 +198,10 @@ const ApiRequestBuilder: React.FC<ApiRequestBuilderProps> = ({
           <div className="grid grid-cols-5 gap-4">
             <div className="col-span-1">
               <Label htmlFor="method">Method</Label>
-              <Select value={method} onValueChange={setMethod}>
+              <Select 
+                value={method} 
+                onValueChange={(value: HttpMethod) => setMethod(value)}
+              >
                 <SelectTrigger id="method">
                   <SelectValue placeholder="Method" />
                 </SelectTrigger>
