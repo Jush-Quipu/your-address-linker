@@ -29,7 +29,7 @@ const DeveloperSidebar: React.FC = () => {
               to="/developer" 
               className={cn(
                 "flex items-center gap-2 p-2 text-sm rounded-md w-full transition-colors",
-                isPathActive("/developer") && !isPathActive("/developer/docs") && !isPathActive("/developer/testing") && !isPathActive("/developer/analytics") && !isPathActive("/developer/monitoring") && !isPathActive("/developer/todo") && !isPathActive("/developer/apps")
+                isPathActive("/developer") && !isPathActive("/developer/docs") && !isPathActive("/developer/testing") && !isPathActive("/developer/analytics") && !isPathActive("/developer/monitoring") && !isPathActive("/developer/todo") && !isPathActive("/developer/apps") && !isPathActive("/developer/portal")
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-muted"
               )}
@@ -54,10 +54,10 @@ const DeveloperSidebar: React.FC = () => {
           </li>
           <li>
             <Link 
-              to="/developer/apps" 
+              to="/developer/portal" 
               className={cn(
                 "flex items-center gap-2 p-2 text-sm rounded-md w-full transition-colors",
-                isPathActive("/developer/apps")
+                isPathActive("/developer/portal")
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-muted"
               )}

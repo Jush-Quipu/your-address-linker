@@ -109,125 +109,89 @@ router.post('/api/verify-proof', async (req, res) => {
              p.values.some(v => ['CA', 'NY', 'TX'].includes(v))
       );
       
-      // Take action based on the verification
+      // Now we can take actions based on these verifications
+      // without ever seeing the actual address data
       if (isInUS && isInTargetState) {
         return res.json({
-          success: true,
           eligible: true,
           message: 'User is eligible for this service'
         });
       } else {
         return res.json({
-          success: true,
           eligible: false,
           message: 'User is not in an eligible location'
         });
       }
     } else {
       return res.status(400).json({
-        success: false,
-        message: 'Invalid proof'
+        error: 'Invalid proof',
+        message: verification.error
       });
     }
   } catch (error) {
-    console.error('Proof verification error:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Failed to verify proof'
-    });
+    console.error('Error verifying proof:', error);
+    return res.status(500).json({ error: 'Failed to verify proof' });
   }
 });
 
 module.exports = router;`;
 
-  const zkpSmartContractCode = `// SPDX-License-Identifier: MIT
+  const smartContractCode = `// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract ZkAddressVerifier is Ownable {
-    // Trusted verifier address (the SecureAddress Bridge oracle)
+    // Mapping from wallet address to verification status for different predicates
+    mapping(address => mapping(bytes32 => bool)) public verifiedPredicates;
+    
+    // Verifier contract address (the SecureAddress Bridge verifier)
     address public verifier;
     
-    // Structure to store proof verification status
-    struct ProofVerification {
-        bool verified;
-        uint256 timestamp;
-        bytes32 proofHash;
-    }
-    
-    // Mapping from wallet address to verification status
-    mapping(address => ProofVerification) public verifications;
-    
     // Events
-    event ProofVerified(address indexed wallet, bytes32 proofHash);
+    event PredicateVerified(address indexed wallet, bytes32 predicateHash);
     event VerifierChanged(address indexed newVerifier);
     
     constructor(address _verifier) {
         verifier = _verifier;
     }
     
-    // Change the verifier address
+    // Set the verifier address
     function setVerifier(address _verifier) external onlyOwner {
         verifier = _verifier;
         emit VerifierChanged(_verifier);
     }
     
-    // Verify a ZK proof on-chain (called by the oracle)
-    function verifyProof(
-        address wallet,
-        bytes32 proofHash,
-        bytes calldata signature,
-        uint256 expiresAt
+    // Verify a ZK predicate
+    function verifyPredicate(
+        address wallet, 
+        bytes32 predicateHash,
+        bytes memory proof
     ) external returns (bool) {
-        // Ensure the caller is the trusted verifier
+        // Ensure only the trusted verifier can call this
         require(msg.sender == verifier, "Only the verifier can call this function");
         
-        // Verify that the signature is valid
-        bytes32 messageHash = keccak256(abi.encodePacked(wallet, proofHash, expiresAt));
-        require(recoverSigner(messageHash, signature) == wallet, "Invalid signature");
+        // Set the predicate as verified
+        verifiedPredicates[wallet][predicateHash] = true;
         
-        // Store the verification
-        verifications[wallet] = ProofVerification({
-            verified: true,
-            timestamp: block.timestamp,
-            proofHash: proofHash
-        });
-        
-        emit ProofVerified(wallet, proofHash);
+        emit PredicateVerified(wallet, predicateHash);
         return true;
     }
     
-    // Helper function to recover signer from signature
-    function recoverSigner(bytes32 messageHash, bytes memory sig) internal pure returns (address) {
-        require(sig.length == 65, "Invalid signature length");
-        
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-        
-        assembly {
-            r := mload(add(sig, 32))
-            s := mload(add(sig, 64))
-            v := byte(0, mload(add(sig, 96)))
-        }
-        
-        if (v < 27) {
-            v += 27;
-        }
-        
-        return ecrecover(messageHash, v, r, s);
+    // Check if a wallet has a verified predicate
+    function hasVerifiedPredicate(address wallet, bytes32 predicateHash) external view returns (bool) {
+        return verifiedPredicates[wallet][predicateHash];
     }
     
-    // Check if a wallet has a verified proof
-    function isVerified(address wallet) external view returns (bool) {
-        return verifications[wallet].verified;
+    // Helper to generate consistent predicate hashes
+    function generatePredicateHash(string memory predicateType, string memory value) external pure returns (bytes32) {
+        return keccak256(abi.encodePacked(predicateType, ":", value));
     }
     
-    // Get full verification details
-    function getVerification(address wallet) external view returns (bool, uint256, bytes32) {
-        ProofVerification memory verification = verifications[wallet];
-        return (verification.verified, verification.timestamp, verification.proofHash);
+    // Example: Check if a wallet is verified to be in a specific country
+    function isInCountry(address wallet, string memory countryCode) external view returns (bool) {
+        bytes32 predicateHash = keccak256(abi.encodePacked("country:", countryCode));
+        return verifiedPredicates[wallet][predicateHash];
     }
 }`;
 
@@ -243,51 +207,37 @@ contract ZkAddressVerifier is Ownable {
     >
       <h2>Introduction</h2>
       <p>
-        Zero-Knowledge Proofs (ZKPs) allow you to verify certain properties about data without revealing the data itself.
+        Zero-knowledge proofs (ZKPs) provide a powerful way to prove facts about data without revealing the data itself.
         In the context of SecureAddress Bridge, ZKPs enable:
       </p>
       <ul>
-        <li>Verifying a user is located in a specific country or region without revealing their exact address</li>
-        <li>Confirming a shipping address meets certain criteria without exposing the full address</li>
-        <li>Proving address ownership on a blockchain without linking to personal information</li>
-        <li>Creating privacy-preserving eligibility checks for region-restricted services</li>
+        <li>Verifying properties about a user&apos;s address without exposing the complete address</li>
+        <li>Proving a user is in a specific region, country, or jurisdiction without revealing their exact location</li>
+        <li>Enabling compliance with geographic regulations while preserving user privacy</li>
+        <li>Creating location-based dApps with strong privacy guarantees</li>
       </ul>
       
       <h2>Prerequisites</h2>
-      <p>To implement ZK proofs with SecureAddress Bridge, you&apos;ll need:</p>
+      <p>Before proceeding with this tutorial, you&apos;ll need:</p>
       <ul>
-        <li>An active SecureAddress Bridge developer account with ZKP features enabled</li>
-        <li>The SecureAddress Bridge SDK installed in your project</li>
-        <li>Basic understanding of cryptographic concepts</li>
+        <li>An active SecureAddress Bridge developer account</li>
+        <li>Familiarity with the SecureAddress Bridge SDK</li>
+        <li>Basic understanding of zero-knowledge proofs conceptually</li>
       </ul>
       
-      <h2>Step 1: Understand ZK Proof Types</h2>
+      <h2>Step 1: Install Required Dependencies</h2>
       <p>
-        SecureAddress Bridge offers several types of zero-knowledge proofs:
+        First, install the SecureAddress Bridge SDK:
       </p>
+      <CodeBlock
+        code="npm install @secureaddress/bridge-sdk"
+        language="bash"
+        showLineNumbers={false}
+      />
       
-      <h3>1. Location Proofs</h3>
-      <ul>
-        <li><strong>country_proof</strong>: Proves a user resides in a specific country</li>
-        <li><strong>region_proof</strong>: Proves a user is in a specific state/province/region</li>
-        <li><strong>postal_code_prefix</strong>: Proves a user&apos;s postal code begins with specific digits</li>
-      </ul>
-      
-      <h3>2. Address Characteristic Proofs</h3>
-      <ul>
-        <li><strong>address_type</strong>: Proves an address is residential, commercial, or PO Box</li>
-        <li><strong>delivery_zone</strong>: Proves an address is in a specific delivery zone</li>
-      </ul>
-      
-      <h3>3. Verification Status Proofs</h3>
-      <ul>
-        <li><strong>verification_level</strong>: Proves an address has been verified to a certain level</li>
-        <li><strong>verification_date</strong>: Proves when an address was last verified</li>
-      </ul>
-      
-      <h2>Step 2: Implement Client-Side ZKP Requests</h2>
+      <h2>Step 2: Implement Client-Side ZKP Authorization</h2>
       <p>
-        To request a zero-knowledge proof from a user, implement the following in your client application:
+        Create a component that requests and handles zero-knowledge proofs:
       </p>
       <CodeBlock
         code={zkpClientCode}
@@ -295,9 +245,9 @@ contract ZkAddressVerifier is Ownable {
         showLineNumbers={true}
       />
       
-      <h2>Step 3: Verify Proofs Server-Side</h2>
+      <h2>Step 3: Verify Proofs on the Server</h2>
       <p>
-        Once a user has authorized and generated a ZK proof, you&apos;ll need to verify it in your backend:
+        On your server, implement an endpoint to verify the proofs:
       </p>
       <CodeBlock
         code={zkpServerCode}
@@ -305,44 +255,102 @@ contract ZkAddressVerifier is Ownable {
         showLineNumbers={true}
       />
       
-      <h2>Step 4: Integrate with Blockchain (Optional)</h2>
+      <h2>Step 4: Blockchain Integration (Optional)</h2>
       <p>
-        For Web3 applications, you can verify ZK proofs on-chain using a smart contract:
+        For Web3 applications, you can integrate ZK proofs with smart contracts:
       </p>
       <CodeBlock
-        code={zkpSmartContractCode}
+        code={smartContractCode}
         language="solidity"
         showLineNumbers={true}
       />
       
-      <h2>Advanced ZKP Features</h2>
-      
-      <h3>Complex Predicates</h3>
+      <h2>How Zero-Knowledge Proofs Work in SecureAddress Bridge</h2>
       <p>
-        You can combine multiple conditions in a single proof:
+        The SecureAddress Bridge ZKP system works through these key components:
+      </p>
+      
+      <ol>
+        <li>
+          <strong>Predicate Definition</strong>
+          <p>
+            A predicate is a statement about an address that can be proven true or false,
+            such as &quot;The user&apos;s country is the United States&quot; or &quot;The user&apos;s postal code is within a specific range.&quot;
+          </p>
+        </li>
+        <li>
+          <strong>Proof Generation</strong>
+          <p>
+            When a user authorizes a ZKP request, the SecureAddress Bridge generates a cryptographic
+            proof that the predicate is true for their verified address.
+          </p>
+        </li>
+        <li>
+          <strong>Proof Verification</strong>
+          <p>
+            Your application can verify this proof without ever seeing the address data itself.
+            The verification process confirms that the predicate is true without revealing any
+            information beyond what was explicitly authorized.
+          </p>
+        </li>
+      </ol>
+      
+      <h2>Available Predicate Types</h2>
+      <p>
+        SecureAddress Bridge supports the following predicate types:
+      </p>
+      
+      <h3>Equality Predicates</h3>
+      <ul>
+        <li><strong>equals</strong> - Proves that a field exactly matches a value</li>
+        <li><strong>notEquals</strong> - Proves that a field does not match a value</li>
+      </ul>
+      
+      <h3>Set Membership Predicates</h3>
+      <ul>
+        <li><strong>in</strong> - Proves that a field is one of a set of values</li>
+        <li><strong>notIn</strong> - Proves that a field is not in a set of values</li>
+      </ul>
+      
+      <h3>Range Predicates</h3>
+      <ul>
+        <li><strong>greaterThan</strong> - Proves that a numeric field is greater than a value</li>
+        <li><strong>lessThan</strong> - Proves that a numeric field is less than a value</li>
+        <li><strong>inRange</strong> - Proves that a numeric field is within a range</li>
+      </ul>
+      
+      <h3>Geographic Predicates</h3>
+      <ul>
+        <li><strong>withinRadius</strong> - Proves that an address is within a radius of a point</li>
+        <li><strong>withinBoundary</strong> - Proves that an address is within a geographic boundary</li>
+      </ul>
+      
+      <h2>Privacy Considerations</h2>
+      <p>
+        When implementing ZKPs, keep these privacy best practices in mind:
+      </p>
+      <ul>
+        <li>Only request the minimum information needed for your use case</li>
+        <li>Be transparent with users about what you&apos;re verifying</li>
+        <li>Store proof results securely, ideally without linking them to user identities</li>
+        <li>Implement short expiration periods for proofs that may change over time</li>
+      </ul>
+      
+      <h2>Example Use Cases</h2>
+      
+      <h3>Region-Restricted Content</h3>
+      <p>
+        Verify a user is in an eligible region without tracking their specific location:
       </p>
       <CodeBlock
-        code={`// Request proof with complex predicates
+        code={`// Client-side
 await client.authorizeZkp({
-  proofType: 'address_eligibility',
+  proofType: 'region_eligibility',
   predicates: [
-    // User must be in the US
     {
       field: 'country',
-      operation: 'equals',
-      value: 'US'
-    },
-    // AND in one of these states
-    {
-      field: 'state',
       operation: 'in',
-      values: ['CA', 'NY', 'TX', 'FL', 'IL']
-    },
-    // AND NOT in these postal codes
-    {
-      field: 'postal_code',
-      operation: 'not_in',
-      values: ['90210', '10001', '77001']
+      values: ['US', 'CA', 'MX']
     }
   ],
   expiryDays: 30
@@ -351,94 +359,52 @@ await client.authorizeZkp({
         showLineNumbers={true}
       />
       
-      <h3>Proof Chaining</h3>
+      <h3>Tax Compliance</h3>
       <p>
-        For enhanced privacy, you can chain proofs together without revealing the connection:
+        Verify tax jurisdiction without storing address details:
       </p>
       <CodeBlock
-        code={`// First, prove the user is in the US
-const countryProof = await client.getZkProof();
-
-// Then, use that proof to request a more specific proof
-// without revealing the connection between them
+        code={`// Client-side
 await client.authorizeZkp({
-  proofType: 'address_details',
-  previousProofId: countryProof.id,
+  proofType: 'tax_jurisdiction',
   predicates: [
     {
       field: 'state',
       operation: 'equals',
       value: 'CA'
     }
-  ]
+  ],
+  expiryDays: 90
 });`}
         language="javascript"
         showLineNumbers={true}
       />
       
-      <h3>Temporal Conditions</h3>
+      <h3>KYC/AML for DeFi</h3>
       <p>
-        You can verify conditions about when an address was verified or updated:
+        Implement compliance checks without compromising privacy:
       </p>
       <CodeBlock
-        code={`// Prove an address was verified in the last 90 days
-await client.authorizeZkp({
-  proofType: 'verification_freshness',
-  predicates: [
-    {
-      field: 'verification_date',
-      operation: 'greater_than',
-      value: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
-    }
-  ]
-});`}
-        language="javascript"
+        code={`// Smart contract integration
+// This would be called by the SecureAddress Bridge verifier
+// after generating and validating the proof
+function verifyUserCompliance(address userWallet) external onlyVerifier {
+  bytes32 predicateHash = keccak256(abi.encodePacked("compliant_jurisdiction"));
+  verifiedPredicates[userWallet][predicateHash] = true;
+  emit ComplianceVerified(userWallet);
+}`}
+        language="solidity"
         showLineNumbers={true}
       />
-      
-      <h2>Privacy and Security Considerations</h2>
-      <p>
-        When working with ZK proofs, keep these best practices in mind:
-      </p>
-      <ul>
-        <li>Only request the minimum information needed for your use case</li>
-        <li>Set appropriate expiration times for proofs</li>
-        <li>Never store the user&apos;s actual address alongside proof verifications</li>
-        <li>Use unique proof requests for sensitive operations to prevent replay attacks</li>
-        <li>Implement proper error handling for cases where proofs fail verification</li>
-      </ul>
-      
-      <h2>Real-World Applications</h2>
-      <p>
-        Zero-knowledge proofs enable many privacy-preserving applications:
-      </p>
-      <ul>
-        <li>
-          <strong>Geo-Restricted Services</strong>
-          <p>Verify a user is in an eligible region without knowing exactly where they live</p>
-        </li>
-        <li>
-          <strong>Regulatory Compliance</strong>
-          <p>Implement KYC/AML requirements without storing sensitive user data</p>
-        </li>
-        <li>
-          <strong>DAO Governance</strong>
-          <p>Ensure geographic diversity in voting without exposing member locations</p>
-        </li>
-        <li>
-          <strong>Decentralized Commerce</strong>
-          <p>Confirm shipping eligibility without revealing customer addresses to smart contracts</p>
-        </li>
-      </ul>
       
       <h2>Next Steps</h2>
       <p>
-        Now that you&apos;ve learned about implementing ZK proofs, consider exploring:
+        Now that you understand how to implement ZKPs with SecureAddress Bridge, consider exploring:
       </p>
       <ul>
-        <li>Custom ZK proof types for specific business requirements</li>
-        <li>Integrating with ZK rollups for scalable on-chain verification</li>
-        <li>Building privacy-preserving marketplaces using SecureAddress Bridge</li>
+        <li>Combining ZKPs with wallet linking for privacy-preserving Web3 applications</li>
+        <li>Implementing complex multi-predicate proofs for sophisticated verification logic</li>
+        <li>Creating your own custom verification predicates for specialized use cases</li>
       </ul>
     </TutorialLayout>
   );

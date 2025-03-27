@@ -19,6 +19,12 @@ import Privacy from '@/pages/Privacy';
 import Compliance from '@/pages/Compliance';
 import NotFound from '@/pages/NotFound';
 
+// Tutorial Pages
+import EcommerceIntegration from '@/pages/tutorials/EcommerceIntegration';
+import Web3WalletLinking from '@/pages/tutorials/Web3WalletLinking';
+import WebhookIntegration from '@/pages/tutorials/WebhookIntegration';
+import ZkProofs from '@/pages/tutorials/ZkProofs';
+
 // Authentication
 import Auth from '@/pages/Auth';
 import Connect from '@/pages/Connect';
@@ -27,10 +33,12 @@ import Connect from '@/pages/Connect';
 import Dashboard from '@/pages/Dashboard';
 import DashboardSettings from '@/pages/DashboardSettings';
 import DashboardApiKeys from '@/pages/DashboardApiKeys';
+import DashboardAddresses from '@/pages/DashboardAddresses';
 import BlindShipping from '@/pages/BlindShipping';
 import MyShipments from '@/pages/MyShipments';
 
 // Developer
+import DeveloperDashboard from '@/pages/DeveloperDashboard';
 import DeveloperPortal from '@/pages/DeveloperPortal';
 import ApiTesting from '@/pages/ApiTesting';
 import DeveloperAnalytics from '@/pages/DeveloperAnalytics';
@@ -63,6 +71,12 @@ const AppRoutes = () => {
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/compliance" element={<Compliance />} />
       
+      {/* Tutorial Routes */}
+      <Route path="/tutorials/ecommerce-integration" element={<EcommerceIntegration />} />
+      <Route path="/tutorials/web3-wallet-linking" element={<Web3WalletLinking />} />
+      <Route path="/tutorials/webhook-integration" element={<WebhookIntegration />} />
+      <Route path="/tutorials/zk-proofs" element={<ZkProofs />} />
+      
       {/* Authentication */}
       <Route path="/auth" element={<Auth />} />
       <Route path="/connect" element={<Connect />} />
@@ -71,11 +85,13 @@ const AppRoutes = () => {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/dashboard/settings" element={<DashboardSettings />} />
       <Route path="/dashboard/api-keys" element={<DashboardApiKeys />} />
+      <Route path="/dashboard/addresses" element={<DashboardAddresses />} />
       <Route path="/blind-shipping" element={<BlindShipping />} />
       <Route path="/my-shipments" element={<MyShipments />} />
       
       {/* Developer Routes */}
-      <Route path="/developer" element={<DeveloperPortal />} />
+      <Route path="/developer" element={<DeveloperDashboard />} />
+      <Route path="/developer/portal" element={<DeveloperPortal />} />
       <Route path="/developer/testing" element={<ApiTesting />} />
       <Route path="/developer/analytics" element={<DeveloperAnalytics />} />
       <Route path="/developer/monitoring" element={<ApiMonitoring />} />

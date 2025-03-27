@@ -1,89 +1,147 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Navbar from '@/components/Navbar';
-import DashboardComponent from '@/components/Dashboard';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext';
-import { getPhysicalAddresses, getWalletAddresses, getAddressPermissions } from '@/services/addressService';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { MapPin, Package, Key, Settings, Shield } from 'lucide-react';
 
-const DashboardPage: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+const Dashboard: React.FC = () => {
+  const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState({
-    physicalAddresses: [],
-    walletAddresses: [],
-    permissions: []
-  });
 
-  useEffect(() => {
-    // Redirect if not authenticated
-    if (!isAuthenticated && !loading) {
-      toast.error('Authentication required', {
-        description: 'Please sign in to access the dashboard',
-      });
+  // Redirect if not authenticated
+  React.useEffect(() => {
+    if (!isAuthenticated) {
       navigate('/auth');
     }
-  }, [isAuthenticated, navigate, loading]);
-
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!isAuthenticated) return;
-      
-      setLoading(true);
-      try {
-        // Fetch all required data in parallel
-        const [addresses, wallets, permissions] = await Promise.all([
-          getPhysicalAddresses(),
-          getWalletAddresses(),
-          getAddressPermissions()
-        ]);
-        
-        setDashboardData({
-          physicalAddresses: addresses,
-          walletAddresses: wallets,
-          permissions: permissions
-        });
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        toast.error('Failed to load dashboard data', {
-          description: 'Please try again later',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigate]);
 
   return (
     <div className="min-h-screen">
       <Navbar />
       <main className="pt-32 pb-20 px-6 md:px-12">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">Your Dashboard</h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Manage your wallet and home address connections, privacy settings, and app permissions.
-            </p>
-          </div>
+          <h1 className="text-3xl md:text-4xl font-bold mb-6">Dashboard</h1>
           
-          {loading ? (
-            <div className="flex justify-center items-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <span className="ml-2">Loading your data...</span>
-            </div>
-          ) : (
-            <DashboardComponent 
-              physicalAddresses={dashboardData.physicalAddresses}
-              walletAddresses={dashboardData.walletAddresses}
-              permissions={dashboardData.permissions}
-            />
-          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Address Management Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <MapPin className="h-5 w-5 mr-2 text-primary" />
+                  Address Management
+                </CardTitle>
+                <CardDescription>Manage your verified addresses</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Add, verify, and manage your physical addresses.
+                </p>
+                <Button 
+                  variant="default" 
+                  className="w-full"
+                  onClick={() => navigate('/dashboard/addresses')}
+                >
+                  Manage Addresses
+                </Button>
+              </CardContent>
+            </Card>
+            
+            {/* Shipment Tracking Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Package className="h-5 w-5 mr-2 text-primary" />
+                  Shipment Tracking
+                </CardTitle>
+                <CardDescription>Track your shipments</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  View and track all your blind shipments.
+                </p>
+                <Button 
+                  variant="default" 
+                  className="w-full"
+                  onClick={() => navigate('/my-shipments')}
+                >
+                  View Shipments
+                </Button>
+              </CardContent>
+            </Card>
+            
+            {/* API Keys Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Key className="h-5 w-5 mr-2 text-primary" />
+                  API Keys
+                </CardTitle>
+                <CardDescription>Manage your API keys</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Generate and manage API keys for integration.
+                </p>
+                <Button 
+                  variant="default" 
+                  className="w-full"
+                  onClick={() => navigate('/dashboard/api-keys')}
+                >
+                  Manage API Keys
+                </Button>
+              </CardContent>
+            </Card>
+            
+            {/* Settings Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Settings className="h-5 w-5 mr-2 text-primary" />
+                  Account Settings
+                </CardTitle>
+                <CardDescription>Manage your account</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Update your profile and account settings.
+                </p>
+                <Button 
+                  variant="default" 
+                  className="w-full"
+                  onClick={() => navigate('/dashboard/settings')}
+                >
+                  Account Settings
+                </Button>
+              </CardContent>
+            </Card>
+            
+            {/* Developer Portal Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Shield className="h-5 w-5 mr-2 text-primary" />
+                  Developer Portal
+                </CardTitle>
+                <CardDescription>Access developer tools</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Access the developer portal for API docs and tools.
+                </p>
+                <Button 
+                  variant="default" 
+                  className="w-full"
+                  onClick={() => navigate('/developer')}
+                >
+                  Developer Portal
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
       <Footer />
@@ -91,4 +149,4 @@ const DashboardPage: React.FC = () => {
   );
 };
 
-export default DashboardPage;
+export default Dashboard;
