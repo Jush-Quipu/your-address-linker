@@ -49,7 +49,7 @@ export const submitVerificationDocument = async (document: VerificationDocument)
     }
 
     // Use environment variable or compute URL from window.location if in browser
-    const supabaseUrl = process.env.SUPABASE_URL || supabase.getUrl().replace(/\/rest\/v1\/?$/, '');
+    const supabaseUrl = process.env.SUPABASE_URL || supabase.getUrl();
     
     const response = await fetch(`${supabaseUrl}/functions/v1/verify-address-document`, {
       method: 'POST',
@@ -90,7 +90,7 @@ export const getAddressVerificationStatus = async (addressId: string): Promise<V
     }
 
     // Use environment variable or compute URL from window.location if in browser
-    const supabaseUrl = process.env.SUPABASE_URL || supabase.getUrl().replace(/\/rest\/v1\/?$/, '');
+    const supabaseUrl = process.env.SUPABASE_URL || supabase.getUrl();
     
     const response = await fetch(`${supabaseUrl}/functions/v1/get-verification-status?address_id=${addressId}`, {
       method: 'GET',
@@ -130,7 +130,7 @@ export const getVerificationLogs = async (addressId: string): Promise<Verificati
       document_type: item.document_type || undefined,
       status: item.status,
       verification_date: item.verification_date,
-      metadata: item.metadata ? item.metadata as Record<string, any> : null
+      metadata: item.metadata ? (item.metadata as Record<string, any>) : null
     }));
     
     return transformedData;

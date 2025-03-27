@@ -34,7 +34,7 @@ export interface WebhookUpdateParams {
 
 // Helper function to get Supabase URL safely
 const getSupabaseUrl = (): string => {
-  return process.env.SUPABASE_URL || supabase.getUrl().replace(/\/rest\/v1\/?$/, '');
+  return process.env.SUPABASE_URL || supabase.getUrl();
 };
 
 // Function to register a new webhook
