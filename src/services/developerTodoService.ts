@@ -6,7 +6,7 @@ export interface DeveloperTodo {
   id: string;
   title: string;
   description: string | null;
-  status: 'not-started' | 'in-progress' | 'completed';
+  status: 'not-started' | 'in-progress' | 'completed' | 'blocked';
   priority: 'low' | 'medium' | 'high';
   created_at: string;
   updated_at: string;
@@ -17,7 +17,7 @@ export interface DeveloperSubtask {
   id: string;
   todo_id: string;
   title: string;
-  status: 'not-started' | 'in-progress' | 'completed';
+  status: 'not-started' | 'in-progress' | 'completed' | 'blocked';
   created_at: string;
   updated_at: string;
 }
@@ -131,7 +131,7 @@ export const createDeveloperSubtask = async (params: SubtaskCreateParams): Promi
 };
 
 // Update todo status
-export const updateTodoStatus = async (todoId: string, status: 'not-started' | 'in-progress' | 'completed'): Promise<boolean> => {
+export const updateTodoStatus = async (todoId: string, status: 'not-started' | 'in-progress' | 'completed' | 'blocked'): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('developer_todos')
@@ -150,7 +150,7 @@ export const updateTodoStatus = async (todoId: string, status: 'not-started' | '
 };
 
 // Update subtask status
-export const updateSubtaskStatus = async (subtaskId: string, status: 'not-started' | 'in-progress' | 'completed'): Promise<boolean> => {
+export const updateSubtaskStatus = async (subtaskId: string, status: 'not-started' | 'in-progress' | 'completed' | 'blocked'): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('developer_subtasks')

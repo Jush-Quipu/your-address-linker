@@ -9,9 +9,9 @@ import { HomeIcon, CodeIcon } from 'lucide-react';
 import DeveloperTodoList from '@/components/DeveloperTodoList';
 import DeveloperTodoDetails from '@/components/DeveloperTodoDetails';
 import DeveloperTodoForm from '@/components/DeveloperTodoForm';
-import { DeveloperTodo, getDeveloperTodos, getDeveloperTodoWithSubtasks } from '@/services/developerTodoService';
+import { type DeveloperTodo, getDeveloperTodos, getDeveloperTodoWithSubtasks } from '@/services/developerTodoService';
 
-const DeveloperTodo: React.FC = () => {
+const DeveloperTodoPage: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const [todos, setTodos] = useState<DeveloperTodo[]>([]);
   const [selectedTodo, setSelectedTodo] = useState<DeveloperTodo | null>(null);
@@ -115,4 +115,4 @@ const DeveloperTodo: React.FC = () => {
   );
 };
 
-export default DeveloperTodo;
+export default DeveloperTodoPage;
