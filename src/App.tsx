@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import HomePage from '@/pages/Index'; // Corrected import path
@@ -31,6 +30,7 @@ import DeveloperAnalytics from '@/pages/DeveloperAnalytics'; // Import Developer
 import DeveloperSandbox from '@/pages/DeveloperSandbox'; // Import Developer Sandbox page
 import DeveloperDashboard from '@/pages/DeveloperDashboard'; // Import Developer Dashboard page
 import DeveloperDocsHub from '@/pages/DeveloperDocsHub'; // Import Developer Documentation Hub page
+import DeveloperTodoPage from './pages/DeveloperTodoPage';
 
 function App() {
   return (
@@ -71,6 +71,9 @@ function App() {
           
           {/* Legacy routes that redirect */}
           <Route path="/developer-dashboard" element={<DeveloperDashboard />} />
+          
+          {/* Add this route inside the Routes component, alongside the other developer routes */}
+          <Route path="/developer/todo" element={<DeveloperTodoPage />} />
         </Routes>
       </AuthProvider>
     </Router>

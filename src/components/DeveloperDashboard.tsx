@@ -10,7 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import WebhookManager from '@/components/WebhookManager';
-import { Code, Settings, Compass, ServerIcon, Bell, Database, Book, Beaker, History } from 'lucide-react';
+import { Code, Settings, Compass, ServerIcon, Bell, Database, Book, Beaker, History, ClipboardList } from 'lucide-react';
 
 interface DeveloperApplication {
   id: string;
@@ -76,6 +76,10 @@ const DeveloperDashboard: React.FC = () => {
     navigate('/api-testing');
   };
 
+  const handleNavigateToTodo = () => {
+    navigate('/developer/todo');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -88,9 +92,15 @@ const DeveloperDashboard: React.FC = () => {
             Manage your applications, API keys, and developer resources
           </p>
         </div>
-        <Button onClick={handleNavigateToPortal}>
-          Open Developer Portal
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleNavigateToTodo}>
+            <ClipboardList className="mr-2 h-4 w-4" />
+            Implementation Todo
+          </Button>
+          <Button onClick={handleNavigateToPortal}>
+            Open Developer Portal
+          </Button>
+        </div>
       </div>
       
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
