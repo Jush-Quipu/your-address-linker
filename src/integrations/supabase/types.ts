@@ -253,6 +253,60 @@ export type Database = {
         }
         Relationships: []
       }
+      api_quota_usage: {
+        Row: {
+          app_id: string
+          id: string
+          last_updated: string
+          month: string
+          request_count: number
+        }
+        Insert: {
+          app_id: string
+          id?: string
+          last_updated?: string
+          month: string
+          request_count?: number
+        }
+        Update: {
+          app_id?: string
+          id?: string
+          last_updated?: string
+          month?: string
+          request_count?: number
+        }
+        Relationships: []
+      }
+      api_rate_limits: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          method: string
+          requests_per_hour: number
+          requests_per_minute: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          method: string
+          requests_per_hour?: number
+          requests_per_minute?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          method?: string
+          requests_per_hour?: number
+          requests_per_minute?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       authorization_codes: {
         Row: {
           app_id: string
@@ -951,6 +1005,57 @@ export type Database = {
           },
         ]
       }
+      webhook_retry_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          id: string
+          log_id: string
+          max_attempts: number
+          scheduled_at: string
+          status: string
+          updated_at: string
+          webhook_id: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          log_id: string
+          max_attempts?: number
+          scheduled_at?: string
+          status?: string
+          updated_at?: string
+          webhook_id: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          id?: string
+          log_id?: string
+          max_attempts?: number
+          scheduled_at?: string
+          status?: string
+          updated_at?: string
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_retry_queue_log_id_fkey"
+            columns: ["log_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_retry_queue_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webhooks: {
         Row: {
           app_id: string
@@ -1044,6 +1149,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_old_webhook_logs: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_user_role: {
         Args: {
           user_id: string
