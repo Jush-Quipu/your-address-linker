@@ -1,193 +1,269 @@
 
-import { useState, useEffect, useContext, createContext, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { SecureAddressBridge } from './secureaddress-bridge-sdk';
 
-// Define the user and wallet types
-interface User {
-  id: string;
-  email?: string;
-  name?: string;
-  isVerified: boolean;
-}
-
-interface Wallet {
-  address: string;
-  chainId: string;
-  network: string;
-  connectedAt: string;
-}
-
-// Define the context value type
-interface SecureAddressContextValue {
-  sdk: SecureAddressBridge | null;
-  isAuthenticated: boolean;
+interface SecureAddressContextType {
+  client: SecureAddressBridge | null;
+  isAuthorized: boolean;
   isLoading: boolean;
-  user: User | null;
-  wallets: Wallet[];
-  refreshWallets: () => Promise<void>;
-  login: () => Promise<void>;
+  error: string | null;
+  zkpProof: any | null;
+  address: any | null;
+  walletLinked: boolean;
+  authorizeAddress: (options?: any) => Promise<void>;
+  authorizeZkp: (options: any) => Promise<void>;
+  getAddress: () => Promise<any>;
+  getZkProof: () => Promise<any>;
+  verifyWallet: (options: any) => Promise<any>;
+  linkWalletToAddress: (options: any) => Promise<any>;
   logout: () => void;
 }
 
-// Create the context
-const SecureAddressContext = createContext<SecureAddressContextValue>({
-  sdk: null,
-  isAuthenticated: false,
-  isLoading: true,
-  user: null,
-  wallets: [],
-  refreshWallets: async () => {},
-  login: async () => {},
-  logout: () => {},
-});
+const SecureAddressContext = createContext<SecureAddressContextType | undefined>(undefined);
 
-// Create the provider component
-export const SecureAddressProvider: React.FC<{
+interface SecureAddressProviderProps {
   children: ReactNode;
-  sdkOptions?: any;
-}> = ({ children, sdkOptions }) => {
-  const [sdk, setSdk] = useState<SecureAddressBridge | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
-  const [wallets, setWallets] = useState<Wallet[]>([]);
+  appId: string;
+  apiUrl?: string;
+  redirectUri?: string;
+}
 
-  // Initialize the SDK
+export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
+  children,
+  appId,
+  apiUrl,
+  redirectUri,
+}) => {
+  const [client, setClient] = useState<SecureAddressBridge | null>(null);
+  const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [zkpProof, setZkpProof] = useState<any | null>(null);
+  const [address, setAddress] = useState<any | null>(null);
+  const [walletLinked, setWalletLinked] = useState<boolean>(false);
+  const [token, setToken] = useState<string | null>(null);
+
+  // Initialize the client
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const sdkInstance = new SecureAddressBridge({
-        appId: 'app_sandbox',
-        redirectUri: window.location.origin + '/callback',
-        sandbox: true,
-        ...(sdkOptions || {})
-      });
-      
-      setSdk(sdkInstance);
-      
-      // Check if user is already authenticated
-      const checkAuth = async () => {
-        try {
-          // This is a mock implementation since we're in sandbox mode
-          // In a real app, you would check for an access token and validate it
-          const token = localStorage.getItem('secureaddress_token');
-          
-          if (token) {
-            sdkInstance.setAccessToken(token);
-            setIsAuthenticated(true);
-            
-            // Mock user data
-            setUser({
-              id: 'user_123',
-              email: 'user@example.com',
-              name: 'John Doe',
-              isVerified: true
-            });
-            
-            // Fetch wallets
-            await refreshWallets();
-          }
-        } catch (error) {
-          console.error('Error checking authentication:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      
-      checkAuth();
-    }
-  }, []);
+    const secureAddressClient = new SecureAddressBridge({
+      appId,
+      apiUrl,
+      redirectUri,
+    });
+    setClient(secureAddressClient);
 
-  // Refresh wallets
-  const refreshWallets = useCallback(async () => {
-    if (sdk && isAuthenticated) {
-      try {
-        // Mock implementation - in a real app, you would fetch from API
-        setWallets([
-          {
-            address: '0x742d35Cc6634C0532925a3b844Bc454e4438f44e',
-            chainId: '0x1',
-            network: 'Ethereum Mainnet',
-            connectedAt: new Date().toISOString()
-          }
-        ]);
-      } catch (error) {
-        console.error('Error refreshing wallets:', error);
-      }
+    // Check if we have a token
+    const storedToken = localStorage.getItem('secureaddress_token');
+    if (storedToken) {
+      setToken(storedToken);
+      setIsAuthorized(true);
     }
-  }, [sdk, isAuthenticated]);
 
-  // Login
-  const login = useCallback(async () => {
-    if (sdk) {
-      try {
-        const result = await sdk.authorize({
-          scope: ['read:profile', 'read:address', 'write:wallet']
+    // Check if we have a proof
+    const proofId = localStorage.getItem('secureaddress_proof_id');
+    const proofToken = localStorage.getItem('secureaddress_proof_token');
+    if (proofId && proofToken) {
+      // We have a proof, load it
+      secureAddressClient.getZkProof()
+        .then(result => {
+          if (result.success && result.proof) {
+            setZkpProof(result.proof);
+          }
+        })
+        .catch(err => {
+          console.error('Error loading ZK proof:', err);
         });
-        
-        if (result && result.success) {
-          const callbackResult = await sdk.handleCallback();
-          
-          if (callbackResult && callbackResult.success && callbackResult.data) {
-            // Store token and set authenticated
-            localStorage.setItem('secureaddress_token', callbackResult.data.accessToken);
-            sdk.setAccessToken(callbackResult.data.accessToken);
-            setIsAuthenticated(true);
-            
-            // Mock user data
-            setUser({
-              id: 'user_123',
-              email: 'user@example.com',
-              name: 'John Doe',
-              isVerified: true
-            });
-            
-            // Refresh wallets
-            await refreshWallets();
-          }
-        }
-      } catch (error) {
-        console.error('Error logging in:', error);
-      }
     }
-  }, [sdk, refreshWallets]);
 
-  // Logout
-  const logout = useCallback(() => {
-    if (sdk) {
-      // Clear token and state
-      localStorage.removeItem('secureaddress_token');
-      sdk.setAccessToken(null);
-      setIsAuthenticated(false);
-      setUser(null);
-      setWallets([]);
+    setIsLoading(false);
+  }, [appId, apiUrl, redirectUri]);
+
+  // Check for callback handling on page load
+  useEffect(() => {
+    if (!client) return;
+
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get('code');
+    const proofId = url.searchParams.get('proof_id');
+
+    // Auth callback handling
+    if (code) {
+      handleAuthCallback();
     }
-  }, [sdk]);
+
+    // ZKP callback handling
+    if (proofId) {
+      handleZkpCallback();
+    }
+  }, [client]);
+
+  const handleAuthCallback = async () => {
+    if (!client) return;
+
+    try {
+      setIsLoading(true);
+      const result = await client.handleCallback();
+      if (result.success && result.token) {
+        localStorage.setItem('secureaddress_token', result.token);
+        setToken(result.token);
+        setIsAuthorized(true);
+      } else {
+        setError(result.error || 'Authorization failed');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleZkpCallback = async () => {
+    if (!client) return;
+
+    try {
+      setIsLoading(true);
+      const result = await client.handleZkpCallback();
+      if (result.success) {
+        // Get the proof details
+        const proofResult = await client.getZkProof();
+        if (proofResult.success && proofResult.proof) {
+          setZkpProof(proofResult.proof);
+        }
+      } else {
+        setError(result.error || 'ZKP authorization failed');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const authorizeAddress = async (options = {}) => {
+    if (!client) throw new Error('Client not initialized');
+    
+    await client.authorize({
+      redirectUri: redirectUri,
+      ...options,
+    });
+  };
+
+  const authorizeZkp = async (options: any) => {
+    if (!client) throw new Error('Client not initialized');
+    
+    await client.authorizeZkp({
+      redirectUri: redirectUri,
+      ...options,
+    });
+  };
+
+  const getAddress = async () => {
+    if (!client || !token) {
+      throw new Error('Client not initialized or not authorized');
+    }
+
+    try {
+      const result = await client.getAddress(token);
+      if (result.success && result.address) {
+        setAddress(result.address);
+        return result.address;
+      } else {
+        throw new Error(result.error || 'Failed to get address');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    }
+  };
+
+  const getZkProof = async () => {
+    if (!client) {
+      throw new Error('Client not initialized');
+    }
+
+    try {
+      const result = await client.getZkProof();
+      if (result.success && result.proof) {
+        setZkpProof(result.proof);
+        return result.proof;
+      } else {
+        throw new Error(result.error || 'Failed to get ZK proof');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    }
+  };
+
+  const verifyWallet = async (options: any) => {
+    if (!client) {
+      throw new Error('Client not initialized');
+    }
+
+    try {
+      return await client.verifyWallet(options);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    }
+  };
+
+  const linkWalletToAddress = async (options: any) => {
+    if (!client) {
+      throw new Error('Client not initialized');
+    }
+
+    try {
+      const result = await client.linkWalletToAddress(options);
+      if (result.success && result.linked) {
+        setWalletLinked(true);
+      }
+      return result;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      throw err;
+    }
+  };
+
+  const logout = () => {
+    localStorage.removeItem('secureaddress_token');
+    localStorage.removeItem('secureaddress_proof_id');
+    localStorage.removeItem('secureaddress_proof_token');
+    setToken(null);
+    setIsAuthorized(false);
+    setZkpProof(null);
+    setAddress(null);
+    setWalletLinked(false);
+  };
+
+  const value = {
+    client,
+    isAuthorized,
+    isLoading,
+    error,
+    zkpProof,
+    address,
+    walletLinked,
+    authorizeAddress,
+    authorizeZkp,
+    getAddress,
+    getZkProof,
+    verifyWallet,
+    linkWalletToAddress,
+    logout,
+  };
 
   return (
-    <SecureAddressContext.Provider
-      value={{
-        sdk,
-        isAuthenticated,
-        isLoading,
-        user,
-        wallets,
-        refreshWallets,
-        login,
-        logout
-      }}
-    >
+    <SecureAddressContext.Provider value={value}>
       {children}
     </SecureAddressContext.Provider>
   );
 };
 
-// Hook to use the SecureAddress context
-export const useSecureAddress = () => {
+export const useSecureAddress = (): SecureAddressContextType => {
   const context = useContext(SecureAddressContext);
-  
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useSecureAddress must be used within a SecureAddressProvider');
   }
-  
   return context;
 };
