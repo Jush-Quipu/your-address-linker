@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -20,6 +19,7 @@ import {
 import { Menu, X, LogOut, User, Shield, Truck, Code, Settings, Home, Book, Beaker, Server } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { checkDeveloperAccess } from '@/services/developerService';
+import { Separator } from '@/components/ui/separator';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
