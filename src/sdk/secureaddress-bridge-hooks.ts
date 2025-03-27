@@ -165,7 +165,7 @@ export const SecureAddressProvider: React.FC<{
 
   return (
     <SecureAddressContext.Provider
-      value={{
+      >value={{
         sdk,
         isAuthenticated,
         isLoading,
