@@ -74,7 +74,7 @@ const DeveloperTodoDetails: React.FC<DeveloperTodoDetailsProps> = ({
     }
   };
 
-  const handleStatusChange = async (status: 'not-started' | 'in-progress' | 'completed') => {
+  const handleStatusChange = async (status: 'not-started' | 'in-progress' | 'completed' | 'blocked') => {
     setStatusUpdating(true);
     try {
       await updateTodoStatus(todo.id, status);
@@ -84,12 +84,14 @@ const DeveloperTodoDetails: React.FC<DeveloperTodoDetailsProps> = ({
     }
   };
 
-  const getStatusIcon = (status: 'not-started' | 'in-progress' | 'completed') => {
+  const getStatusIcon = (status: 'not-started' | 'in-progress' | 'completed' | 'blocked') => {
     switch (status) {
       case 'completed':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'in-progress':
         return <Clock className="h-5 w-5 text-amber-500" />;
+      case 'blocked':
+        return <AlertTriangle className="h-5 w-5 text-red-500" />;
       default:
         return <Circle className="h-5 w-5 text-gray-300" />;
     }
@@ -162,6 +164,12 @@ const DeveloperTodoDetails: React.FC<DeveloperTodoDetailsProps> = ({
                       Completed
                     </div>
                   </SelectItem>
+                  <SelectItem value="blocked">
+                    <div className="flex items-center">
+                      <AlertTriangle className="h-4 w-4 text-red-500 mr-2" />
+                      Blocked
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -203,6 +211,7 @@ const DeveloperTodoDetails: React.FC<DeveloperTodoDetailsProps> = ({
                   className={`flex items-start p-2 border rounded ${
                     subtask.status === 'completed' ? 'bg-green-50 border-green-100' : 
                     subtask.status === 'in-progress' ? 'bg-amber-50 border-amber-100' : 
+                    subtask.status === 'blocked' ? 'bg-red-50 border-red-100' : 
                     'bg-gray-50 border-gray-100'
                   }`}
                 >

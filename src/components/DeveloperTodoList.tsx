@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, CheckCircle, Circle, AlertCircle, Trash2, ArrowRight } from 'lucide-react';
+import { PlusCircle, CheckCircle, Circle, AlertCircle, Trash2, ArrowRight, AlertTriangle } from 'lucide-react';
 import { DeveloperTodo, updateTodoStatus, deleteDeveloperTodo } from '@/services/developerTodoService';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -23,7 +23,7 @@ const DeveloperTodoList: React.FC<DeveloperTodoListProps> = ({
 }) => {
   const [loading, setLoading] = useState<Record<string, boolean>>({});
 
-  const handleStatusChange = async (todo: DeveloperTodo, newStatus: 'not-started' | 'in-progress' | 'completed') => {
+  const handleStatusChange = async (todo: DeveloperTodo, newStatus: 'not-started' | 'in-progress' | 'completed' | 'blocked') => {
     setLoading({ ...loading, [todo.id]: true });
     try {
       await updateTodoStatus(todo.id, newStatus);
@@ -56,12 +56,14 @@ const DeveloperTodoList: React.FC<DeveloperTodoListProps> = ({
     }
   };
 
-  const getStatusIcon = (status: 'not-started' | 'in-progress' | 'completed') => {
+  const getStatusIcon = (status: 'not-started' | 'in-progress' | 'completed' | 'blocked') => {
     switch (status) {
       case 'completed':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'in-progress':
         return <Circle className="h-5 w-5 text-amber-500" />;
+      case 'blocked':
+        return <AlertTriangle className="h-5 w-5 text-red-500" />;
       default:
         return <Circle className="h-5 w-5 text-gray-300" />;
     }
