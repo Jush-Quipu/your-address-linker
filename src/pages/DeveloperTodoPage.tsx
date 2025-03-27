@@ -6,7 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { HomeIcon, ClipboardList } from 'lucide-react';
-import DeveloperTodo from '@/utils/DeveloperTodo';
+import TodoList from '@/components/todo/TodoList';
 
 const DeveloperTodoPage: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -43,7 +43,7 @@ const DeveloperTodoPage: React.FC = () => {
             </BreadcrumbList>
           </Breadcrumb>
 
-          <DeveloperTodo />
+          <TodoList />
         </div>
       </main>
       <Footer />

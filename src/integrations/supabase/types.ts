@@ -520,6 +520,71 @@ export type Database = {
         }
         Relationships: []
       }
+      developer_subtasks: {
+        Row: {
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["todo_status"]
+          title: string
+          todo_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["todo_status"]
+          title: string
+          todo_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["todo_status"]
+          title?: string
+          todo_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "developer_subtasks_todo_id_fkey"
+            columns: ["todo_id"]
+            isOneToOne: false
+            referencedRelation: "developer_todos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      developer_todos: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          priority: Database["public"]["Enums"]["todo_priority"]
+          status: Database["public"]["Enums"]["todo_status"]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["todo_priority"]
+          status?: Database["public"]["Enums"]["todo_status"]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          priority?: Database["public"]["Enums"]["todo_priority"]
+          status?: Database["public"]["Enums"]["todo_status"]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       encryption_keys: {
         Row: {
           active: boolean
@@ -989,6 +1054,8 @@ export type Database = {
     Enums: {
       app_status: "active" | "suspended" | "development"
       app_verification_status: "pending" | "verified" | "rejected"
+      todo_priority: "high" | "medium" | "low"
+      todo_status: "completed" | "in-progress" | "not-started" | "blocked"
     }
     CompositeTypes: {
       [_ in never]: never
