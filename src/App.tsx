@@ -35,56 +35,62 @@ import DeveloperDocsHub from '@/pages/DeveloperDocsHub'; // Import Developer Doc
 import DeveloperTodoPage from './pages/DeveloperTodoPage';
 import AdminPage from './pages/AdminPage'; // Import Admin Page
 import AdminRolesPage from './pages/AdminRolesPage'; // Import Admin Roles Page
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Create a new query client instance
+const queryClient = new QueryClient();
 
 function App() {
   return (
-    <Router>
-      <AuthProvider>
-        <RoleProvider>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/docs" element={<DeveloperDocs />} />
-            <Route path="/api-testing" element={<ApiTesting />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/connect" element={<Connect />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/addresses" element={<DashboardAddresses />} />
-            <Route path="/dashboard/api-keys" element={<DashboardApiKeys />} />
-            <Route path="/dashboard/settings" element={<DashboardSettings />} />
-            <Route path="/features" element={<Features />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/careers" element={<Careers />} />
-            <Route path="/security" element={<Security />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/integrations" element={<Integrations />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/compliance" element={<Compliance />} />
-            <Route path="/cookies" element={<Cookies />} />
-            <Route path="/tutorials" element={<Tutorials />} />
-            <Route path="/permissions" element={<PermissionsPage />} />
-            <Route path="/blind-shipping" element={<BlindShippingPage />} />
-            <Route path="/authorize" element={<AuthorizePage />} />
-            
-            {/* Developer Section - Consolidated Routes */}
-            <Route path="/developer" element={<DeveloperDashboard />} />
-            <Route path="/developer/portal" element={<DeveloperPortal />} />
-            <Route path="/developer/analytics" element={<DeveloperAnalytics />} />
-            <Route path="/developer/sandbox" element={<DeveloperSandbox />} />
-            <Route path="/developer/docs" element={<DeveloperDocsHub />} />
-            <Route path="/developer/todo" element={<DeveloperTodoPage />} />
-            
-            {/* Admin Section */}
-            <Route path="/developer/admin" element={<AdminPage />} />
-            <Route path="/developer/admin/roles" element={<AdminRolesPage />} />
-            
-            {/* Legacy routes that redirect */}
-            <Route path="/developer-dashboard" element={<DeveloperDashboard />} />
-          </Routes>
-        </RoleProvider>
-      </AuthProvider>
-    </Router>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <AuthProvider>
+          <RoleProvider>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/docs" element={<DeveloperDocs />} />
+              <Route path="/api-testing" element={<ApiTesting />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/connect" element={<Connect />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/dashboard/addresses" element={<DashboardAddresses />} />
+              <Route path="/dashboard/api-keys" element={<DashboardApiKeys />} />
+              <Route path="/dashboard/settings" element={<DashboardSettings />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/security" element={<Security />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/integrations" element={<Integrations />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/compliance" element={<Compliance />} />
+              <Route path="/cookies" element={<Cookies />} />
+              <Route path="/tutorials" element={<Tutorials />} />
+              <Route path="/permissions" element={<PermissionsPage />} />
+              <Route path="/blind-shipping" element={<BlindShippingPage />} />
+              <Route path="/authorize" element={<AuthorizePage />} />
+              
+              {/* Developer Section - Consolidated Routes */}
+              <Route path="/developer" element={<DeveloperDashboard />} />
+              <Route path="/developer/portal" element={<DeveloperPortal />} />
+              <Route path="/developer/analytics" element={<DeveloperAnalytics />} />
+              <Route path="/developer/sandbox" element={<DeveloperSandbox />} />
+              <Route path="/developer/docs" element={<DeveloperDocsHub />} />
+              <Route path="/developer/todo" element={<DeveloperTodoPage />} />
+              
+              {/* Admin Section */}
+              <Route path="/developer/admin" element={<AdminPage />} />
+              <Route path="/developer/admin/roles" element={<AdminRolesPage />} />
+              
+              {/* Legacy routes that redirect */}
+              <Route path="/developer-dashboard" element={<DeveloperDashboard />} />
+            </Routes>
+          </RoleProvider>
+        </AuthProvider>
+      </Router>
+    </QueryClientProvider>
   );
 }
 
