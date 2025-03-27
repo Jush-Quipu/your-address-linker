@@ -274,10 +274,19 @@ export async function createDeveloperApp(appData: {
   
   const userId = sessionData.session.user.id;
   
-  // Generate a unique ID for the app (we'll let Supabase handle this with default values)
+  // Generate a unique app ID with a prefix
+  const appId = `app_${Date.now()}`;
+  
+  // Generate a random app secret
+  const appSecret = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+  
+  // Insert with explicit id field
   const { data, error } = await supabase
     .from('developer_apps')
     .insert({
+      id: appId,
       user_id: userId,
       app_name: appData.appName,
       description: appData.description || null,
@@ -286,6 +295,7 @@ export async function createDeveloperApp(appData: {
       status: appData.status || AppStatus.DEVELOPMENT,
       verification_status: AppVerificationStatus.PENDING,
       monthly_request_limit: 1000, // Default limit
+      app_secret: appSecret,
       oauth_settings: {
         scopes: ['read:profile', 'read:address'],
         token_lifetime: 3600,
