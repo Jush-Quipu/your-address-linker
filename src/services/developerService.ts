@@ -8,13 +8,21 @@ export enum DeveloperRole {
   ADMIN = 'admin'
 }
 
+// Define types for the developer_roles table
+type DeveloperRoleRecord = {
+  id: string;
+  user_id: string;
+  role: string;
+  created_at: string;
+}
+
 // Check if a user has developer access
 export const checkDeveloperAccess = async (userId: string): Promise<boolean> => {
   try {
     // Check if the user has a developer role in the developer_roles table
     const { data, error } = await supabase
       .from('developer_roles')
-      .select('role')
+      .select('*')
       .eq('user_id', userId)
       .in('role', [DeveloperRole.DEVELOPER, DeveloperRole.ADMIN]);
       
@@ -36,7 +44,7 @@ export const checkAdminAccess = async (userId: string): Promise<boolean> => {
   try {
     const { data, error } = await supabase
       .from('developer_roles')
-      .select('role')
+      .select('*')
       .eq('user_id', userId)
       .eq('role', DeveloperRole.ADMIN);
       
@@ -58,7 +66,7 @@ export const getUserRoles = async (userId: string): Promise<DeveloperRole[]> => 
   try {
     const { data, error } = await supabase
       .from('developer_roles')
-      .select('role')
+      .select('*')
       .eq('user_id', userId);
       
     if (error) throw error;

@@ -36,6 +36,12 @@ interface User {
   avatarUrl?: string;
 }
 
+// Interface for the developer_roles table rows
+interface DeveloperRoleRecord {
+  user_id: string;
+  role: string;
+}
+
 const AdminRolesPage: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const { isAdmin, refreshRoles } = useRole();
@@ -66,15 +72,15 @@ const AdminRolesPage: React.FC = () => {
         // Get all role assignments
         const { data: rolesData, error: rolesError } = await supabase
           .from('developer_roles')
-          .select('user_id, role');
+          .select('*');
           
         if (rolesError) throw rolesError;
         
         // Map roles to users
         const usersWithRoles = (usersData || []).map((user: any) => {
           const userRoles = rolesData
-            .filter((role: any) => role.user_id === user.id)
-            .map((role: any) => role.role as DeveloperRole);
+            .filter((role: DeveloperRoleRecord) => role.user_id === user.id)
+            .map((role: DeveloperRoleRecord) => role.role as DeveloperRole);
             
           return {
             id: user.id,
