@@ -9,7 +9,7 @@ import { ApiResponse, ErrorCodes } from './apiHelpers';
 export interface ApiTestCase {
   name: string;
   endpoint: string;
-  method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   headers?: Record<string, string>;
   body?: any;
   expectedStatus?: number;

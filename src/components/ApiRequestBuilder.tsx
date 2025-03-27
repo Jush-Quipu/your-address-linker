@@ -24,7 +24,7 @@ const ApiRequestBuilder: React.FC<ApiRequestBuilderProps> = ({
   onSave,
   loading = false
 }) => {
-  // Define the acceptable HTTP methods type
+  // Define the acceptable HTTP methods type to match ApiTestCase
   type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
   
   const [method, setMethod] = useState<HttpMethod>(initialRequest?.method as HttpMethod || 'GET');
@@ -93,7 +93,7 @@ const ApiRequestBuilder: React.FC<ApiRequestBuilderProps> = ({
     
     const request: ApiTestCase = {
       name,
-      method: method,
+      method,
       endpoint,
       headers: parsedHeaders,
       body: parsedBody,
@@ -126,7 +126,7 @@ const ApiRequestBuilder: React.FC<ApiRequestBuilderProps> = ({
     
     const request: ApiTestCase = {
       name,
-      method: method,
+      method,
       endpoint,
       headers: parsedHeaders,
       body: parsedBody,
