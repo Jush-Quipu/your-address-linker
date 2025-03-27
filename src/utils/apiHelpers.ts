@@ -3,6 +3,39 @@
 
 import { toast } from "sonner";
 
+// Standard API response structure
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code?: string;
+    message: string;
+    details?: any;
+    status?: number;
+  };
+  meta?: {
+    version?: string;
+    timestamp?: string;
+    serverTime?: string;
+    requestId?: string;
+  };
+}
+
+// Common error codes
+export const ErrorCodes = {
+  UNAUTHORIZED: 'unauthorized',
+  FORBIDDEN: 'forbidden',
+  NOT_FOUND: 'not_found',
+  VALIDATION_ERROR: 'validation_error',
+  RATE_LIMIT_EXCEEDED: 'rate_limit_exceeded',
+  INTERNAL_SERVER_ERROR: 'internal_server_error',
+  TOKEN_EXPIRED: 'token_expired',
+  INVALID_REQUEST: 'invalid_request',
+  ADDRESS_NOT_VERIFIED: 'address_not_verified',
+  PERMISSION_REVOKED: 'permission_revoked',
+  MAX_ACCESS_EXCEEDED: 'max_access_exceeded'
+};
+
 /**
  * Tests the connection to the API
  * @param baseUrl - The base URL of the API
