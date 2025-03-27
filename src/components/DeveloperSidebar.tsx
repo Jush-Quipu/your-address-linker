@@ -1,42 +1,10 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  Sidebar, 
-  SidebarContent, 
-  SidebarFooter, 
-  SidebarHeader, 
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarProvider,
-  SidebarTrigger,
-  SidebarInset
-} from '@/components/ui/sidebar';
 import { Badge } from '@/components/ui/badge';
 import { useRole } from '@/context/RoleContext';
-import { HomeIcon, Code, Beaker, ListChecks, Server, Book, BarChart, Settings, ShieldAlert } from 'lucide-react';
+import { HomeIcon, Code, Beaker, ListChecks, Server, Book, BarChart, Settings, ShieldAlert, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface DeveloperSidebarProps {
-  children: React.ReactNode;
-}
-
-export const DeveloperSidebarWrapper: React.FC<DeveloperSidebarProps> = ({ children }) => {
-  return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="flex min-h-screen w-full">
-        <DeveloperSidebar />
-        <SidebarInset>
-          {children}
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
-  );
-};
 
 const DeveloperSidebar: React.FC = () => {
   const location = useLocation();
@@ -48,116 +16,119 @@ const DeveloperSidebar: React.FC = () => {
     return location.pathname === path || location.pathname.startsWith(`${path}/`);
   };
 
-  const menuItems = [
-    {
-      title: "Dashboard",
-      icon: HomeIcon,
-      path: "/developer",
-    },
-    {
-      title: "Register App",
-      icon: Server,
-      path: "/developer/portal",
-    },
-    {
-      title: "Documentation",
-      icon: Book,
-      path: "/developer/docs",
-    },
-    {
-      title: "Sandbox",
-      icon: Beaker,
-      path: "/developer/sandbox",
-    },
-    {
-      title: "Todo List",
-      icon: ListChecks,
-      path: "/developer/todo",
-    },
-    {
-      title: "Analytics",
-      icon: BarChart,
-      path: "/developer/analytics",
-    },
-  ];
-
-  const adminItems = [
-    {
-      title: "Admin Panel",
-      icon: ShieldAlert,
-      path: "/developer/admin",
-    },
-    {
-      title: "Roles",
-      icon: Settings,
-      path: "/developer/admin/roles",
-    },
-  ];
-
   return (
-    <Sidebar variant="floating">
-      <SidebarHeader className="flex items-center gap-2 px-4 py-2">
-        <Code className="h-6 w-6 text-primary" />
-        <span className="text-lg font-bold">Developer Portal</span>
-        <SidebarTrigger className="ml-auto" />
-      </SidebarHeader>
-      
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton 
-                    asChild 
-                    isActive={isPathActive(item.path)}
-                    tooltip={item.title}
-                  >
-                    <Link to={item.path}>
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        
-        {isAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Administration</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {adminItems.map((item) => (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton 
-                      asChild
-                      isActive={isPathActive(item.path)}
-                      tooltip={item.title}
-                    >
-                      <Link to={item.path}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-      </SidebarContent>
-      
-      <SidebarFooter>
-        <div className="px-3 py-2">
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 w-full justify-center">
-            Sandbox Environment
-          </Badge>
-        </div>
-      </SidebarFooter>
-    </Sidebar>
+    <div className="border rounded-lg h-full">
+      <div className="p-4 border-b">
+        <h2 className="font-medium">Developer Portal</h2>
+        <p className="text-sm text-muted-foreground">Tools and resources</p>
+      </div>
+      <nav className="p-2">
+        <ul className="space-y-1">
+          <li>
+            <Link 
+              to="/developer" 
+              className={cn(
+                "flex items-center gap-2 p-2 text-sm rounded-md w-full transition-colors",
+                isPathActive("/developer") && !isPathActive("/developer/docs") && !isPathActive("/developer/testing") && !isPathActive("/developer/analytics") && !isPathActive("/developer/monitoring") && !isPathActive("/developer/todo")
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              )}
+            >
+              <HomeIcon className="h-4 w-4" />
+              Dashboard
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/developer/docs" 
+              className={cn(
+                "flex items-center gap-2 p-2 text-sm rounded-md w-full transition-colors",
+                isPathActive("/developer/docs")
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              )}
+            >
+              <Book className="h-4 w-4" />
+              Documentation
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/developer/testing" 
+              className={cn(
+                "flex items-center gap-2 p-2 text-sm rounded-md w-full transition-colors",
+                isPathActive("/developer/testing")
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              )}
+            >
+              <Beaker className="h-4 w-4" />
+              API Testing
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/developer/analytics" 
+              className={cn(
+                "flex items-center gap-2 p-2 text-sm rounded-md w-full transition-colors",
+                isPathActive("/developer/analytics")
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              )}
+            >
+              <BarChart className="h-4 w-4" />
+              Analytics
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/developer/monitoring" 
+              className={cn(
+                "flex items-center gap-2 p-2 text-sm rounded-md w-full transition-colors",
+                isPathActive("/developer/monitoring")
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              )}
+            >
+              <Activity className="h-4 w-4" />
+              API Monitoring
+              <Badge variant="outline" className="ml-auto text-xs">New</Badge>
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/developer/todo" 
+              className={cn(
+                "flex items-center gap-2 p-2 text-sm rounded-md w-full transition-colors",
+                isPathActive("/developer/todo")
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              )}
+            >
+              <ListChecks className="h-4 w-4" />
+              Todo List
+            </Link>
+          </li>
+          
+          {isAdmin && (
+            <li className="pt-4 mt-4 border-t">
+              <Link 
+                to="/admin" 
+                className={cn(
+                  "flex items-center gap-2 p-2 text-sm rounded-md w-full transition-colors",
+                  isPathActive("/admin")
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-muted"
+                )}
+              >
+                <ShieldAlert className="h-4 w-4" />
+                Admin Panel
+              </Link>
+            </li>
+          )}
+        </ul>
+      </nav>
+    </div>
   );
 };
 

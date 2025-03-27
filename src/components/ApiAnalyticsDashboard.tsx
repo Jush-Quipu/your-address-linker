@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,6 +10,8 @@ import { AlertTriangle, ArrowUpRight, BarChart2, RefreshCw, TrendingDown, Trendi
 import { getApiUsage, getApiQuota, ApiUsageDetails } from '@/services/analyticsService';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import ApiQuotaManager from '@/components/ApiQuotaManager';
+import { ChartContainer, ChartTooltipContent, ChartTooltip } from '@/components/ui/chart';
 
 interface ApiAnalyticsDashboardProps {
   appId: string;
@@ -84,6 +85,11 @@ const ApiAnalyticsDashboard: React.FC<ApiAnalyticsDashboardProps> = ({
     return "good";
   };
 
+  // Prepare chart data
+  const prepareChartData = () => {
+    // Chart data transformation logic
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -101,6 +107,9 @@ const ApiAnalyticsDashboard: React.FC<ApiAnalyticsDashboardProps> = ({
           Refresh
         </Button>
       </div>
+      
+      {/* API Quota Manager component */}
+      <ApiQuotaManager appId={appId} appName={appName} />
       
       {loading ? (
         <div className="space-y-4">
