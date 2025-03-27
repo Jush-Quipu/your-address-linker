@@ -32,6 +32,11 @@ export interface WebhookUpdateParams {
   description?: string;
 }
 
+// Helper function to get Supabase URL safely
+const getSupabaseUrl = (): string => {
+  return process.env.SUPABASE_URL || supabase.getUrl().replace(/\/rest\/v1\/?$/, '');
+};
+
 // Function to register a new webhook
 export const registerWebhook = async (params: WebhookCreateParams): Promise<Webhook> => {
   try {
@@ -40,7 +45,9 @@ export const registerWebhook = async (params: WebhookCreateParams): Promise<Webh
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/register-webhook`, {
+    const supabaseUrl = getSupabaseUrl();
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/register-webhook`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -78,7 +85,8 @@ export const getWebhooks = async (appId?: string): Promise<Webhook[]> => {
       throw new Error('Authentication required');
     }
 
-    const url = new URL(`${supabase.supabaseUrl}/functions/v1/manage-webhooks`);
+    const supabaseUrl = getSupabaseUrl();
+    const url = new URL(`${supabaseUrl}/functions/v1/manage-webhooks`);
     if (appId) {
       url.searchParams.append('app_id', appId);
     }
@@ -114,7 +122,9 @@ export const getWebhook = async (webhookId: string): Promise<Webhook> => {
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/manage-webhooks/${webhookId}`, {
+    const supabaseUrl = getSupabaseUrl();
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/manage-webhooks/${webhookId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token.session.access_token}`
@@ -145,7 +155,9 @@ export const updateWebhook = async (webhookId: string, params: WebhookUpdatePara
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/manage-webhooks/${webhookId}`, {
+    const supabaseUrl = getSupabaseUrl();
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/manage-webhooks/${webhookId}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -183,7 +195,9 @@ export const deleteWebhook = async (webhookId: string): Promise<void> => {
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/manage-webhooks/${webhookId}`, {
+    const supabaseUrl = getSupabaseUrl();
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/manage-webhooks/${webhookId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token.session.access_token}`
@@ -215,7 +229,9 @@ export const testWebhook = async (webhookId: string): Promise<void> => {
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/manage-webhooks/${webhookId}/test`, {
+    const supabaseUrl = getSupabaseUrl();
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/manage-webhooks/${webhookId}/test`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token.session.access_token}`
@@ -247,7 +263,9 @@ export const getWebhookDeliveries = async (webhookId: string): Promise<any[]> =>
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/manage-webhooks/${webhookId}/deliveries`, {
+    const supabaseUrl = getSupabaseUrl();
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/manage-webhooks/${webhookId}/deliveries`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token.session.access_token}`
@@ -278,7 +296,9 @@ export const retryWebhookDelivery = async (webhookId: string, deliveryId: string
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/manage-webhooks/${webhookId}/deliveries/${deliveryId}/retry`, {
+    const supabaseUrl = getSupabaseUrl();
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/manage-webhooks/${webhookId}/deliveries/${deliveryId}/retry`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token.session.access_token}`

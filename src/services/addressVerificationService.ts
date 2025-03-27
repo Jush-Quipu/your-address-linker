@@ -37,7 +37,7 @@ export interface VerificationLog {
   document_type?: string;
   status: string;
   verification_date: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, any> | null;
 }
 
 // Submit a document for address verification
@@ -48,7 +48,10 @@ export const submitVerificationDocument = async (document: VerificationDocument)
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/verify-address-document`, {
+    // Use environment variable or compute URL from window.location if in browser
+    const supabaseUrl = process.env.SUPABASE_URL || supabase.getUrl().replace(/\/rest\/v1\/?$/, '');
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/verify-address-document`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -86,7 +89,10 @@ export const getAddressVerificationStatus = async (addressId: string): Promise<V
       throw new Error('Authentication required');
     }
 
-    const response = await fetch(`${supabase.supabaseUrl}/functions/v1/get-verification-status?address_id=${addressId}`, {
+    // Use environment variable or compute URL from window.location if in browser
+    const supabaseUrl = process.env.SUPABASE_URL || supabase.getUrl().replace(/\/rest\/v1\/?$/, '');
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/get-verification-status?address_id=${addressId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token.session.access_token}`
@@ -117,7 +123,17 @@ export const getVerificationLogs = async (addressId: string): Promise<Verificati
       
     if (error) throw error;
     
-    return data;
+    // Transform the data to match the VerificationLog interface
+    const transformedData: VerificationLog[] = data.map(item => ({
+      id: item.id,
+      verification_type: item.verification_type,
+      document_type: item.document_type || undefined,
+      status: item.status,
+      verification_date: item.verification_date,
+      metadata: item.metadata ? item.metadata as Record<string, any> : null
+    }));
+    
+    return transformedData;
   } catch (error) {
     console.error('Error fetching verification logs:', error);
     throw error;
