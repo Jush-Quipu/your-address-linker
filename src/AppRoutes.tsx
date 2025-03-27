@@ -38,6 +38,7 @@ import ApiMonitoring from '@/pages/ApiMonitoring';
 import DeveloperSandbox from '@/pages/DeveloperSandbox';
 import DeveloperTodoPage from '@/pages/DeveloperTodoPage';
 import DeveloperPortalManager from '@/pages/DeveloperPortalManager';
+import DeveloperDocs from '@/pages/DeveloperDocs';
 
 // Admin
 import AdminPage from '@/pages/AdminPage';
@@ -82,6 +83,8 @@ const AppRoutes = () => {
       <Route path="/developer/todo" element={<DeveloperTodoPage />} />
       <Route path="/developer/apps" element={<DeveloperPortalManager />} />
       <Route path="/developer/apps/:appId" element={<DeveloperPortalManager />} />
+      <Route path="/developer/docs" element={<DeveloperDocs />} />
+      <Route path="/developer/admin/apps" element={<DeveloperPortalManager />} />
       
       {/* Admin Routes */}
       <Route path="/admin" element={<AdminPage />} />

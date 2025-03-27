@@ -29,7 +29,7 @@ const DeveloperSidebar: React.FC = () => {
               to="/developer" 
               className={cn(
                 "flex items-center gap-2 p-2 text-sm rounded-md w-full transition-colors",
-                isPathActive("/developer") && !isPathActive("/developer/docs") && !isPathActive("/developer/testing") && !isPathActive("/developer/analytics") && !isPathActive("/developer/monitoring") && !isPathActive("/developer/todo")
+                isPathActive("/developer") && !isPathActive("/developer/docs") && !isPathActive("/developer/testing") && !isPathActive("/developer/analytics") && !isPathActive("/developer/monitoring") && !isPathActive("/developer/todo") && !isPathActive("/developer/apps")
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-muted"
               )}
@@ -50,6 +50,20 @@ const DeveloperSidebar: React.FC = () => {
             >
               <Book className="h-4 w-4" />
               Documentation
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/developer/apps" 
+              className={cn(
+                "flex items-center gap-2 p-2 text-sm rounded-md w-full transition-colors",
+                isPathActive("/developer/apps")
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-muted"
+              )}
+            >
+              <Server className="h-4 w-4" />
+              Register App
             </Link>
           </li>
           <li>

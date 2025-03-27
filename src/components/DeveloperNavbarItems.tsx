@@ -11,7 +11,7 @@ export const getDeveloperNavItems = () => [
     icon: <Code className="h-4 w-4 mr-2" /> 
   },
   { 
-    to: '/developer/portal', 
+    to: '/developer/apps', 
     label: 'Register App', 
     authRequired: true, 
     icon: <Server className="h-4 w-4 mr-2" /> 
