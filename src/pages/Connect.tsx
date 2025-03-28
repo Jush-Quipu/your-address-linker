@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -101,7 +102,12 @@ const Connect: React.FC = () => {
       });
       
       if (signature) {
-        const response = await client.linkAddressToWallet('verified-address-id', walletAddress);
+        // Fix: Using linkWalletToAddress instead of linkAddressToWallet
+        const response = await client.linkWalletToAddress({
+          proofId: 'verified-address-id',
+          proofToken: 'token',
+          wallet_address: walletAddress
+        });
         
         if (response.success) {
           toast.success('Wallet linked successfully');
