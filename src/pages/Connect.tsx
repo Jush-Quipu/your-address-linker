@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useSecureAddress } from '@/sdk/secureaddress-context';
+import WalletSelector from '@/components/WalletSelector';
 import { connectWallet, formatAddress, getCurrentChainId, CHAINS } from '@/utils/blockchain';
 import { toast } from 'sonner';
 import { Shield, AlertCircle, Check, Wallet, Key, Link as LinkIcon } from 'lucide-react';
@@ -20,6 +21,7 @@ const Connect: React.FC = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('connect');
+  const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
 
   useEffect(() => {
     const checkWalletConnection = async () => {
@@ -62,14 +64,15 @@ const Connect: React.FC = () => {
     };
   }, []);
 
-  const handleConnectWallet = async () => {
+  const handleConnectWallet = async (providerType: string = 'metamask') => {
     setConnecting(true);
     try {
-      const address = await connectWallet();
+      const address = await connectWallet(providerType as 'metamask' | 'walletconnect');
       if (address) {
         setWalletAddress(address);
         const chainId = await getCurrentChainId();
         setChainId(chainId);
+        setSelectedProvider(providerType);
         toast.success('Wallet connected');
       }
     } catch (error) {
@@ -96,13 +99,21 @@ const Connect: React.FC = () => {
     try {
       const message = `I am linking this wallet address ${walletAddress} to my SecureAddress Bridge account ${user?.email || 'User'}`;
       
-      const signature = await window.ethereum.request({
-        method: 'personal_sign',
-        params: [message, walletAddress],
-      });
+      // For metamask
+      let signature;
+      if (selectedProvider === 'metamask' && window.ethereum) {
+        signature = await window.ethereum.request({
+          method: 'personal_sign',
+          params: [message, walletAddress],
+        });
+      } else {
+        // For WalletConnect (handled by the blockchain utility)
+        signature = await import('@/utils/blockchain').then(mod => 
+          mod.signMessage(message)
+        );
+      }
       
       if (signature) {
-        // Fix: Using linkWalletToAddress instead of linkAddressToWallet
         const response = await client.linkWalletToAddress({
           proofId: 'verified-address-id',
           proofToken: 'token',
@@ -146,6 +157,11 @@ const Connect: React.FC = () => {
     );
   };
 
+  const getProviderName = () => {
+    if (!selectedProvider) return '';
+    return selectedProvider === 'metamask' ? 'MetaMask' : 'WalletConnect';
+  };
+
   return (
     <div className="min-h-screen">
       <Navbar />
@@ -178,23 +194,7 @@ const Connect: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {!window.ethereum ? (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>No Web3 Wallet Detected</AlertTitle>
-                      <AlertDescription>
-                        Please install MetaMask or another Ethereum wallet to continue. 
-                        <a 
-                          href="https://metamask.io/download/" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary underline ml-1"
-                        >
-                          Download MetaMask
-                        </a>
-                      </AlertDescription>
-                    </Alert>
-                  ) : walletAddress ? (
+                  {walletAddress ? (
                     <div className="space-y-4">
                       <div className="bg-green-50 border border-green-200 rounded-md p-4 flex items-start">
                         <Check className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
@@ -216,17 +216,20 @@ const Connect: React.FC = () => {
                           <p>{getChainName(chainId)}</p>
                         </div>
                       </div>
+                      
+                      {selectedProvider && (
+                        <div className="border rounded-md p-4">
+                          <p className="text-sm text-muted-foreground mb-1">Provider</p>
+                          <p>{getProviderName()}</p>
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <div className="text-center py-8">
-                      <Wallet className="h-12 w-12 text-primary mx-auto mb-4" />
-                      <h3 className="text-lg font-medium mb-2">No Wallet Connected</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Connect your wallet to start using Web3 features
-                      </p>
-                      <Button onClick={handleConnectWallet} disabled={connecting} className="mx-auto">
-                        {connecting ? 'Connecting...' : 'Connect Wallet'}
-                      </Button>
+                    <div className="text-center py-4">
+                      <WalletSelector 
+                        onSelect={handleConnectWallet}
+                        isLoading={connecting}
+                      />
                     </div>
                   )}
                 </CardContent>
@@ -237,7 +240,7 @@ const Connect: React.FC = () => {
                         <LinkIcon className="h-4 w-4 mr-2" />
                         Link to Address
                       </Button>
-                      <Button onClick={handleConnectWallet}>
+                      <Button onClick={() => setWalletAddress(null)}>
                         Change Wallet
                       </Button>
                     </>

@@ -1,5 +1,6 @@
 
 import { toast } from 'sonner';
+import { connectWallet as connectWalletProvider, WalletInfo } from './walletProviders';
 
 /**
  * Utility functions for blockchain interactions
@@ -48,20 +49,14 @@ export const isWalletConnected = async (): Promise<boolean> => {
   }
 };
 
-// Connect to wallet
-export const connectWallet = async (): Promise<string | null> => {
+// Connect to wallet using a specific provider
+export const connectWallet = async (providerType: 'metamask' | 'walletconnect' = 'metamask'): Promise<string | null> => {
   try {
-    if (!window.ethereum) {
-      toast.error('No Ethereum wallet detected. Please install MetaMask or another wallet.');
-      return null;
-    }
+    const walletInfo = await connectWalletProvider(providerType);
     
-    // Request account access
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    
-    if (accounts && accounts.length > 0) {
-      toast.success('Wallet connected successfully');
-      return accounts[0];
+    if (walletInfo) {
+      toast.success(`Wallet connected successfully`);
+      return walletInfo.address;
     }
     
     return null;
@@ -135,47 +130,38 @@ export const switchChain = async (chainId: string): Promise<boolean> => {
 };
 
 // Sign message to verify wallet ownership
-export const signMessage = async (message: string): Promise<string | null> => {
+export const signMessage = async (message: string, provider?: any): Promise<string | null> => {
   try {
-    if (!window.ethereum) {
-      toast.error('No Ethereum wallet detected');
+    if (!window.ethereum && !provider) {
+      toast.error('No wallet provider detected');
       return null;
     }
     
-    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+    let signature;
     
-    if (!accounts || accounts.length === 0) {
-      toast.error('No wallet connected');
-      return null;
-    }
-    
-    const from = accounts[0];
-    const msgParams = {
-      domain: {
-        name: 'SecureAddress Bridge',
-        version: '1'
-      },
-      message: {
-        content: message,
-        timestamp: Date.now()
-      },
-      primaryType: 'Verification',
-      types: {
-        EIP712Domain: [
-          { name: 'name', type: 'string' },
-          { name: 'version', type: 'string' }
-        ],
-        Verification: [
-          { name: 'content', type: 'string' },
-          { name: 'timestamp', type: 'uint256' }
-        ]
+    if (provider) {
+      // For WalletConnect or other providers
+      const accounts = await provider.listAccounts();
+      if (!accounts || accounts.length === 0) {
+        toast.error('No wallet connected');
+        return null;
       }
-    };
-    
-    const signature = await window.ethereum.request({
-      method: 'eth_signTypedData_v4',
-      params: [from, JSON.stringify(msgParams)],
-    });
+      
+      signature = await provider.getSigner().signMessage(message);
+    } else {
+      // For MetaMask
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (!accounts || accounts.length === 0) {
+        toast.error('No wallet connected');
+        return null;
+      }
+      
+      const from = accounts[0];
+      signature = await window.ethereum.request({
+        method: 'personal_sign',
+        params: [message, from],
+      });
+    }
     
     return signature;
   } catch (error: any) {
