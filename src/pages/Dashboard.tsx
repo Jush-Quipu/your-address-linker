@@ -1,149 +1,119 @@
 
 import React from 'react';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
-import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import DashboardNavbar from '@/components/DashboardNavbar';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MapPin, Package, Key, Settings, Shield } from 'lucide-react';
+import Footer from '@/components/Footer';
 
 const Dashboard: React.FC = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const navigate = useNavigate();
 
-  // Redirect if not authenticated
+  // Redirect to login if not authenticated
   React.useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isLoading && !isAuthenticated) {
       navigate('/auth');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen">
-      <Navbar />
-      <main className="pt-32 pb-20 px-6 md:px-12">
+    <div className="min-h-screen flex flex-col">
+      <DashboardNavbar />
+      
+      <main className="flex-1 pt-24 pb-16 px-4">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl md:text-4xl font-bold mb-6">Dashboard</h1>
-          
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold">Welcome to Your Dashboard</h1>
+            <p className="text-muted-foreground mt-2">
+              Manage your addresses, shipments, and application settings
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Address Management Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <MapPin className="h-5 w-5 mr-2 text-primary" />
-                  Address Management
-                </CardTitle>
-                <CardDescription>Manage your verified addresses</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Add, verify, and manage your physical addresses.
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border">
+              <h2 className="text-lg font-medium mb-4">Verified Addresses</h2>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Manage your verified physical addresses and control who has access to them.
                 </p>
-                <Button 
-                  variant="default" 
-                  className="w-full"
-                  onClick={() => navigate('/dashboard/addresses')}
-                >
+                <Button onClick={() => navigate('/dashboard/addresses')}>
                   Manage Addresses
                 </Button>
-              </CardContent>
-            </Card>
-            
-            {/* Shipment Tracking Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Package className="h-5 w-5 mr-2 text-primary" />
-                  Shipment Tracking
-                </CardTitle>
-                <CardDescription>Track your shipments</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  View and track all your blind shipments.
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border">
+              <h2 className="text-lg font-medium mb-4">Shipments</h2>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Track your packages and manage blind shipping configurations.
                 </p>
-                <Button 
-                  variant="default" 
-                  className="w-full"
-                  onClick={() => navigate('/my-shipments')}
-                >
+                <Button onClick={() => navigate('/my-shipments')}>
                   View Shipments
                 </Button>
-              </CardContent>
-            </Card>
-            
-            {/* API Keys Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Key className="h-5 w-5 mr-2 text-primary" />
-                  API Keys
-                </CardTitle>
-                <CardDescription>Manage your API keys</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Generate and manage API keys for integration.
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border">
+              <h2 className="text-lg font-medium mb-4">Connected Wallets</h2>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Link your blockchain wallets to your verified addresses securely.
                 </p>
-                <Button 
-                  variant="default" 
-                  className="w-full"
-                  onClick={() => navigate('/dashboard/api-keys')}
-                >
+                <Button onClick={() => navigate('/connect')}>
+                  Manage Wallets
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border">
+              <h2 className="text-lg font-medium mb-4">Access Permissions</h2>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Control which applications can access your address information.
+                </p>
+                <Button onClick={() => navigate('/dashboard/permissions')}>
+                  Manage Permissions
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border">
+              <h2 className="text-lg font-medium mb-4">API Keys</h2>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Generate and manage API keys for integrating with our services.
+                </p>
+                <Button onClick={() => navigate('/dashboard/api-keys')}>
                   Manage API Keys
                 </Button>
-              </CardContent>
-            </Card>
-            
-            {/* Settings Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Settings className="h-5 w-5 mr-2 text-primary" />
-                  Account Settings
-                </CardTitle>
-                <CardDescription>Manage your account</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Update your profile and account settings.
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border">
+              <h2 className="text-lg font-medium mb-4">Settings</h2>
+              <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Configure your account preferences and notification settings.
                 </p>
-                <Button 
-                  variant="default" 
-                  className="w-full"
-                  onClick={() => navigate('/dashboard/settings')}
-                >
-                  Account Settings
+                <Button onClick={() => navigate('/dashboard/settings')}>
+                  Edit Settings
                 </Button>
-              </CardContent>
-            </Card>
-            
-            {/* Developer Portal Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Shield className="h-5 w-5 mr-2 text-primary" />
-                  Developer Portal
-                </CardTitle>
-                <CardDescription>Access developer tools</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Access the developer portal for API docs and tools.
-                </p>
-                <Button 
-                  variant="default" 
-                  className="w-full"
-                  onClick={() => navigate('/developer')}
-                >
-                  Developer Portal
-                </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </div>
       </main>
+      
       <Footer />
     </div>
   );
