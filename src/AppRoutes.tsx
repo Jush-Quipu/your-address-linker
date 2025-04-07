@@ -17,6 +17,11 @@ import DeveloperPortal from '@/pages/DeveloperPortal';
 import AdminPage from '@/pages/AdminPage';
 import DashboardAddresses from '@/pages/DashboardAddresses';
 import Permissions from '@/pages/Permissions';
+import Contact from '@/pages/Contact';
+import IntegrationsPage from '@/pages/Integrations';
+import SecurityPage from '@/pages/Security';
+import AboutPage from '@/pages/About';
+import BlogPage from '@/pages/Blog';
 
 // Developer routes
 import DeveloperDashboardPage from '@/pages/DeveloperDashboardPage';
@@ -44,6 +49,12 @@ const AppRoutes: React.FC = () => {
       <Route path="/" element={<Landing />} />
       <Route path="/home" element={<Index />} />
       <Route path="/features" element={<Features />} />
+      <Route path="/pricing" element={<Pricing />} />
+      <Route path="/integrations" element={<IntegrationsPage />} />
+      <Route path="/security" element={<SecurityPage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/blog" element={<BlogPage />} />
+      <Route path="/contact" element={<Contact />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/auth/callback" element={<Auth />} />
       
