@@ -24,4 +24,12 @@ export default defineConfig(({ mode }) => ({
     'process.env': {},
     global: 'window',
   },
+  optimizeDeps: {
+    esbuildOptions: {
+      // Node.js global to browser globalThis
+      define: {
+        global: 'globalThis',
+      },
+    },
+  },
 }));

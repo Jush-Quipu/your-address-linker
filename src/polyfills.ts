@@ -6,7 +6,18 @@ if (typeof window !== 'undefined') {
   // Other common Node.js globals that might be needed
   // Use a type assertion to avoid TypeScript errors with Process type
   window.process = window.process || { env: {} } as any;
-  window.Buffer = window.Buffer || require('buffer').Buffer;
+  
+  // Instead of using require for Buffer, we'll create it if it doesn't exist
+  if (!window.Buffer) {
+    // Create a simple Buffer polyfill or import it dynamically
+    window.Buffer = {
+      from: (data: string, encoding?: string) => {
+        return new Uint8Array([...data].map(char => char.charCodeAt(0)));
+      },
+      isBuffer: (obj: any) => false,
+      alloc: (size: number) => new Uint8Array(size)
+    } as any;
+  }
 }
 
 export default function registerPolyfills() {
