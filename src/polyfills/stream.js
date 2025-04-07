@@ -29,6 +29,9 @@ export class Transform {
   end() { return this; }
 }
 
-export default {
+// Export a default object for easier importing
+const stream = {
   Transform
 };
+
+export default stream;

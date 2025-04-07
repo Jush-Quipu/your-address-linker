@@ -1,6 +1,9 @@
-
 // Import the actual buffer package
 import { Buffer as BufferPolyfill } from 'buffer';
+
+// Import our utility polyfills
+import utilPolyfill from './polyfills/util';
+import streamPolyfill from './polyfills/stream';
 
 // Polyfills for Node.js globals that are needed by libraries
 if (typeof window !== 'undefined') {
@@ -8,34 +11,16 @@ if (typeof window !== 'undefined') {
   window.global = window;
   
   // Other common Node.js globals that might be needed
-  // Use a type assertion to avoid TypeScript errors with Process type
-  window.process = window.process || { env: {} } as any;
+  window.process = window.process || { env: {} };
   
   // Use the actual buffer package instead of our own implementation
-  if (!window.Buffer) {
-    window.Buffer = BufferPolyfill;
-  }
+  window.Buffer = BufferPolyfill;
 
-  // Polyfill for util.inherits used by WalletConnect and other libraries
-  if (!window.util) {
-    window.util = {} as any;
-  }
+  // Add polyfill for util
+  window.util = utilPolyfill;
   
-  // Add util.inherits polyfill
-  if (!window.util.inherits) {
-    window.util.inherits = function inherits(ctor, superCtor) {
-      if (superCtor) {
-        ctor.super_ = superCtor;
-        Object.setPrototypeOf(ctor.prototype, superCtor.prototype);
-      }
-    };
-  }
-
-  // Common stream polyfill
-  if (!window.stream) {
-    window.stream = {} as any;
-  }
-  window.stream.Transform = class Transform {};
+  // Add polyfill for stream
+  window.stream = streamPolyfill;
 }
 
 export default function registerPolyfills() {

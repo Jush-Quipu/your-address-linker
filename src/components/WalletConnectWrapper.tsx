@@ -18,7 +18,7 @@ const WalletConnectWrapper: React.FC<WalletConnectWrapperProps> = ({ onWalletSel
       if (providerType === 'metamask') {
         if (!window.ethereum) {
           toast.error('MetaMask is not installed');
-          return;
+          return null;
         }
         
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -32,8 +32,8 @@ const WalletConnectWrapper: React.FC<WalletConnectWrapperProps> = ({ onWalletSel
           return accounts[0];
         }
       } else {
-        toast.info('WalletConnect is currently disabled');
-        // In the future, we can re-enable WalletConnect once polyfills are working
+        toast.info('WalletConnect support is coming soon');
+        // Due to polyfill issues, we're temporarily disabling WalletConnect
       }
     } catch (error) {
       console.error('Error connecting wallet:', error);
