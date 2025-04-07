@@ -19,6 +19,8 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       'buffer': 'buffer',
+      'util': path.resolve(__dirname, './src/polyfills/util.js'),
+      'stream': path.resolve(__dirname, './src/polyfills/stream.js'),
     },
   },
   define: {
@@ -31,6 +33,21 @@ export default defineConfig(({ mode }) => ({
       define: {
         global: 'globalThis',
       },
+      // Enable esbuild polyfill for Node.js modules
+      plugins: [
+        {
+          name: 'node-globals',
+          setup(build) {
+            // Polyfill Node.js globals
+            build.onResolve({ filter: /^util$/ }, () => {
+              return { path: path.resolve(__dirname, './src/polyfills/util.js') };
+            });
+            build.onResolve({ filter: /^stream$/ }, () => {
+              return { path: path.resolve(__dirname, './src/polyfills/stream.js') };
+            });
+          },
+        },
+      ],
     },
   },
 }));
