@@ -4,7 +4,8 @@ if (typeof window !== 'undefined') {
   window.global = window;
   
   // Other common Node.js globals that might be needed
-  window.process = window.process || { env: {} };
+  // Use a type assertion to avoid TypeScript errors with Process type
+  window.process = window.process || { env: {} } as any;
   window.Buffer = window.Buffer || require('buffer').Buffer;
 }
 
