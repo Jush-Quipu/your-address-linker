@@ -1,3 +1,5 @@
+// Import the actual buffer package
+import { Buffer as BufferPolyfill } from 'buffer';
 
 // Polyfills for Node.js globals that are needed by some libraries
 if (typeof window !== 'undefined') {
@@ -8,29 +10,9 @@ if (typeof window !== 'undefined') {
   // Use a type assertion to avoid TypeScript errors with Process type
   window.process = window.process || { env: {} } as any;
   
-  // Instead of using require for Buffer, we'll create it if it doesn't exist
+  // Use the actual buffer package instead of our own implementation
   if (!window.Buffer) {
-    // Create a more robust Buffer polyfill
-    window.Buffer = {
-      from: (data: any, encoding?: string) => {
-        // Handle string inputs
-        if (typeof data === 'string') {
-          return new Uint8Array([...data].map(char => char.charCodeAt(0)));
-        }
-        // Handle array-like or ArrayBuffer
-        else if (data instanceof Uint8Array || Array.isArray(data)) {
-          return new Uint8Array(data);
-        }
-        // Handle ArrayBuffer
-        else if (data instanceof ArrayBuffer) {
-          return new Uint8Array(data);
-        }
-        // Default fallback
-        return new Uint8Array();
-      },
-      isBuffer: (obj: any) => false,
-      alloc: (size: number) => new Uint8Array(size)
-    } as any;
+    window.Buffer = BufferPolyfill;
   }
 }
 

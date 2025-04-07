@@ -6,6 +6,7 @@ import { RoleProvider } from '@/context/RoleContext';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/context/ThemeContext';
 import AppRoutes from './AppRoutes';
+import { SecureAddressProvider } from './sdk/secureaddress-context';
 
 function App() {
   useEffect(() => {
@@ -18,8 +19,14 @@ function App() {
       <Router>
         <AuthProvider>
           <RoleProvider>
-            <AppRoutes />
-            <Toaster position="top-right" />
+            <SecureAddressProvider 
+              appId="secure-address-bridge-app"
+              apiUrl="https://sandbox.secureaddress-bridge.com/api" 
+              redirectUri={`${window.location.origin}/auth/callback`}
+            >
+              <AppRoutes />
+              <Toaster position="top-right" />
+            </SecureAddressProvider>
           </RoleProvider>
         </AuthProvider>
       </Router>
