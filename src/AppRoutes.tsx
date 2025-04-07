@@ -22,6 +22,7 @@ import IntegrationsPage from '@/pages/Integrations';
 import SecurityPage from '@/pages/Security';
 import AboutPage from '@/pages/About';
 import BlogPage from '@/pages/Blog';
+import Pricing from '@/pages/Pricing';
 
 // Developer routes
 import DeveloperDashboardPage from '@/pages/DeveloperDashboardPage';
