@@ -1,3 +1,4 @@
+
 // Polyfills for Node.js globals that are needed by some libraries
 if (typeof window !== 'undefined') {
   // Provide global object for libraries that expect Node.js environment
@@ -9,10 +10,23 @@ if (typeof window !== 'undefined') {
   
   // Instead of using require for Buffer, we'll create it if it doesn't exist
   if (!window.Buffer) {
-    // Create a simple Buffer polyfill or import it dynamically
+    // Create a more robust Buffer polyfill
     window.Buffer = {
-      from: (data: string, encoding?: string) => {
-        return new Uint8Array([...data].map(char => char.charCodeAt(0)));
+      from: (data: any, encoding?: string) => {
+        // Handle string inputs
+        if (typeof data === 'string') {
+          return new Uint8Array([...data].map(char => char.charCodeAt(0)));
+        }
+        // Handle array-like or ArrayBuffer
+        else if (data instanceof Uint8Array || Array.isArray(data)) {
+          return new Uint8Array(data);
+        }
+        // Handle ArrayBuffer
+        else if (data instanceof ArrayBuffer) {
+          return new Uint8Array(data);
+        }
+        // Default fallback
+        return new Uint8Array();
       },
       isBuffer: (obj: any) => false,
       alloc: (size: number) => new Uint8Array(size)
