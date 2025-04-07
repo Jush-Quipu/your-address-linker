@@ -21,9 +21,11 @@ if (typeof window !== 'undefined') {
   
   // Add polyfill for stream
   window.stream = streamPolyfill;
+  
+  console.log('Polyfills registered successfully');
 }
 
 export default function registerPolyfills() {
-  // This function can be empty, it's just to ensure the file is imported
-  console.log('Polyfills registered');
+  // This function is imported in main.tsx to ensure polyfills are registered
+  console.log('Polyfills registration function called');
 }

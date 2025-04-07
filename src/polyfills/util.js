@@ -17,8 +17,10 @@ export function inspect(obj) {
 
 // Add any other util functions needed
 
-export default {
+const util = {
   inherits,
   debuglog,
   inspect
 };
+
+export default util;
