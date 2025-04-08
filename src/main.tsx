@@ -5,11 +5,23 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 
-// Log to confirm polyfills are loaded before React
-console.log('Main.tsx executing, polyfills should be loaded');
+// Log to confirm initialization sequence
+console.log('Main.tsx executing, initializing application');
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+// Ensure DOM is fully loaded before rendering
+document.addEventListener('DOMContentLoaded', () => {
+  const rootElement = document.getElementById('root');
+  
+  if (!rootElement) {
+    console.error('Root element not found! Check your HTML file.');
+    return;
+  }
+  
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
+  
+  console.log('React application rendered');
+});

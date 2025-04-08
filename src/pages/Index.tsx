@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
-import Hero from '@/components/Hero';
+import Landing from '@/pages/Landing'; // Import Landing component
 import Features from '@/components/Features';
 import HowItWorks from '@/components/HowItWorks';
 import Footer from '@/components/Footer';
@@ -12,10 +12,11 @@ import { useAuth } from '@/context/AuthContext';
 const Index: React.FC = () => {
   const { isAuthenticated } = useAuth();
   
+  // Use Landing component instead of Hero for home page
   return (
     <div className="min-h-screen">
       <Navbar />
-      <Hero />
+      <Landing />
       <Features />
       <HowItWorks />
       
