@@ -1,6 +1,6 @@
 
 /**
- * SecureAddressBridge SDK v1.0.0
+ * SecureAddressBridge SDK v2.3.0
  * Sandbox Mode Included
  */
 (function(global) {

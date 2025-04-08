@@ -1,7 +1,7 @@
 
 {
   "name": "secureaddress-bridge-sdk",
-  "version": "2.2.1",
+  "version": "2.3.0",
   "description": "SecureAddress Bridge JavaScript SDK for securely linking blockchain wallets to verified physical addresses",
   "main": "secureaddress-bridge-sdk.js",
   "types": "secureaddress-bridge-sdk.d.ts",

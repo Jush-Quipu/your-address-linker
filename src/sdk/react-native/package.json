@@ -1,7 +1,7 @@
 
 {
   "name": "secureaddress-bridge-sdk-react-native",
-  "version": "1.3.1",
+  "version": "2.3.0",
   "description": "React Native SDK for SecureAddress Bridge to securely link blockchain wallets to verified physical addresses",
   "main": "secureaddress-bridge-react-native.js",
   "author": "SecureAddress Bridge Team",
