@@ -1,6 +1,6 @@
 
 import React from 'react';
-import Navbar from '@/components/Navbar';
+import DashboardNavbar from '@/components/DashboardNavbar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -24,7 +24,7 @@ const Connect: React.FC = () => {
   
   return (
     <div className="min-h-screen flex flex-col">
-      <Navbar />
+      <DashboardNavbar />
       
       <main className="flex-1 pt-24 pb-16 px-4">
         <div className="max-w-7xl mx-auto">

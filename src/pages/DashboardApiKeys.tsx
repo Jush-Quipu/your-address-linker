@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import Navbar from '@/components/Navbar';
+import DashboardNavbar from '@/components/DashboardNavbar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -33,7 +32,6 @@ const DashboardApiKeys: React.FC = () => {
   const [generatingKey, setGeneratingKey] = useState(false);
 
   useEffect(() => {
-    // Redirect if not authenticated
     if (!isAuthenticated && !loading) {
       toast.error('Authentication required', {
         description: 'Please sign in to access this page',
@@ -114,10 +112,8 @@ const DashboardApiKeys: React.FC = () => {
           description: 'Make sure to copy your key now. You won\'t be able to see it again.'
         });
         
-        // Copy to clipboard automatically
         navigator.clipboard.writeText(apiKey);
         
-        // Reset and close dialog
         setNewKeyName('');
         setShowNewKeyDialog(false);
       }
@@ -153,12 +149,10 @@ const DashboardApiKeys: React.FC = () => {
       if (error) throw error;
       
       if (data) {
-        // Update the key in state
         setApiKeys(prev => 
           prev.map(key => key.id === id ? data : key)
         );
         
-        // Copy to clipboard
         navigator.clipboard.writeText(apiKey);
         
         toast.success('API key regenerated', {
@@ -183,7 +177,6 @@ const DashboardApiKeys: React.FC = () => {
       
       if (error) throw error;
       
-      // Remove the key from state or update its status
       setApiKeys(prev => prev.map(key => 
         key.id === id ? { ...key, revoked: true } : key
       ));
@@ -197,7 +190,7 @@ const DashboardApiKeys: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <Navbar />
+      <DashboardNavbar />
       <main className="pt-32 pb-20 px-6 md:px-12">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-8">
@@ -273,7 +266,6 @@ const DashboardApiKeys: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* New API Key Dialog */}
           <Dialog open={showNewKeyDialog} onOpenChange={setShowNewKeyDialog}>
             <DialogContent>
               <DialogHeader>

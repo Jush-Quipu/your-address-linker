@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import Navbar from '@/components/Navbar';
+import DashboardNavbar from '@/components/DashboardNavbar';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -26,7 +25,6 @@ const DashboardSettings: React.FC = () => {
   });
 
   useEffect(() => {
-    // Redirect if not authenticated
     if (!isAuthenticated && !loading) {
       toast.error('Authentication required', {
         description: 'Please sign in to access this page',
@@ -37,13 +35,9 @@ const DashboardSettings: React.FC = () => {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      // Here you would fetch user settings from your API
       setLoading(true);
       try {
-        // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Set initial form data (this would come from your API)
         setFormData({
           email: user?.email || '',
           fullName: '',
@@ -82,7 +76,7 @@ const DashboardSettings: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <Navbar />
+      <DashboardNavbar />
       <main className="pt-32 pb-20 px-6 md:px-12">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl md:text-4xl font-bold mb-8">Account Settings</h1>

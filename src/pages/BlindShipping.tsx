@@ -1,6 +1,6 @@
 
 import React from 'react';
-import Navbar from '@/components/Navbar';
+import DashboardNavbar from '@/components/DashboardNavbar';
 import BlindShipping from '@/components/BlindShipping';
 import Footer from '@/components/Footer';
 import { useAuth } from '@/context/AuthContext';
@@ -16,7 +16,7 @@ const BlindShippingPage: React.FC = () => {
   
   return (
     <div className="min-h-screen">
-      <Navbar />
+      <DashboardNavbar />
       <main className="pt-32 pb-20 px-6 md:px-12">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
