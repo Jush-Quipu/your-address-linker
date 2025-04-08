@@ -42,7 +42,7 @@ interface DeveloperRoleRecord {
 }
 
 const AdminRolesPage: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { isAdmin, refreshRoles } = useRole();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,11 +50,6 @@ const AdminRolesPage: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<DeveloperRole>(DeveloperRole.DEVELOPER);
   const [emailToAdd, setEmailToAdd] = useState('');
   const [addingUser, setAddingUser] = useState(false);
-
-  // Redirect if not authenticated or not admin
-  if (!isLoading && (!isAuthenticated || !isAdmin)) {
-    return <Navigate to="/" />;
-  }
 
   // Fetch users effect
   useEffect(() => {
@@ -196,6 +191,11 @@ const AdminRolesPage: React.FC = () => {
       setAddingUser(false);
     }
   };
+
+  // Redirect if not authenticated or not admin - MOVED AFTER ALL HOOKS
+  if (!authLoading && (!isAuthenticated || !isAdmin)) {
+    return <Navigate to="/" />;
+  }
 
   const filteredUsers = users.filter(user => 
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) || 
