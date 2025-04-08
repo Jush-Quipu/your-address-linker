@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 
@@ -11,9 +10,11 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-1">
             <Link to="/" className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">SB</span>
-              </div>
+              <img 
+                src="/lovable-uploads/d9494fc1-d5a2-48e3-a68d-3c9e7743d434.png" 
+                alt="SecureAddress Bridge Logo" 
+                className="h-8 w-8"
+              />
               <span className="font-semibold">SecureAddress Bridge</span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-xs">

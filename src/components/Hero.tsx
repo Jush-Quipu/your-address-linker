@@ -8,8 +8,12 @@ const Hero: React.FC = () => {
     <section className="min-h-screen pt-24 px-6 md:px-12 flex flex-col justify-center items-center text-center">
       <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px] opacity-70"></div>
       
-      <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mb-8 animate-bounce-subtle">
-        <span className="text-primary-foreground font-bold text-3xl">SB</span>
+      <div className="mb-8">
+        <img 
+          src="/lovable-uploads/d9494fc1-d5a2-48e3-a68d-3c9e7743d434.png" 
+          alt="SecureAddress Bridge Logo" 
+          className="w-32 h-32 object-contain animate-bounce-subtle"
+        />
       </div>
       
       <h1 className="text-4xl md:text-6xl font-bold tracking-tight max-w-4xl animate-fade-in mb-6">
