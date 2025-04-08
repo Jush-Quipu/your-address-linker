@@ -5,6 +5,9 @@ REM Windows script to publish the SecureAddress Bridge SDK
 REM Set the npm token
 set NPM_TOKEN=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
 
+REM Configure npm to use the token for authentication
+echo //registry.npmjs.org/:_authToken=%NPM_TOKEN% > %USERPROFILE%\.npmrc
+
 REM Run the release script with the specified release type
 REM Default to patch if no release type is specified
 set RELEASE_TYPE=%1

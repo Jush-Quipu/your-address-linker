@@ -4,6 +4,9 @@
 # Set the npm token
 export NPM_TOKEN=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
 
+# Configure npm to use the token for authentication
+echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+
 # Run the release script with the specified release type
 # Default to patch if no release type is specified
 RELEASE_TYPE=${1:-patch}
@@ -17,4 +20,3 @@ chmod +x $(dirname "$0")/sync-versions.sh
 
 # Run the release script with node explicitly
 node $(dirname "$0")/release.js $RELEASE_TYPE
-

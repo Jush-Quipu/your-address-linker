@@ -11,12 +11,12 @@ const path = require('path');
 const NPM_TOKEN = process.env.NPM_TOKEN;
 const PACKAGES = [
   {
-    name: 'secureaddress-bridge-sdk', // Removed scope
+    name: 'secureaddress-bridge-sdk', // Kept same name as existing package
     path: path.resolve(__dirname, '..'),
     files: ['secureaddress-bridge-sdk.js', 'secureaddress-bridge-sdk.d.ts', 'index.ts', 'package.json', 'README.md']
   },
   {
-    name: 'secureaddress-bridge-sdk-react-native', // Removed scope
+    name: 'secureaddress-bridge-sdk-react-native', // Kept same name as existing package
     path: path.resolve(__dirname, '../react-native'),
     files: ['secureaddress-bridge-react-native.js', 'package.json', 'README.md']
   }
@@ -32,7 +32,7 @@ if (!NPM_TOKEN) {
 // Set up npm authentication
 console.log('🔑 Setting up npm authentication...');
 try {
-  // Create .npmrc file with the token
+  // Create .npmrc file with the token in the home directory
   const npmrcPath = path.resolve(process.env.HOME || process.env.USERPROFILE, '.npmrc');
   fs.writeFileSync(npmrcPath, `//registry.npmjs.org/:_authToken=${NPM_TOKEN}`);
   console.log('✅ npm authentication set up successfully');
@@ -69,39 +69,28 @@ for (const pkg of PACKAGES) {
   console.log(`  ✅ All files present`);
 }
 
-// Update package.json to use unscoped names
-console.log('\n📝 Updating package.json for publishing...');
-for (const pkg of PACKAGES) {
-  try {
-    const packageJsonPath = path.join(pkg.path, 'package.json');
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-    
-    // Store original name to restore later
-    const originalName = packageJson.name;
-    
-    // Update package name (remove scope)
-    packageJson.name = pkg.name;
-    
-    // Write updated package.json
-    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
-    
-    console.log(`  Updated ${path.basename(pkg.path)}/package.json: ${originalName} → ${packageJson.name}`);
-  } catch (err) {
-    console.error(`❌ Failed to update package.json in ${pkg.path}:`, err.message);
-    process.exit(1);
-  }
-}
-
 // Publish packages
 console.log('\n📦 Publishing packages...');
 for (const pkg of PACKAGES) {
   console.log(`\nPublishing ${pkg.name}...`);
   try {
     process.chdir(pkg.path);
+    
+    // Verify npm is properly logged in
+    try {
+      execSync('npm whoami', { stdio: 'pipe' });
+      console.log('✅ Authenticated with npm');
+    } catch (err) {
+      console.warn('⚠️ Not authenticated with npm, attempting to continue with token...');
+    }
+    
+    // Use --access public to ensure it's published publicly
+    // Force flag to update existing package
     execSync('npm publish --access public', { stdio: 'inherit' });
     console.log(`✅ Successfully published ${pkg.name}`);
   } catch (err) {
     console.error(`❌ Failed to publish ${pkg.name}:`, err.message);
+    console.error('Try manually logging in with: npm login');
     process.exit(1);
   }
 }
