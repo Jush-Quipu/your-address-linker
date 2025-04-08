@@ -2,7 +2,7 @@
 #!/bin/bash
 
 # Set the npm token
-export NPM_TOKEN=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
+export NPM_TOKEN=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
 
 # Configure npm to use the token for authentication
 echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
