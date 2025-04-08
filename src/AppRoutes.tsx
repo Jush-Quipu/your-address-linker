@@ -32,6 +32,13 @@ import DeveloperAnalytics from '@/pages/DeveloperAnalytics';
 import ApiMonitoring from '@/pages/ApiMonitoring';
 import DeveloperTodoPage from '@/pages/DeveloperTodoPage';
 
+// Admin routes
+import AdminRolesPage from '@/pages/AdminRolesPage';
+import AdminMonitoringPage from '@/pages/AdminMonitoringPage';
+import AdminAppsPage from '@/pages/AdminAppsPage';
+import AdminSettingsPage from '@/pages/AdminSettingsPage';
+import AdminLogsPage from '@/pages/AdminLogsPage';
+
 const AppRoutes: React.FC = () => {
   const { isLoading, error } = useSecureAddress();
   
@@ -100,7 +107,11 @@ const AppRoutes: React.FC = () => {
       
       {/* Admin Routes */}
       <Route path="/admin" element={<AdminPage />} />
-      <Route path="/admin/*" element={<AdminPage />} />
+      <Route path="/admin/roles" element={<AdminRolesPage />} />
+      <Route path="/admin/monitoring" element={<AdminMonitoringPage />} />
+      <Route path="/admin/apps" element={<AdminAppsPage />} />
+      <Route path="/admin/settings" element={<AdminSettingsPage />} />
+      <Route path="/admin/logs" element={<AdminLogsPage />} />
       
       {/* 404 Page */}
       <Route path="*" element={<NotFound />} />

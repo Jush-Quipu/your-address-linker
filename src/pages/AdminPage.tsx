@@ -30,11 +30,11 @@ const AdminPage: React.FC = () => {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href="/developer">Developer</BreadcrumbLink>
+            <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href="/developer/admin">
+            <BreadcrumbLink href="/admin">
               <Shield className="h-4 w-4 mr-1" />
               Admin
             </BreadcrumbLink>
@@ -71,7 +71,7 @@ const AdminPage: React.FC = () => {
           </CardContent>
           <CardFooter>
             <Button asChild variant="outline" className="w-full">
-              <Link to="/developer/admin/roles">
+              <Link to="/admin/roles">
                 Manage Roles
               </Link>
             </Button>
@@ -95,7 +95,7 @@ const AdminPage: React.FC = () => {
           </CardContent>
           <CardFooter>
             <Button asChild variant="outline" className="w-full">
-              <Link to="/developer/admin/monitoring">
+              <Link to="/admin/monitoring">
                 View Monitoring
               </Link>
             </Button>
@@ -119,7 +119,7 @@ const AdminPage: React.FC = () => {
           </CardContent>
           <CardFooter>
             <Button asChild variant="outline" className="w-full">
-              <Link to="/developer/admin/apps">
+              <Link to="/admin/apps">
                 Manage Applications
               </Link>
             </Button>
@@ -143,7 +143,7 @@ const AdminPage: React.FC = () => {
           </CardContent>
           <CardFooter>
             <Button asChild variant="outline" className="w-full">
-              <Link to="/developer/admin/settings">
+              <Link to="/admin/settings">
                 System Settings
               </Link>
             </Button>
@@ -167,7 +167,7 @@ const AdminPage: React.FC = () => {
           </CardContent>
           <CardFooter>
             <Button asChild variant="outline" className="w-full">
-              <Link to="/developer/admin/logs">
+              <Link to="/admin/logs">
                 View Audit Logs
               </Link>
             </Button>
