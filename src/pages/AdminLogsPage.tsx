@@ -22,21 +22,21 @@ const AdminLogsPage: React.FC = () => {
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/">
+            <BreadcrumbLink to="/">
               <HomeIcon className="h-4 w-4 mr-1" />
               Home
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href="/admin">
+            <BreadcrumbLink to="/admin">
               <Shield className="h-4 w-4 mr-1" />
               Admin
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href="/admin/logs">
+            <BreadcrumbLink to="/admin/logs">
               <FileText className="h-4 w-4 mr-1" />
               Audit Logs
             </BreadcrumbLink>

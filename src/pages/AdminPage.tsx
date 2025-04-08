@@ -23,18 +23,18 @@ const AdminPage: React.FC = () => {
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/">
+            <BreadcrumbLink to="/">
               <HomeIcon className="h-4 w-4 mr-1" />
               Home
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+            <BreadcrumbLink to="/dashboard">Dashboard</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href="/admin">
+            <BreadcrumbLink to="/admin">
               <Shield className="h-4 w-4 mr-1" />
               Admin
             </BreadcrumbLink>

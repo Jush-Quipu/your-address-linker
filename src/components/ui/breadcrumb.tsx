@@ -3,6 +3,7 @@ import * as React from "react"
 import { ChevronRight, MoreHorizontal } from "lucide-react"
 import { Slot } from "@radix-ui/react-slot"
 import { cn } from "@/lib/utils"
+import { Link as RouterLink } from "react-router-dom"
 
 const Breadcrumb = React.forwardRef<
   HTMLElement,
@@ -39,13 +40,18 @@ const BreadcrumbItem = React.forwardRef<
 ))
 BreadcrumbItem.displayName = "BreadcrumbItem"
 
+interface BreadcrumbLinkProps extends React.ComponentPropsWithoutRef<"a"> {
+  asChild?: boolean
+  to?: string
+}
+
 const BreadcrumbLink = React.forwardRef<
   HTMLAnchorElement,
-  React.ComponentPropsWithoutRef<"a"> & {
-    asChild?: boolean
-  }
->(({ className, asChild = false, ...props }, ref) => {
-  const Comp = asChild ? Slot : "a"
+  BreadcrumbLinkProps
+>(({ className, asChild = false, to, href, ...props }, ref) => {
+  const Comp = asChild ? Slot : to ? RouterLink : "a"
+  const linkProps = to ? { to } : { href }
+  
   return (
     <Comp
       ref={ref}
@@ -53,6 +59,7 @@ const BreadcrumbLink = React.forwardRef<
         "transition-colors hover:text-foreground flex items-center",
         className
       )}
+      {...linkProps}
       {...props}
     />
   )

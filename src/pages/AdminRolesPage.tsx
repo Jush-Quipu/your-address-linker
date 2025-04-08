@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRole } from '@/context/RoleContext';
@@ -35,7 +34,6 @@ interface User {
   avatarUrl?: string;
 }
 
-// Interface for the developer_roles table rows
 interface DeveloperRoleRecord {
   user_id: string;
   role: string;
@@ -51,27 +49,23 @@ const AdminRolesPage: React.FC = () => {
   const [emailToAdd, setEmailToAdd] = useState('');
   const [addingUser, setAddingUser] = useState(false);
 
-  // Fetch users effect
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
         
-        // Get all users with their roles
         const { data: usersData, error: usersError } = await supabase
           .from('profiles')
           .select('id, email, created_at, full_name, avatar_url');
           
         if (usersError) throw usersError;
         
-        // Get all role assignments
         const { data: rolesData, error: rolesError } = await supabase
           .from('developer_roles')
           .select('*');
           
         if (rolesError) throw rolesError;
         
-        // Map roles to users
         const usersWithRoles = (usersData || []).map((user: any) => {
           const userRoles = rolesData
             .filter((role: DeveloperRoleRecord) => role.user_id === user.id)
@@ -104,7 +98,6 @@ const AdminRolesPage: React.FC = () => {
   const handleAddRole = async (userId: string, role: DeveloperRole) => {
     const success = await addUserRole(userId, role);
     if (success) {
-      // Update local state
       setUsers(prevUsers => 
         prevUsers.map(user => 
           user.id === userId 
@@ -118,7 +111,6 @@ const AdminRolesPage: React.FC = () => {
   const handleRemoveRole = async (userId: string, role: DeveloperRole) => {
     const success = await removeUserRole(userId, role);
     if (success) {
-      // Update local state
       setUsers(prevUsers => 
         prevUsers.map(user => 
           user.id === userId 
@@ -138,7 +130,6 @@ const AdminRolesPage: React.FC = () => {
     try {
       setAddingUser(true);
       
-      // Find user with this email
       const { data: userData, error: userError } = await supabase
         .from('profiles')
         .select('id, email')
@@ -150,17 +141,14 @@ const AdminRolesPage: React.FC = () => {
         return;
       }
       
-      // Add the selected role to this user
       const success = await addUserRole(userData.id, selectedRole);
       
       if (success) {
         toast.success(`Added ${selectedRole} role to ${emailToAdd}`);
         
-        // Check if user is already in the list
         const existingUser = users.find(u => u.id === userData.id);
         
         if (existingUser) {
-          // Update existing user
           setUsers(prevUsers => 
             prevUsers.map(user => 
               user.id === userData.id 
@@ -169,7 +157,6 @@ const AdminRolesPage: React.FC = () => {
             )
           );
         } else {
-          // Add new user to the list
           setUsers(prevUsers => [
             ...prevUsers, 
             { 
@@ -181,7 +168,6 @@ const AdminRolesPage: React.FC = () => {
           ]);
         }
         
-        // Clear the input
         setEmailToAdd('');
       }
     } catch (error) {
@@ -192,7 +178,6 @@ const AdminRolesPage: React.FC = () => {
     }
   };
 
-  // Redirect if not authenticated or not admin - MOVED AFTER ALL HOOKS
   if (!authLoading && (!isAuthenticated || !isAdmin)) {
     return <Navigate to="/" />;
   }
@@ -214,21 +199,21 @@ const AdminRolesPage: React.FC = () => {
       <Breadcrumb className="mb-6">
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink href="/">
+            <BreadcrumbLink to="/">
               <HomeIcon className="h-4 w-4 mr-1" />
               Home
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href="/admin">
+            <BreadcrumbLink to="/admin">
               <Shield className="h-4 w-4 mr-1" />
               Admin
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href="/admin/roles">
+            <BreadcrumbLink to="/admin/roles">
               <Users className="h-4 w-4 mr-1" />
               Role Management
             </BreadcrumbLink>
