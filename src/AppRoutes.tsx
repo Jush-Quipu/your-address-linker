@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Landing from '@/pages/Landing';
 import Index from '@/pages/Index';
 import NotFound from '@/pages/NotFound';
 import Dashboard from '@/pages/Dashboard';
@@ -34,7 +33,24 @@ import ApiMonitoring from '@/pages/ApiMonitoring';
 import DeveloperTodoPage from '@/pages/DeveloperTodoPage';
 
 const AppRoutes: React.FC = () => {
-  const { isLoading } = useSecureAddress();
+  const { isLoading, error } = useSecureAddress();
+  
+  // Add error handling for context initialization
+  if (error) {
+    console.error("SecureAddress context error:", error);
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <h1 className="text-xl font-semibold mb-2">Something went wrong</h1>
+        <p className="text-muted-foreground">There was a problem loading the application</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-4 px-4 py-2 bg-primary text-white rounded"
+        >
+          Refresh page
+        </button>
+      </div>
+    );
+  }
   
   if (isLoading) {
     return (
@@ -46,8 +62,8 @@ const AppRoutes: React.FC = () => {
   
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<Landing />} />
+      {/* Public Routes - Make Index the root route */}
+      <Route path="/" element={<Index />} />
       <Route path="/home" element={<Index />} />
       <Route path="/features" element={<Features />} />
       <Route path="/pricing" element={<Pricing />} />

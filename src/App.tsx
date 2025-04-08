@@ -7,6 +7,7 @@ import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/context/ThemeContext';
 import AppRoutes from './AppRoutes';
 import { SecureAddressProvider } from './sdk/secureaddress-context';
+import './polyfills'; // Ensure polyfills are imported
 
 function App() {
   useEffect(() => {
@@ -23,6 +24,7 @@ function App() {
               appId="secure-address-bridge-app"
               apiUrl="https://sandbox.secureaddress-bridge.com/api" 
               redirectUri={`${window.location.origin}/auth/callback`}
+              debug={true} // Enable debug mode
             >
               <AppRoutes />
               <Toaster position="top-right" />

@@ -38,6 +38,7 @@ interface SecureAddressProviderProps {
   appId: string;
   apiUrl?: string;
   redirectUri?: string;
+  debug?: boolean;
 }
 
 export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
@@ -45,6 +46,7 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
   appId,
   apiUrl,
   redirectUri,
+  debug = false,
 }) => {
   const [client, setClient] = useState<SecureAddressBridge | null>(null);
   const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
@@ -58,42 +60,64 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
   const [wallets, setWallets] = useState<WalletInfo[]>([]);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
+  const logDebug = (message: string, ...args: any[]) => {
+    if (debug) {
+      console.log(`[SecureAddress] ${message}`, ...args);
+    }
+  };
+
   useEffect(() => {
-    const secureAddressClient = new SecureAddressBridge({
-      appId,
-      apiUrl,
-      redirectUri,
-    });
-    setClient(secureAddressClient);
+    try {
+      logDebug('Initializing SecureAddressBridge with:', { appId, apiUrl, redirectUri });
+      
+      const secureAddressClient = new SecureAddressBridge({
+        appId,
+        apiUrl,
+        redirectUri,
+        sandbox: true, // Ensure sandbox mode is on for development
+      });
+      
+      setClient(secureAddressClient);
+      logDebug('SecureAddressBridge initialized');
 
-    const storedToken = localStorage.getItem('secureaddress_token');
-    if (storedToken) {
-      setToken(storedToken);
-      setIsAuthorized(true);
-      setIsAuthenticated(true);
+      const storedToken = localStorage.getItem('secureaddress_token');
+      logDebug('Stored token:', storedToken ? '[token exists]' : 'none');
+      
+      if (storedToken) {
+        setToken(storedToken);
+        setIsAuthorized(true);
+        setIsAuthenticated(true);
 
-      fetchUserInfo(storedToken);
+        fetchUserInfo(storedToken);
+      }
+
+      const proofId = localStorage.getItem('secureaddress_proof_id');
+      const proofToken = localStorage.getItem('secureaddress_proof_token');
+      if (proofId && proofToken) {
+        logDebug('Found stored proof credentials:', { proofId });
+        secureAddressClient.getZkProof()
+          .then(result => {
+            logDebug('ZK proof result:', result);
+            if (result.success && result.proof) {
+              setZkpProof(result.proof);
+            }
+          })
+          .catch(err => {
+            console.error('Error loading ZK proof:', err);
+          });
+      }
+
+      setIsLoading(false);
+    } catch (initError) {
+      console.error('Error initializing SecureAddress context:', initError);
+      setError(initError instanceof Error ? initError.message : 'Unknown initialization error');
+      setIsLoading(false);
     }
-
-    const proofId = localStorage.getItem('secureaddress_proof_id');
-    const proofToken = localStorage.getItem('secureaddress_proof_token');
-    if (proofId && proofToken) {
-      secureAddressClient.getZkProof()
-        .then(result => {
-          if (result.success && result.proof) {
-            setZkpProof(result.proof);
-          }
-        })
-        .catch(err => {
-          console.error('Error loading ZK proof:', err);
-        });
-    }
-
-    setIsLoading(false);
-  }, [appId, apiUrl, redirectUri]);
+  }, [appId, apiUrl, redirectUri, debug]);
 
   const fetchUserInfo = async (token: string) => {
     try {
+      logDebug('Fetching user info with token');
       setUser({
         id: 'user-123',
         email: 'user@example.com'
@@ -107,6 +131,7 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
 
   const refreshWallets = async () => {
     try {
+      logDebug('Refreshing wallets');
       if (isAuthenticated) {
         setWallets([
           {
@@ -115,6 +140,7 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
             connectedAt: new Date().toISOString()
           }
         ]);
+        logDebug('Wallets refreshed');
       }
     } catch (error) {
       console.error('Error refreshing wallets:', error);
@@ -124,16 +150,23 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
   useEffect(() => {
     if (!client) return;
 
-    const url = new URL(window.location.href);
-    const code = url.searchParams.get('code');
-    const proofId = url.searchParams.get('proof_id');
+    try {
+      logDebug('Checking URL for auth callbacks');
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get('code');
+      const proofId = url.searchParams.get('proof_id');
 
-    if (code) {
-      handleAuthCallback();
-    }
+      if (code) {
+        logDebug('Found code in URL, handling auth callback');
+        handleAuthCallback();
+      }
 
-    if (proofId) {
-      handleZkpCallback();
+      if (proofId) {
+        logDebug('Found proofId in URL, handling ZKP callback');
+        handleZkpCallback();
+      }
+    } catch (urlError) {
+      console.error('Error processing URL parameters:', urlError);
     }
   }, [client]);
 
@@ -141,18 +174,26 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
     if (!client) return;
 
     try {
+      logDebug('Processing auth callback');
       setIsLoading(true);
       const result = await client.handleCallback();
+      logDebug('Auth callback result:', result);
+      
       if (result.success && result.token) {
         localStorage.setItem('secureaddress_token', result.token);
         setToken(result.token);
         setIsAuthorized(true);
         setIsAuthenticated(true);
+        toast.success('Successfully authenticated');
       } else {
         setError(result.error || 'Authorization failed');
+        toast.error('Authentication failed', { description: result.error || 'Unknown error' });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Error handling auth callback:', errorMessage);
+      setError(errorMessage);
+      toast.error('Authentication error', { description: errorMessage });
     } finally {
       setIsLoading(false);
     }
@@ -162,18 +203,28 @@ export const SecureAddressProvider: React.FC<SecureAddressProviderProps> = ({
     if (!client) return;
 
     try {
+      logDebug('Processing ZKP callback');
       setIsLoading(true);
       const result = await client.handleZkpCallback();
+      logDebug('ZKP callback result:', result);
+      
       if (result.success) {
         const proofResult = await client.getZkProof();
+        logDebug('Proof retrieval result:', proofResult);
+        
         if (proofResult.success && proofResult.proof) {
           setZkpProof(proofResult.proof);
+          toast.success('Successfully retrieved ZK proof');
         }
       } else {
         setError(result.error || 'ZKP authorization failed');
+        toast.error('ZKP verification failed', { description: result.error || 'Unknown error' });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Error handling ZKP callback:', errorMessage);
+      setError(errorMessage);
+      toast.error('ZKP verification error', { description: errorMessage });
     } finally {
       setIsLoading(false);
     }
