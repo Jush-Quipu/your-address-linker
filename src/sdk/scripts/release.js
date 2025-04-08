@@ -59,19 +59,19 @@ for (const pkg of PACKAGES) {
     fs.writeFileSync(pkg.path, JSON.stringify(packageJson, null, 2) + '\n');
     
     console.log(`  Updated ${path.basename(path.dirname(pkg.path))}/package.json: ${currentVersion} → ${newVersion}`);
-    
-    // Also update the demo SDK in public folder if it exists
-    const demoSdkPath = path.resolve(__dirname, '..', '..', '..', 'public', 'sdk', 'secureaddress-bridge-sdk.js');
-    if (fs.existsSync(demoSdkPath)) {
-      let sdkContent = fs.readFileSync(demoSdkPath, 'utf8');
-      sdkContent = sdkContent.replace(/SecureAddressBridge SDK v[0-9]+\.[0-9]+\.[0-9]+/, `SecureAddressBridge SDK v${newVersion}`);
-      fs.writeFileSync(demoSdkPath, sdkContent);
-      console.log(`  Updated demo SDK version: v${currentVersion} → v${newVersion}`);
-    }
   } catch (err) {
     console.error(`❌ Failed to update version in ${pkg.path}:`, err.message);
     process.exit(1);
   }
+}
+
+// Synchronize versions across all files
+console.log('\n🔄 Synchronizing versions across all files...');
+try {
+  execSync('node ' + path.join(__dirname, 'sync-versions.js'), { stdio: 'inherit' });
+} catch (err) {
+  console.error('❌ Failed to synchronize versions:', err.message);
+  process.exit(1);
 }
 
 // Run the package preparation script

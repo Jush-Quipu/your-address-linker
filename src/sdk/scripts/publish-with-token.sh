@@ -12,6 +12,9 @@ RELEASE_TYPE=${1:-patch}
 chmod +x $(dirname "$0")/release.js
 chmod +x $(dirname "$0")/publish.js
 chmod +x $(dirname "$0")/package-prep.js
+chmod +x $(dirname "$0")/sync-versions.js
+chmod +x $(dirname "$0")/sync-versions.sh
 
 # Run the release script with node explicitly
 node $(dirname "$0")/release.js $RELEASE_TYPE
+
