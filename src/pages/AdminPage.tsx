@@ -3,8 +3,7 @@ import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRole } from '@/context/RoleContext';
 import { Navigate, Link } from 'react-router-dom';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import AuthenticatedLayout from '@/components/layouts/AuthenticatedLayout';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { HomeIcon, Shield, Settings, Users, Activity, Database, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,167 +19,162 @@ const AdminPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen">
-      <Navbar />
-      <main className="pt-32 pb-20 px-6 md:px-12">
-        <div className="max-w-7xl mx-auto">
-          <Breadcrumb className="mb-6">
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/">
-                  <HomeIcon className="h-4 w-4 mr-1" />
-                  Home
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/developer">Developer</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/developer/admin">
-                  <Shield className="h-4 w-4 mr-1" />
-                  Admin
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
+    <AuthenticatedLayout>
+      <Breadcrumb className="mb-6">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/">
+              <HomeIcon className="h-4 w-4 mr-1" />
+              Home
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/developer">Developer</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/developer/admin">
+              <Shield className="h-4 w-4 mr-1" />
+              Admin
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
-          <div className="mb-8 space-y-4">
-            <h1 className="text-2xl font-bold flex items-center">
-              <Shield className="mr-2 h-6 w-6 text-primary" />
-              Admin Dashboard
-            </h1>
-            <p className="text-muted-foreground">
-              Administrative tools for the SecureAddress Bridge platform
+      <div className="mb-8 space-y-4">
+        <h1 className="text-2xl font-bold flex items-center">
+          <Shield className="mr-2 h-6 w-6 text-primary" />
+          Admin Dashboard
+        </h1>
+        <p className="text-muted-foreground">
+          Administrative tools for the SecureAddress Bridge platform
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Admin cards */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center">
+              <Users className="h-5 w-5 mr-2 text-primary" />
+              Role Management
+            </CardTitle>
+            <CardDescription>
+              Manage user roles and permissions
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pb-2">
+            <p className="text-sm text-muted-foreground">
+              Assign developer and admin roles to users and manage platform access
             </p>
-          </div>
+          </CardContent>
+          <CardFooter>
+            <Button asChild variant="outline" className="w-full">
+              <Link to="/developer/admin/roles">
+                Manage Roles
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                  <Users className="h-5 w-5 mr-2 text-primary" />
-                  Role Management
-                </CardTitle>
-                <CardDescription>
-                  Manage user roles and permissions
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pb-2">
-                <p className="text-sm text-muted-foreground">
-                  Assign developer and admin roles to users and manage platform access
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Button asChild variant="outline" className="w-full">
-                  <Link to="/developer/admin/roles">
-                    Manage Roles
-                  </Link>
-                </Button>
-              </CardFooter>
-            </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center">
+              <Activity className="h-5 w-5 mr-2 text-primary" />
+              System Monitoring
+            </CardTitle>
+            <CardDescription>
+              Monitor platform performance and usage
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pb-2">
+            <p className="text-sm text-muted-foreground">
+              View system metrics, error logs, and usage statistics
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button asChild variant="outline" className="w-full">
+              <Link to="/developer/admin/monitoring">
+                View Monitoring
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                  <Activity className="h-5 w-5 mr-2 text-primary" />
-                  System Monitoring
-                </CardTitle>
-                <CardDescription>
-                  Monitor platform performance and usage
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pb-2">
-                <p className="text-sm text-muted-foreground">
-                  View system metrics, error logs, and usage statistics
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Button asChild variant="outline" className="w-full">
-                  <Link to="/developer/admin/monitoring">
-                    View Monitoring
-                  </Link>
-                </Button>
-              </CardFooter>
-            </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center">
+              <Database className="h-5 w-5 mr-2 text-primary" />
+              Application Management
+            </CardTitle>
+            <CardDescription>
+              Manage developer applications
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pb-2">
+            <p className="text-sm text-muted-foreground">
+              Review, approve, and manage third-party applications
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button asChild variant="outline" className="w-full">
+              <Link to="/developer/admin/apps">
+                Manage Applications
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                  <Database className="h-5 w-5 mr-2 text-primary" />
-                  Application Management
-                </CardTitle>
-                <CardDescription>
-                  Manage developer applications
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pb-2">
-                <p className="text-sm text-muted-foreground">
-                  Review, approve, and manage third-party applications
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Button asChild variant="outline" className="w-full">
-                  <Link to="/developer/admin/apps">
-                    Manage Applications
-                  </Link>
-                </Button>
-              </CardFooter>
-            </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center">
+              <Settings className="h-5 w-5 mr-2 text-primary" />
+              System Settings
+            </CardTitle>
+            <CardDescription>
+              Configure platform settings
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pb-2">
+            <p className="text-sm text-muted-foreground">
+              Manage API rate limits, global settings, and system configurations
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button asChild variant="outline" className="w-full">
+              <Link to="/developer/admin/settings">
+                System Settings
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                  <Settings className="h-5 w-5 mr-2 text-primary" />
-                  System Settings
-                </CardTitle>
-                <CardDescription>
-                  Configure platform settings
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pb-2">
-                <p className="text-sm text-muted-foreground">
-                  Manage API rate limits, global settings, and system configurations
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Button asChild variant="outline" className="w-full">
-                  <Link to="/developer/admin/settings">
-                    System Settings
-                  </Link>
-                </Button>
-              </CardFooter>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                  <FileText className="h-5 w-5 mr-2 text-primary" />
-                  Audit Logs
-                </CardTitle>
-                <CardDescription>
-                  Review system activity
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pb-2">
-                <p className="text-sm text-muted-foreground">
-                  View logs of important system events and user actions
-                </p>
-              </CardContent>
-              <CardFooter>
-                <Button asChild variant="outline" className="w-full">
-                  <Link to="/developer/admin/logs">
-                    View Audit Logs
-                  </Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
-        </div>
-      </main>
-      <Footer />
-    </div>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center">
+              <FileText className="h-5 w-5 mr-2 text-primary" />
+              Audit Logs
+            </CardTitle>
+            <CardDescription>
+              Review system activity
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pb-2">
+            <p className="text-sm text-muted-foreground">
+              View logs of important system events and user actions
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button asChild variant="outline" className="w-full">
+              <Link to="/developer/admin/logs">
+                View Audit Logs
+              </Link>
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    </AuthenticatedLayout>
   );
 };
 
