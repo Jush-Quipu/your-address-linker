@@ -11,9 +11,9 @@ const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen">
       <Navbar />
-      <div className="pt-16">
+      <main>
         {children}
-      </div>
+      </main>
       <Footer />
     </div>
   );

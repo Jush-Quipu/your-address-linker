@@ -12,19 +12,19 @@ const Hero: React.FC = () => {
         <img 
           src="/lovable-uploads/d9494fc1-d5a2-48e3-a68d-3c9e7743d434.png" 
           alt="SecureAddress Bridge Logo" 
-          className="w-32 h-32 object-contain animate-bounce-subtle"
+          className="w-32 h-32 object-contain"
         />
       </div>
       
-      <h1 className="text-4xl md:text-6xl font-bold tracking-tight max-w-4xl animate-fade-in mb-6">
+      <h1 className="text-4xl md:text-6xl font-bold tracking-tight max-w-4xl mb-6">
         Your wallet, your home, <span className="text-primary">your control</span>
       </h1>
       
-      <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10 animate-fade-in animate-delay-200">
+      <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mb-10">
         Securely link your blockchain wallet to your verified physical address while maintaining complete privacy and control over your data.
       </p>
       
-      <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animate-delay-300">
+      <div className="flex flex-col sm:flex-row gap-4">
         <Link to="/auth">
           <Button size="lg" className="bg-primary hover:bg-primary/90 text-white px-8">
             Get Started
@@ -37,8 +37,8 @@ const Hero: React.FC = () => {
         </Link>
       </div>
       
-      <div className="mt-20 max-w-4xl w-full glass rounded-2xl p-1 animate-fade-in animate-delay-400">
-        <div className="bg-white rounded-xl overflow-hidden shadow-subtle">
+      <div className="mt-20 max-w-4xl w-full rounded-2xl p-1">
+        <div className="bg-white rounded-xl overflow-hidden shadow-lg">
           <img 
             src="https://placehold.co/1200x600/e9ecef/343a40?text=SecureAddress+Bridge+Dashboard" 
             alt="Dashboard Preview" 

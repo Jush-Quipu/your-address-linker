@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import PublicLayout from '@/components/layouts/PublicLayout';
-import Landing from '@/pages/Landing';
+import Hero from '@/components/Hero';
 import Features from '@/components/Features';
 import HowItWorks from '@/components/HowItWorks';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ const Index: React.FC = () => {
   
   return (
     <PublicLayout>
-      <Landing />
+      <Hero />
       <Features />
       <HowItWorks />
       

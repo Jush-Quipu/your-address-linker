@@ -71,7 +71,7 @@ const AppRoutes: React.FC = () => {
     <Routes>
       {/* Public Routes - Make Index the root route */}
       <Route path="/" element={<Index />} />
-      <Route path="/home" element={<Index />} />
+      <Route path="/home" element={<Navigate to="/" replace />} />
       <Route path="/features" element={<Features />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/integrations" element={<IntegrationsPage />} />

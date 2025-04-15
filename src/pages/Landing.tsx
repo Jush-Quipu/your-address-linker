@@ -2,11 +2,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext'; // Change to use AuthContext instead
+import { useAuth } from '@/context/AuthContext';
 
 const Landing: React.FC = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading } = useAuth(); // Use AuthContext instead of SecureAddress context
+  const { isAuthenticated, isLoading } = useAuth();
   
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-primary/5 to-primary/10">
